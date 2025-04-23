@@ -4,10 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Voter;
+
 
 class Election extends Model
 {
     use HasFactory;
+
+    protected $table = 'election'; 
 
     protected $fillable = [
         'name', 'description', 'start_date', 'end_date',
@@ -15,9 +19,6 @@ class Election extends Model
         'result_date', 'election_img', 'admin_id'
     ];
 
-    /**
-     * Define relationships
-     */
     public function admin()
     {
         return $this->belongsTo(Admin::class);
@@ -33,9 +34,11 @@ class Election extends Model
         return $this->hasMany(Voter::class);
     }
 
-    /**
-     * Cast attributes to their native types
-     */
+    public function articles()
+    {
+        return $this->hasMany(ElectionArticle::class);
+    }
+
     protected $casts = [
         'start_date' => 'datetime',
         'end_date' => 'datetime',
@@ -46,9 +49,6 @@ class Election extends Model
         'result_date' => 'datetime',
     ];
 
-    /**
-     * Accessor to format the start date
-     */
     public function getFormattedStartDateAttribute()
     {
         return $this->start_date->format('F j, Y');

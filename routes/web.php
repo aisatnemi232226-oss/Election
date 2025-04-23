@@ -3,7 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\{LoginController, RegisterController, ForgotPasswordController, ResetPasswordController};
 use App\Http\Controllers\{DashboardController, ElectionsController, CandidateController, PositionController, VoterController, 
-                            UserController, AdminController, RoleController, ViewElectionController, VerifiedVoterController};
+                            UserController, AdminController, RoleController, ViewElectionController, VerifiedVoterController,
+                            ElectionArticleController};
 
 // =======================
 // 🔐 Authentication Routes
@@ -54,6 +55,10 @@ Route::middleware('auth')->group(function () {
         Route::get('candidates/edit/{id}', [CandidateController::class, 'editCandidate'])->name('candidates.edit');
         Route::post('/candidates/uploadQuillImage', [CandidateController::class, 'uploadQuillImage'])->name('quill.image.upload');
 
+        // ✅ Routes for Articles
+        Route::resource('election-articles', ElectionArticleController::class);
+        Route::post('/articles/uploadQuillImage', [ElectionArticleController::class, 'uploadQuillImage'])->name('articles.quill.image.upload');
+        
         Route::resource('positions', PositionController::class);
         Route::resource('voters', VoterController::class);
         Route::resource('users', UserController::class);

@@ -12,13 +12,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('election_articles', function (Blueprint $table) {
-            $table->bigIncrements('id')->primary();
+            $table->id();
+            $table->string('title');
+            $table->text('content');
+            $table->string('author');
+            $table->unsignedBigInteger('election_id');
             $table->unsignedBigInteger('candidate_id')->nullable();
-            $table->unsignedBigInteger('election_id')->nullable();
-            $table->unsignedBigInteger('articles_id')->nullable();
-            $table->string('show_status')->nullable();
-            $table->timestamp('created_at')->useCurrentOnUpdate()->useCurrent();
-            $table->timestamp('delete_at')->useCurrent();
+            $table->boolean('visible')->default(true);
+            $table->json('tags')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+
+            $table->foreign('election_id')->references('id')->on('elections');
+            $table->foreign('candidate_id')->references('id')->on('candidates');
         });
     }
 
