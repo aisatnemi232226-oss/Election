@@ -66,11 +66,12 @@ class ElectionArticleController extends Controller
             'author' => 'required|string|max:255',
             'content' => 'required|string',
             'election_id' => 'required|exists:election,id',
-            'visible' => 'nullable',
+            'show_status' => 'nullable',
             'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:3072',
         ]);
 
-        $validated['visible'] = $request->has('visible');
+        // Set show_status as boolean based on checkbox presence
+        $validated['show_status'] = $request->has('show_status');
 
         // Handle featured image
         if ($request->hasFile('featured_image')) {
@@ -90,6 +91,7 @@ class ElectionArticleController extends Controller
             $validated['featured_image'] = Storage::url($path);
         }
 
+        // Update article content
         $article->update([
             'title' => $validated['title'],
             'author' => $validated['author'],
@@ -97,11 +99,12 @@ class ElectionArticleController extends Controller
             'featured_image' => $validated['featured_image'] ?? $article->featured_image,
         ]);
 
+        // Update election_articles pivot
         DB::table('election_articles')
             ->where('articles_id', $article->id)
             ->update([
                 'election_id' => $validated['election_id'],
-                'show_status' => $validated['visible'] ? '1' : '0',
+                'show_status' => $validated['show_status'] ? '1' : '0',
             ]);
 
         return redirect()->route('admin.election-articles.index')

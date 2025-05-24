@@ -151,10 +151,11 @@
                     <input type="hidden" id="edit-tags" name="tags">
                 </div>
                 
-                <div class="flex items-center space-x-2 mb-3">
-                    <input type="checkbox" id="edit-show-status" name="show_status" value="1" class="rounded">
-                    <label for="edit-show-status" class="text-sm text-gray-700">Visible</label>
-                </div>
+            <div class="flex items-center space-x-2 mb-3">
+                <input type="checkbox" id="edit-show-status" name="show_status" value="1" class="rounded"
+                    {{ old('show_status', $article->show_status ?? false) ? 'checked' : '' }}>
+                <label for="edit-show-status" class="text-sm text-gray-700">Visible</label>
+            </div>
 
                 <div>
                     <label for="edit-content" class="block text-sm font-medium text-gray-700 mb-1">Content</label>

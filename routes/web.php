@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\{LoginController, RegisterController, ForgotPasswordController, ResetPasswordController};
 use App\Http\Controllers\{DashboardController, ElectionsController, CandidateController, PositionController, VoterController, 
                             UserController, AdminController, RoleController, ViewElectionController, VerifiedVoterController,
-                            ElectionArticleController,ArticleController};
+                            ElectionArticleController, ElectArticleController, ArticleController};
 
 
 use Intervention\Image\ImageManager;
@@ -69,6 +69,11 @@ Route::middleware('auth')->group(function () {
         Route::resource('election-articles', ElectionArticleController::class);
         Route::post('/admin/election-articles/featured-image/upload', [ArticleController::class, 'uploadFeaturedImage'])
             ->name('admin.election-articles.featured-image.upload');
+
+        // ✅ Routes for Election-Article linking
+        Route::resource('elect-articles', ElectArticleController::class);
+        // Route::post('/admin/election-articles/featured-image/upload', [ArticleController::class, 'uploadFeaturedImage'])
+        //     ->name('admin.election-articles.featured-image.upload');
 
         Route::resource('positions', PositionController::class);
         Route::resource('voters', VoterController::class);
