@@ -12,21 +12,24 @@ class ElectionArticle extends Model
     protected $table = 'election_articles'; 
 
     protected $fillable = [
-        'title',
-        'author',
-        'content',
         'election_id',
-        'visible',
-        'tags'
+        'candidate_id',
+        'articles_id',
+        'show_status'
     ];
 
     protected $casts = [
-        'tags' => 'array',
-        'visible' => 'boolean'
+        'show_status' => 'boolean'
     ];
 
     public function election()
     {
         return $this->belongsTo(Election::class);
+    }
+
+    // Add this relationship
+    public function article()
+    {
+        return $this->belongsTo(Article::class, 'articles_id');
     }
 }

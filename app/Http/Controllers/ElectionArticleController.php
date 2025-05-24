@@ -3,112 +3,108 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\ElectionArticle;
+use App\Models\Article;
 use App\Models\Election;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ElectionArticleController extends Controller
 {
     public function index()
     {
-        $articles = ElectionArticle::with('election')->get();
-        
-        // Create a test article if none exists
-        if ($articles->isEmpty()) {
-            $firstElection = Election::first();
-            if ($firstElection) {
-                $testArticle = new ElectionArticle();
-                $testArticle->title = "Test Article";
-                $testArticle->author = "Test Author";
-                $testArticle->content = "<p>This is a test article</p>";
-                $testArticle->election_id = $firstElection->id;
-                $testArticle->visible = true;
-                $testArticle->tags = ["test", "debug"];
-                $testArticle->save();
-                
-                // Reload articles
-                $articles = ElectionArticle::with('election')->get();
-            }
-        }
-        
+        $articles = DB::table('election_articles')
+            ->join('articles', 'articles.id', '=', 'election_articles.articles_id')
+            ->join('election', 'election.id', '=', 'election_articles.election_id')
+            ->select(
+                'articles.*',
+                'election.name as election_name',
+                'election_articles.show_status'
+            )
+            ->get();
+
         $elections = Election::all();
+
         return view('admin.election-articles', compact('articles', 'elections'));
     }
 
-    public function store(Request $request)
+    public function show($id)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'author' => 'required|string|max:255',
-            'content' => 'required|string',
-            'election_id' => 'required|exists:elections,id', // Updated table name if needed
-            'visible' => 'boolean',
-            'tags' => 'nullable',
-        ]);
+        $article = Article::findOrFail($id);
 
-        // Handle tags if they come as JSON string
-        if (is_string($request->tags)) {
-            $validated['tags'] = json_decode($request->tags, true);
-        }
+        $election = Election::select('election.*')
+            ->join('election_articles', 'election.id', '=', 'election_articles.election_id')
+            ->where('election_articles.articles_id', $article->id)
+            ->first();
 
-        // Set visible to false if not provided
-        $validated['visible'] = $request->has('visible') ? true : false;
+        $article->election = $election;
 
-        ElectionArticle::create($validated);
-
-        return redirect()->route('admin.election-articles.index')
-            ->with('success', 'Article created successfully.');
+        return response()->json($article);
     }
 
     public function edit($id)
     {
-        $article = ElectionArticle::findOrFail($id);
+        $article = Article::findOrFail($id);
+
+        $election = Election::select('election.*')
+            ->join('election_articles', 'election.id', '=', 'election_articles.election_id')
+            ->where('election_articles.articles_id', $article->id)
+            ->first();
+
+        if ($election) {
+            $article->election_id = $election->id;
+        }
+
         return response()->json($article);
     }
 
     public function update(Request $request, $id)
     {
-        $article = ElectionArticle::findOrFail($id);
-        
+        $article = Article::findOrFail($id);
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
             'content' => 'required|string',
-            'election_id' => 'required|exists:elections,id', // Updated table name if needed
-            'visible' => 'boolean',
-            'tags' => 'nullable',
+            'election_id' => 'required|exists:election,id',
+            'visible' => 'nullable',
+            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:3072',
         ]);
 
-        // Handle tags if they come as JSON string
-        if (is_string($request->tags)) {
-            $validated['tags'] = json_decode($request->tags, true);
+        $validated['visible'] = $request->has('visible');
+
+        // Handle featured image
+        if ($request->hasFile('featured_image')) {
+            if ($article->featured_image) {
+                $oldPath = str_replace('/storage/', 'public/', $article->featured_image);
+                if (Storage::exists($oldPath)) {
+                    Storage::delete($oldPath);
+                }
+            }
+
+            $image = $request->file('featured_image');
+            $filename = time() . '_featured_' . str_replace(' ', '_', $image->getClientOriginalName());
+
+            Storage::makeDirectory('public/featured-images');
+            $path = $image->storeAs('public/featured-images', $filename);
+
+            $validated['featured_image'] = Storage::url($path);
         }
 
-        // Set visible to false if not provided
-        $validated['visible'] = $request->has('visible') ? true : false;
+        $article->update([
+            'title' => $validated['title'],
+            'author' => $validated['author'],
+            'content' => $validated['content'],
+            'featured_image' => $validated['featured_image'] ?? $article->featured_image,
+        ]);
 
-        $article->update($validated);
+        DB::table('election_articles')
+            ->where('articles_id', $article->id)
+            ->update([
+                'election_id' => $validated['election_id'],
+                'show_status' => $validated['visible'] ? '1' : '0',
+            ]);
 
         return redirect()->route('admin.election-articles.index')
             ->with('success', 'Article updated successfully.');
-    }
-
-    public function destroy($id)
-    {
-        $article = ElectionArticle::findOrFail($id);
-        $article->delete();
-        return redirect()->route('admin.election-articles.index')
-            ->with('success', 'Article deleted successfully.');
-    }
-
-    public function uploadQuillImage(Request $request)
-    {
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $path = $image->store('article-images', 'public');
-            return response()->json(['url' => Storage::url($path)]);
-        }
-        
-        return response()->json(['error' => 'No image found'], 400);
     }
 }

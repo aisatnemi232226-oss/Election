@@ -4,7 +4,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\{LoginController, RegisterController, ForgotPasswordController, ResetPasswordController};
 use App\Http\Controllers\{DashboardController, ElectionsController, CandidateController, PositionController, VoterController, 
                             UserController, AdminController, RoleController, ViewElectionController, VerifiedVoterController,
-                            ElectionArticleController};
+                            ElectionArticleController,ArticleController};
+
+
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 
 // =======================
 // 🔐 Authentication Routes
@@ -53,12 +57,19 @@ Route::middleware('auth')->group(function () {
         Route::get('/candidates/filter', [CandidateController::class, 'filter'])->name('candidates.filter');
         Route::get('candidates/new', [CandidateController::class, 'newCandidate'])->name('candidates.new');
         Route::get('candidates/edit/{id}', [CandidateController::class, 'editCandidate'])->name('candidates.edit');
-        Route::post('/candidates/uploadQuillImage', [CandidateController::class, 'uploadQuillImage'])->name('quill.image.upload');
+        Route::post('/candidates/uploadQuillImage', [CandidateController::class, 'uploadQuillImage'])->name('candidates.quill.image.upload');
 
-        // ✅ Routes for Articles
+
+        // ✅ Routes for Articles (general)
+        Route::resource('articles', ArticleController::class);
+        Route::post('/articles/quill/upload-image', [ArticleController::class, 'uploadQuillImage'])
+            ->name('election-articles.quill.image.upload');
+
+        // ✅ Routes for Election-Article linking
         Route::resource('election-articles', ElectionArticleController::class);
-        Route::post('/articles/uploadQuillImage', [ElectionArticleController::class, 'uploadQuillImage'])->name('articles.quill.image.upload');
-        
+        Route::post('/admin/election-articles/featured-image/upload', [ArticleController::class, 'uploadFeaturedImage'])
+            ->name('admin.election-articles.featured-image.upload');
+
         Route::resource('positions', PositionController::class);
         Route::resource('voters', VoterController::class);
         Route::resource('users', UserController::class);
@@ -89,3 +100,6 @@ Route::view('/result', 'voter.result');
 Route::view('/resultTally', 'voter.resultTally');
 Route::view('/contact', 'voter.contact');
 Route::view('/new-candidate', 'admin.new-candidate');
+
+
+
