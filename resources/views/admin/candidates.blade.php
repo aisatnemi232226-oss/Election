@@ -10,25 +10,35 @@
     </section>
 
     <section class="my-8">
-        <div class="flex items-center justify-between px-6 py-4 bg-gray-50">
-            <h1 class="text-2xl font-bold text-gray-800">Candidates List</h1>
-            
-            <div class="flex items-center space-x-4">
-                <x-search-box 
-                    id="candidates-search"
-                    placeholder="Search candidates..."
-                    class="w-64"
-                />
-                
-                <button 
-                    class="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                    id="new-candidate-btn">
-                    New Candidate
-                </button>
-            </div>
-        </div>
-
         <div class="bg-white p-6 rounded-lg shadow-lg">
+            <!-- Header with title, search, pagination, and new button -->
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-2xl font-bold text-gray-800">Candidates List</h1>
+                    
+                    <div class="relative">
+                        <x-search-box 
+                            id="candidates-search"
+                            placeholder="Search candidates, courses, status..."
+                            class="w-80"
+                        />
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- Pagination at the top - properly aligned -->
+                    <div id="pagination-container-top" class="flex items-center">
+                        {{ $candidates->links('components.pagination') }}
+                    </div>
+                    
+                    <button 
+                        class="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                        id="new-candidate-btn">
+                        New Candidate
+                    </button>
+                </div>
+            </div>
+            
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-white border-collapse">
                     <thead>
@@ -39,12 +49,16 @@
                             <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="candidates-table-body">
                         @foreach ($candidates as $candidate)
                             <tr>
                                 <td class="py-2 px-4 border-b">{{ $candidate->name }}</td>
                                 <td class="py-2 px-4 border-b">{{ optional($candidate->course)->name ?? 'N/A' }}</td>
-                                <td class="py-2 px-4 border-b">{{ $candidate->status }}</td>
+                                <td class="py-2 px-4 border-b">
+                                    <span class="px-2 py-1 text-xs rounded-full {{ $candidate->status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                        {{ $candidate->status }}
+                                    </span>
+                                </td>
                                 <td class="py-2 px-4 border-b">
                                     <div class="flex gap-2">
                                         <button 
@@ -97,7 +111,9 @@
                     </tbody>
                 </table>
             </div>
-            <div id="pagination-container" class="mt-4">
+            
+            <!-- Hidden pagination container for backup -->
+            <div id="pagination-container" class="mt-4" style="display: none;">
                 {{ $candidates->links('components.pagination') }}
             </div>
         </div>

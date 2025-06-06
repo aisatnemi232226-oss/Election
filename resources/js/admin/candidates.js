@@ -55,13 +55,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 searchInputId: 'candidates-search',
                 onSearch: (query) => {
                     console.log('Search query:', query);
-                    if (query === 'active' || query === 'inactive') {
-                        PaginationController.filters.search = '';
-                        PaginationController.filters.status = query.charAt(0).toUpperCase() + query.slice(1);
-                    } else {
-                        PaginationController.filters.search = query;
-                        PaginationController.filters.status = '';
-                    }
+                    // Clear existing filters
+                    PaginationController.filters.search = query;
+                    PaginationController.filters.status = '';
+                    PaginationController.filters.course = '';
+                    
+                    // Load first page with new search
                     PaginationController.loadCandidates(1);
                 }
             });
@@ -83,14 +82,21 @@ document.addEventListener('DOMContentLoaded', () => {
             isLoading: false
         },
         setupPaginationLinks() {
+            // Handle pagination clicks on both top and bottom containers
             document.addEventListener('click', (e) => {
-                const link = e.target.closest('.pagination a');
+                const link = e.target.closest('.pagination a, #pagination-container-top a, #pagination-container a');
                 if (link) {
                     e.preventDefault();
                     const page = new URL(link.href).searchParams.get('page') || 1;
                     this.loadCandidates(parseInt(page));
                 }
             });
+        },
+        updateResultsInfo(metadata) {
+            const resultsInfo = document.getElementById('results-info');
+            if (resultsInfo && metadata) {
+                resultsInfo.textContent = `Showing ${metadata.showing_from || 1} to ${metadata.showing_to || metadata.total} of ${metadata.total} results`;
+            }
         },
         loadCandidates(page = 1) {
             if (this.filters.isLoading) {
@@ -100,7 +106,8 @@ document.addEventListener('DOMContentLoaded', () => {
             this.filters.isLoading = true;
             this.currentPage = page;
             
-            const tableBody = document.querySelector('tbody');
+            const tableBody = document.querySelector('#candidates-table-body');
+            const paginationContainerTop = document.querySelector('#pagination-container-top');
             const paginationContainer = document.querySelector('#pagination-container');
             
             if (tableBody) {
@@ -183,14 +190,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         `).join('');
                     }
                     
+                    // Update both pagination containers
+                    if (paginationContainerTop && data.pagination_html) {
+                        paginationContainerTop.innerHTML = data.pagination_html;
+                    }
                     if (paginationContainer && data.pagination_html) {
                         paginationContainer.innerHTML = data.pagination_html;
                     }
                     
+                    // Update results info
+                    this.updateResultsInfo(data.metadata);
+                    
                     // Re-attach event handlers to newly created buttons
                     this.reattachEventListeners();
                 } else {
-                    throw new Error(data.error || 'Failed to load candidates');
+                    throw new Error(data.message || 'Failed to load candidates');
                 }
             })
             .catch(error => {
@@ -226,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         init() {
             this.setupPaginationLinks();
-            this.loadCandidates(1);
+            // Don't auto-load on init as the page already has data
         }
     };
 
@@ -372,12 +386,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 const response = await fetch(url, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': token
+                }
+            });
+
                 
                 const contentType = response.headers.get('content-type');
                 if (contentType && contentType.includes('application/json')) {
