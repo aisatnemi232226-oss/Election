@@ -3,16 +3,18 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Article extends Model
 {
-    public $timestamps = false;
-    
-    // Define custom timestamp columns that match your table
+    use SoftDeletes;
+
     const CREATED_AT = 'created_at';
-    const UPDATED_AT = null; 
-    const DELETED_AT = 'delete_at'; 
-    
+    const UPDATED_AT = null;
+    const DELETED_AT = 'deleted_at';
+
+    protected $table = 'articles';
+
     protected $fillable = [
         'title',
         'author',
@@ -20,21 +22,22 @@ class Article extends Model
         'type',
         'visible',
         'featured_image',
-        'tags'
+        'tags', 
+        'image_urls'
     ];
 
     protected $casts = [
         'tags' => 'array',
         'visible' => 'boolean',
         'created_at' => 'datetime',
-        'delete_at' => 'datetime'
+        'deleted_at' => 'datetime'
     ];
-    
-    public function election()
+
+    public function elections()
     {
         return $this->belongsToMany(Election::class, 'election_articles', 'articles_id', 'election_id');
     }
-    
+
     protected static function booted()
     {
         static::creating(function ($article) {

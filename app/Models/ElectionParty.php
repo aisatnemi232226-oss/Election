@@ -11,6 +11,8 @@ class ElectionParty extends Model
 
     protected $table = 'electionparty';
 
+    public $timestamps = false;
+
     protected $fillable = [
         'name', 'status',
     ];

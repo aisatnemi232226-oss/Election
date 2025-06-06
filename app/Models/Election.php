@@ -3,11 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Election extends Model
 {
-    protected $table = 'election';
-    
+    use SoftDeletes;
+
+    protected $table = 'election'; // Matches schema
+
+    public $timestamps = false;
+
+
     protected $fillable = [
         'name',
         'description',

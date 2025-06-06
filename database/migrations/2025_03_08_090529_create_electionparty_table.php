@@ -12,12 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('electionparty', function (Blueprint $table) {
-            $table->bigIncrements('id')->primary();
+            $table->bigIncrements('id');
             $table->string('name')->nullable();
             $table->string('status')->nullable();
             $table->timestamp('created_at')->useCurrentOnUpdate()->useCurrent();
             $table->timestamp('delete_at')->useCurrent();
         });
+
     }
 
     /**

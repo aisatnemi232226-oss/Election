@@ -17,6 +17,6 @@ class Course extends Model
 
     public function candidate()
     {
-        return $this->hasOne(Candidate::class, 'courses_id');
+        return $this->hasOne(Candidate::class, 'course_id');
     }
 }

@@ -9,7 +9,10 @@ class ElectionArticle extends Model
 {
     use HasFactory;
 
-    protected $table = 'election_articles'; 
+    protected $table = 'election_articles';
+
+    // Disable updated_at, keep created_at
+    const UPDATED_AT = null;
 
     protected $fillable = [
         'election_id',
@@ -24,12 +27,16 @@ class ElectionArticle extends Model
 
     public function election()
     {
-        return $this->belongsTo(Election::class);
+        return $this->belongsTo(Election::class, 'election_id')->withTrashed();
     }
 
-    // Add this relationship
-    public function article()
+    public function articles()
     {
         return $this->belongsTo(Article::class, 'articles_id');
+    }
+
+    public function candidate()
+    {
+        return $this->belongsTo(Candidate::class, 'candidate_id')->withTrashed();
     }
 }

@@ -25,7 +25,6 @@
                         <li><a class="block px-4 py-2 hover:bg-gray-200" href="#">Manage Positions</a></li>
                         <li><a class="block px-4 py-2 hover:bg-gray-200" href="#">Manage Voters</a></li>
                         <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.election-articles.index') }}">Manage Election Articles</a></li>
-                        <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.elect-articles.index') }}">Manage Elect Articles</a></li>
                         <li><a class="block px-4 py-2 hover:bg-gray-200" href="#">View Results</a></li>
                     </ul>
                 </li>
