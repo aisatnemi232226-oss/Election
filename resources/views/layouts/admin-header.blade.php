@@ -22,6 +22,7 @@
                     <ul id="election-management-menu" class="absolute left-0 mt-1 hidden bg-white text-gray-800 shadow-lg rounded-lg w-56 z-50 p-2 group-hover:block">
                         <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.elections.index') }}">Manage Elections</a></li>
                         <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.candidates.index') }}">Manage Candidates</a></li>
+                        <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.election-parties.index') }}">Manage Election Party</a></li>
                         <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.positions.index') }}">Manage Positions</a></li>
                         <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.voters.index') }}">Manage Voters</a></li>
                         <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.election-articles.index') }}">Manage Election Articles</a></li>
@@ -40,6 +41,7 @@
                         <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.audit-logs.index') }}">Audit Logs</a></li>
                         <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.verified-voters.index') }}">Verify Voters</a></li>
                         <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.academic-year.index') }}">Set Current Academic Year</a></li>
+                        <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.courses.index') }}">Courses</a></li>
                     </ul>
                 </li>
 

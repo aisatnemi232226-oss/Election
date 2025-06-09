@@ -5,7 +5,7 @@ use App\Http\Controllers\Auth\{LoginController, RegisterController, ForgotPasswo
 use App\Http\Controllers\{DashboardController, ElectionsController, CandidateController, PositionController, VoterController, 
     UserController, AdminController, RoleController, ViewElectionController, VerifiedVoterController, ElectionArticleController, 
     ArticleController, SearchController, ResultsController, ReportsController, AdminRoleController, ProfileSettingsController, 
-    AuditLogController, AcademicYearController};
+    AuditLogController, AcademicYearController, CourseController, ElectionPartyController};
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 
@@ -92,6 +92,19 @@ Route::middleware(['auth', 'isAdmin'])->prefix('admin')->name('admin.')->group(f
         Route::delete('/{id}', [CandidateController::class, 'destroy'])->name('destroy');
     });
 
+    // ✅ Routes for Election Parties
+    Route::prefix('election-parties')->name('election-parties.')->group(function () {
+        Route::get('/', [ElectionPartyController::class, 'index'])->name('index');
+        Route::get('/create', [ElectionPartyController::class, 'create'])->name('create');
+        Route::post('/', [ElectionPartyController::class, 'store'])->name('store');
+        Route::get('/{id}', [ElectionPartyController::class, 'show'])->name('show');
+        Route::get('/{id}/edit', [ElectionPartyController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [ElectionPartyController::class, 'update'])->name('update');
+        Route::delete('/{id}', [ElectionPartyController::class, 'destroy'])->name('destroy');
+        Route::post('/bulk-delete', [ElectionPartyController::class, 'bulkDelete'])->name('bulk-delete');
+        Route::get('/{id}/data', [ElectionPartyController::class, 'getPartyData'])->name('data');
+    });
+
     // ✅ Routes for Positions
     Route::resource('positions', PositionController::class)->only(['index', 'create', 'store', 'destroy', 'edit', 'update']);
     Route::get('/positions/paginatePositions', [PositionController::class, 'paginatePositions'])->name('positions.paginate');
@@ -138,6 +151,19 @@ Route::middleware(['auth', 'isAdmin'])->prefix('admin')->name('admin.')->group(f
         Route::delete('/{id}', [AcademicYearController::class, 'destroy'])->name('destroy');
         Route::post('/toggle-status', [AcademicYearController::class, 'toggleStatus'])->name('toggle-status');
         Route::post('/bulk-delete', [AcademicYearController::class, 'bulkDelete'])->name('bulk-delete');
+    });
+
+    // ✅ Routes for Courses Management
+    Route::prefix('courses')->name('courses.')->group(function () {
+        Route::get('/', [CourseController::class, 'index'])->name('index');
+        Route::get('/create', [CourseController::class, 'create'])->name('create');
+        Route::post('/', [CourseController::class, 'store'])->name('store');
+        Route::get('/{id}', [CourseController::class, 'show'])->name('show');
+        Route::get('/{id}/edit', [CourseController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [CourseController::class, 'update'])->name('update');
+        Route::delete('/{id}', [CourseController::class, 'destroy'])->name('destroy');
+        Route::post('/bulk-delete', [CourseController::class, 'bulkDelete'])->name('bulk-delete');
+        Route::get('/{id}/data', [CourseController::class, 'getCourseData'])->name('data');
     });
 
     // ✅ Routes for Results
