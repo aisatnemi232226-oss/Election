@@ -142,7 +142,7 @@ Make sure the following tools are installed and properly set up:
 npm run dev
 ```
 
-> * This should run in a **separate tab** in the VS Code terminal using Command Prompt*
+> * This should run in a **separate tab** in the VS Code terminal using Command Prompt *
 
 11. **Start the Laravel development server**:
 
@@ -150,10 +150,10 @@ npm run dev
 php artisan serve
 ```
 
-> * Also run this in a **separate Command Prompt tab***
+> * Also run this in a **separate Command Prompt tab** *
 
-12. **Open the application in your browser**:
-    Visit: [http://localhost:8000](http://localhost:8000)
+12. **Open the application in your browser**:  
+    Visit: [http://localhost:8000](http://localhost:8000)  
     You should see the **University Online Election System** homepage or login screen.
 
     *If everything is set up correctly, you're good to go! Otherwise, double-check your `.env` file and running services.*
@@ -163,7 +163,7 @@ php artisan serve
 
 ### ✅ **Finished Modules**
 
-During the development of the **University Online Election System**, the following modules have been successfully implemented. These are mostly focused on admin-side functionalities, as the team prioritized administrative features during development. Please note that while these modules are functional, some features (especially on the student side) are still under development and may contain bugs or need refinement.
+During the development of the **University Online Election System**, the following modules have been successfully implemented. These are mostly focused on admin-side functionalities, as the team prioritized administrative features during development. Please note that while these modules are functional, some features (especially on the user side) are still under development and may contain bugs or need refinement.
 
 
 #### **1. Manage Candidates**
@@ -355,7 +355,7 @@ Voters (Students) have access to a simplified interface for viewing elections, c
 * **Roles and permissions** are managed through the **Admin Roles** module.
 * The **QR code login** feature for students is still under development. Currently, manual login is required.
 * Registration validation alerts (e.g., wrong password) are still being improved.
-* Most **student-side functions** (like registration and casting votes) are only available **after voter verification**.
+* Most **user-side functions** (like registration and casting votes) are only available **after voter verification**.
 * **Recommended browser**: Google Chrome or Firefox for full feature support.
 
 
