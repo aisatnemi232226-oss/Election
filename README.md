@@ -1,4 +1,4 @@
-**University Online Election System**
+##**University Online Election System**
 
 The ***University Online Election System*** is a web-based application developed to facilitate the management and execution of student elections within ***Philippine Christian University – Dasmariñas***. It aims to provide a **secure**, **transparent**, and **user-friendly** platform for handling election-related data, such as candidates, election articles, and voter participation.
 
@@ -549,10 +549,10 @@ This internship has been a great opportunity for growth, and I’ll always be gr
 
 ## 👩‍💻 Developer Information
 
-**\Ma. Jane Therese L. Ricafort**
+**Ma. Jane Therese L. Ricafort**
 Bachelor of Science in Information Technology
 Intern from Cavite State University - Silang Campus
-Email: \janethereselazaroricafort@gmail.com
+Email: janethereselazaroricafort@gmail.com
 
 **Internship Period:**
 March 10, 2025 – May 30, 2025
