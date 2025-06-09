@@ -9,8 +9,9 @@ The **admin panel** allows authorized personnel to **create**, **view**, **edit*
 This project was developed as part of the **internship program** to support the digital transformation of university processes by providing a **reliable** and **efficient** platform for student elections.
 
 
+---
 
-**Technologies Used**
+## **Technologies Used**
 
 This project uses the following technologies and tools to build a reliable and efficient online election system for ***Philippine Christian University – Dasmariñas***:
 
@@ -51,7 +52,7 @@ This project uses the following technologies and tools to build a reliable and e
   [https://git-scm.com/](https://git-scm.com/) | [https://github.com/](https://github.com/)
 
 
-
+---
 
 ## 🔧 **Installation and Setup**
 
@@ -158,7 +159,7 @@ php artisan serve
     *If everything is set up correctly, you're good to go! Otherwise, double-check your `.env` file and running services.*
 
 
-
+---
 
 ### ✅ **Finished Modules**
 
@@ -176,7 +177,6 @@ During the development of the **University Online Election System**, the followi
   * Delete candidates
   * Pagination for improved readability and performance
 
----
 
 #### **2. Manage Positions**
 
@@ -186,7 +186,6 @@ During the development of the **University Online Election System**, the followi
   * Add, edit, and delete positions
   * Search functionality
 
----
 
 #### **3. Manage Election Articles**
 
@@ -195,7 +194,6 @@ During the development of the **University Online Election System**, the followi
 
   * Add, view, edit, and delete articles
 
----
 
 #### **4. Verify Voters**
 
@@ -209,7 +207,7 @@ During the development of the **University Online Election System**, the followi
   * Removing specific verified voters
   * Pagination for better navigation
 
----
+
 
 ### ⚠️ **Pending or Partial Features**
 
@@ -227,7 +225,7 @@ The following features are proposed and partially implemented but not yet fully 
 
   > Student self-registration is disabled. All focus was initially placed on admin-side modules.
 
-
+---
 
 ## 🛠️ How to Use the University Online Election System
 
@@ -277,7 +275,7 @@ Super Admins have full access to all administrative settings and election config
 
    * Update name, email, ID number, profile picture, password, course, and role.
 
----
+
 
 ### 🧑‍💼 **Admin (Elevated Student Account)**
 
@@ -312,7 +310,7 @@ Admins are users with elevated access (typically students assigned as officers o
 
    * Create, track, and export system reports based on election activity or incidents.
 
----
+
 
 ### 🎓 **Voter / Student**
 
@@ -349,7 +347,7 @@ Voters (Students) have access to a simplified interface for viewing elections, c
    * **Tally** – View vote count breakdowns by position or party.
    * **Contacts** – Access support or system admin contacts for assistance.
 
----
+
 
 ### ⚠️ Important Notes
 
@@ -361,6 +359,7 @@ Voters (Students) have access to a simplified interface for viewing elections, c
 * **Recommended browser**: Google Chrome or Firefox for full feature support.
 
 
+---
 
 ## 📝 Handover Note for Future Developers
 
@@ -368,7 +367,7 @@ Hello, Future Developer(s)!
 
 Thanks for taking over the development or maintenance of the **University Online Election System**. To help you transition smoothly, here are some important notes based on the current state of the system as of handover:
 
----
+
 
 ### 🔐 Admin Access
 
@@ -376,7 +375,7 @@ Thanks for taking over the development or maintenance of the **University Online
 * Only verified **Admins** and **Super Admins** can log in.
 * Role assignments (e.g., Admin, Moderator, User) are managed in the **User Management** and **Admin Roles** modules.
 
----
+
 
 ### 👥 User Roles
 
@@ -386,7 +385,7 @@ Thanks for taking over the development or maintenance of the **University Online
 
 > ⚠️ Be careful when changing role permissions — this may affect access levels across the system.
 
----
+
 
 ### 📥 Verified Students Import
 
@@ -398,7 +397,7 @@ Thanks for taking over the development or maintenance of the **University Online
 * **Strict formatting** is required. Import will fail if the structure is incorrect.
 * The import feature includes error validation. Always review the error messages carefully before finalizing the import.
 
----
+
 
 ### 📅 Election and Eligibility Settings
 
@@ -411,7 +410,7 @@ Thanks for taking over the development or maintenance of the **University Online
 
 > Students will **only see and register** for elections they're eligible for. This logic is already implemented.
 
----
+
 
 ### 🧪 Seeder & Sample Data
 
@@ -422,7 +421,6 @@ Thanks for taking over the development or maintenance of the **University Online
   * Test admin/student users
 * If you're using seeders for testing, **always update the event dates** to avoid empty tables or missing data on the frontend.
 
----
 
 
 ### 💡 Tools Used for Assistance
@@ -435,7 +433,7 @@ During development, the following AI tools were used to assist with code writing
 
 Feel free to use these or other tools, but make sure to fully understand any code you're adding or modifying.
 
----
+
 
 ### 🔄 Version Control
 
@@ -445,7 +443,6 @@ If you're working on future updates, using **Git and GitHub** is highly encourag
 * Collaborate efficiently with other devs
 * Avoid overwriting or breaking key system features
 
----
 
 ### ✅ Final Notes
 
@@ -454,6 +451,7 @@ If you're working on future updates, using **Git and GitHub** is highly encourag
 * For frontend modals and AJAX-based actions (e.g., edit/view/create), you’ll find modal code separated in partials for maintainability.
 
 
+---
 
 ## 📁 Directory Tips
 
