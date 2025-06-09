@@ -535,7 +535,7 @@ This system was built using Laravel, Blade, jQuery, and Bootstrap, with Excel im
 
 Good luck and code with care! 
 
-
+---
 
 ## 💌 Acknowledgment
 
