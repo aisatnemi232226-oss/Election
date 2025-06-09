@@ -105,11 +105,19 @@ Route::middleware(['auth', 'isAdmin'])->prefix('admin')->name('admin.')->group(f
         Route::get('/{id}/data', [ElectionPartyController::class, 'getPartyData'])->name('data');
     });
 
-    // ✅ Routes for Positions
-    Route::resource('positions', PositionController::class)->only(['index', 'create', 'store', 'destroy', 'edit', 'update']);
-    Route::get('/positions/paginatePositions', [PositionController::class, 'paginatePositions'])->name('positions.paginate');
-    Route::post('/positions/{id}/restore', [PositionController::class, 'restore'])->name('positions.restore');
-    Route::delete('/positions/{id}/force-delete', [PositionController::class, 'forceDelete'])->name('positions.force-delete');
+    // Replace this line:
+// Route::resource('positions', PositionController::class)->only(['index', 'create', 'store', 'destroy', 'edit', 'update']);
+
+// With these individual routes:
+Route::get('/positions', [PositionController::class, 'index'])->name('positions.index');
+Route::get('/positions/create', [PositionController::class, 'create'])->name('positions.create');
+Route::post('/positions', [PositionController::class, 'store'])->name('positions.store');
+Route::get('/positions/{position}/edit', [PositionController::class, 'edit'])->name('positions.edit');
+Route::put('/positions/{position}', [PositionController::class, 'update'])->name('positions.update');
+Route::delete('/positions/{id}', [PositionController::class, 'destroy'])->name('positions.destroy');
+Route::get('/positions/paginatePositions', [PositionController::class, 'paginatePositions'])->name('positions.paginate');
+Route::post('/positions/{id}/restore', [PositionController::class, 'restore'])->name('positions.restore');
+Route::delete('/positions/{id}/force-delete', [PositionController::class, 'forceDelete'])->name('positions.force-delete');
 
     // ✅ Other Admin Resources
     Route::resource('voters', VoterController::class);

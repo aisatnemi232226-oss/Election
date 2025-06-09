@@ -69,13 +69,21 @@ class PositionController extends Controller
         return redirect()->back()->with('success', 'Position updated successfully');
     }
 
-    // This method signature must match the resource route expectation
-    public function destroy(Position $position)
-    {
+   public function destroy($id)
+{
+    // Find the position including soft deleted ones
+    $position = Position::withTrashed()->findOrFail($id);
+    
+    if ($position->trashed()) {
+        // If already soft deleted, force delete it permanently
+        $position->forceDelete();
+        return redirect()->back()->with('success', 'Position permanently deleted');
+    } else {
+        // If not deleted, soft delete it
         $position->delete();
-
-        return redirect()->back()->with('success', 'Position deleted successfully');
+        return redirect()->back()->with('success', 'Position moved to trash');
     }
+}
 
     public function restore($id)
     {
