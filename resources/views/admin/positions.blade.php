@@ -6,11 +6,19 @@
 @section('content')
     @php
         function getUpdateUrl($id) {
-            return route('admin.position.update', $id);
+            return route('admin.positions.update', $id);
         }
 
         function getDeleteUrl($id) {
-            return route('admin.position.destroy', $id);
+            return route('admin.positions.destroy', $id);
+        }
+
+        function getRestoreUrl($id) {
+            return route('admin.positions.restore', $id);
+        }
+
+        function getForceDeleteUrl($id) {
+            return route('admin.positions.force-delete', $id);
         }
     @endphp
     <section class="text-center my-8">
@@ -69,45 +77,32 @@
                     <thead>
                         <tr>
                             <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Position Name</th>
-                            <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold hidden md:table-cell">Description</th>
-                            <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold hidden md:table-cell">Actions</th>
+                            <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Description</th>
+                            <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="positions-table-body">
                         @foreach($positions as $position)
-                            <tr>
-                                <td class="py-2 px-4 border-b border-gray-300">
-                                    <div class="md:flex md:items-center">
-                                        <div class="md:flex-grow">{{ $position->name }}</div>
-                                        <div class="mt-2 md:mt-0 md:ml-4 md:hidden">
-                                            <div class="text-gray-600">{{ $position->description }}</div>
-                                            <div class="mt-2 md:mt-0 md:ml-4">
-                                                <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 edit-btn"
-                                                    data-id="{{ $position->id }}"
-                                                    data-position-name="{{ $position->name }}"
-                                                    data-description="{{ $position->description }}"
-                                                    data-update-url="{{ getUpdateUrl($position->id) }}">Edit</button>
-                                                <button class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 delete-btn"
-                                                    data-id="{{ $position->id }}"
-                                                    data-delete-url="{{ getDeleteUrl($position->id) }}">Delete</button>
-                                            </div>
+                                <tr>
+                                    <td class="py-2 px-4 border-b border-gray-300">
+                                        {{ $position->name }}
+                                    </td>
+                                    <td class="py-2 px-4 border-b border-gray-300">
+                                        {{ $position->description }}
+                                    </td>
+                                    <td class="py-2 px-4 border-b border-gray-300">
+                                        <div class="flex items-center space-x-2">
+                                            <button class="bg-blue-600 text-white px-3 py-1 text-sm rounded hover:bg-blue-700 edit-btn"
+                                                data-id="{{ $position->id }}"
+                                                data-position-name="{{ $position->name }}"
+                                                data-description="{{ $position->description }}"
+                                                data-update-url="{{ getUpdateUrl($position->id) }}">Edit</button>
+                                            <button class="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700 delete-btn"
+                                                data-id="{{ $position->id }}"
+                                                data-delete-url="{{ getDeleteUrl($position->id) }}">Delete</button>
                                         </div>
-                                    </div>
-                                </td>
-                                <td class="py-2 px-4 border-b border-gray-300 hidden md:table-cell">{{ $position->description }}</td>
-                                <td class="py-2 px-4 border-b border-gray-300 hidden md:table-cell">
-                                    <div class="flex items-center">
-                                        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 edit-btn"
-                                            data-id="{{ $position->id }}"
-                                            data-position-name="{{ $position->name }}"
-                                            data-description="{{ $position->description }}"
-                                            data-update-url="{{ getUpdateUrl($position->id) }}">Edit</button>
-                                        <button class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 delete-btn ml-2"
-                                            data-id="{{ $position->id }}"
-                                            data-delete-url="{{ getDeleteUrl($position->id) }}">Delete</button>
-                                    </div>
-                                </td>
-                            </tr>
+                                    </td>
+                                </tr>
                         @endforeach
                     </tbody>
                 </table>
@@ -118,11 +113,11 @@
         </div>
     </section>
 
-    <!-- New Position Modal - FIXED: Removed 'flex' class -->
+    <!-- New Position Modal -->
     <div id="new-position-modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 items-center justify-center hidden">
         <div class="bg-white p-6 rounded-lg shadow-lg w-1/2">
             <h3 class="text-2xl font-bold mb-4">Create New Position</h3>
-            <form method="POST" action="{{ route('admin.position.store') }}">
+            <form method="POST" action="{{ route('admin.positions.store') }}">
                 @csrf
                 <div class="mb-4">
                     <label class="block text-gray-700">Position Name</label>
@@ -140,7 +135,7 @@
         </div>
     </div>
 
-    <!-- Edit Position Modal - FIXED: Removed 'flex' class -->
+    <!-- Edit Position Modal -->
     <div id="edit-position-modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 items-center justify-center hidden">
         <div class="bg-white p-6 rounded-lg shadow-lg w-1/2">
             <h3 class="text-2xl font-bold mb-4">Edit Position</h3>
@@ -164,7 +159,7 @@
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal - FIXED: Removed 'flex' class -->
+    <!-- Delete Confirmation Modal -->
     <div id="delete-confirmation-modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 items-center justify-center hidden">
         <div class="bg-white p-6 rounded-lg shadow-lg w-1/3">
             <h3 class="text-2xl font-bold mb-4">Confirm Deletion</h3>
@@ -192,7 +187,6 @@
             const newPositionModal = document.getElementById('new-position-modal');
             const closeNewPositionModal = document.getElementById('close-new-position-modal');
 
-            // UPDATED: Add/remove flex class when showing/hiding modal
             newPositionBtn.addEventListener('click', () => {
                 newPositionModal.classList.remove('hidden');
                 newPositionModal.classList.add('flex');
@@ -212,7 +206,6 @@
             const editPositionName = document.getElementById('edit-position-name');
             const editDescription = document.getElementById('edit-description');
 
-            // UPDATED: Add/remove flex class when showing/hiding modal
             editBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     const positionId = btn.getAttribute('data-id');
@@ -241,7 +234,6 @@
             const closeDeleteConfirmationModal = document.getElementById('close-delete-confirmation-modal');
             const deletePositionForm = document.getElementById('delete-position-form');
 
-            // UPDATED: Add/remove flex class when showing/hiding modal
             deleteBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     const deleteUrl = btn.getAttribute('data-delete-url');

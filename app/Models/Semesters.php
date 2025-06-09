@@ -15,6 +15,19 @@ class Semesters extends Model
         'name',
     ];
 
+        protected $casts = [
+        'created_at' => 'datetime',
+        'deleted_at' => 'datetime',
+    ];
+
+    /**
+     * Get the formatted semester name
+     */
+    public function getFormattedNameAttribute(): string
+    {
+        return $this->name;
+    }
+    
     // Define relationships if needed, for example:
     public function verifiedVoters()
     {

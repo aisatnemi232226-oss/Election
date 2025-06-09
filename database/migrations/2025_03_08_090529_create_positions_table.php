@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name')->nullable();
             $table->string('status')->nullable();
             $table->timestamp('created_at')->useCurrentOnUpdate()->useCurrent();
-            $table->timestamp('delete_at')->useCurrent();
+            $table->timestamp('deleted_at')->useCurrent();
         });
     }
 

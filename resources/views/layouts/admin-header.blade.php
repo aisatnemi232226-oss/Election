@@ -22,24 +22,24 @@
                     <ul id="election-management-menu" class="absolute left-0 mt-1 hidden bg-white text-gray-800 shadow-lg rounded-lg w-56 z-50 p-2 group-hover:block">
                         <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.elections.index') }}">Manage Elections</a></li>
                         <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.candidates.index') }}">Manage Candidates</a></li>
-                        <li><a class="block px-4 py-2 hover:bg-gray-200" href="#">Manage Positions</a></li>
-                        <li><a class="block px-4 py-2 hover:bg-gray-200" href="#">Manage Voters</a></li>
+                        <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.positions.index') }}">Manage Positions</a></li>
+                        <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.voters.index') }}">Manage Voters</a></li>
                         <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.election-articles.index') }}">Manage Election Articles</a></li>
-                        <li><a class="block px-4 py-2 hover:bg-gray-200" href="#">View Results</a></li>
+                        <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.results.index') }}">View Results</a></li>
                     </ul>
                 </li>
 
-                <li class="px-4"><a class="hover:underline" href="#">Reports</a></li>
+                <li class="px-4"><a class="hover:underline" href="{{ route('admin.reports.index') }}">Reports</a></li>
 
                 <li class="relative group">
                     <a id="settings-toggle" class="hover:underline cursor-pointer block">Settings</a>
                     <ul id="settings-menu" class="absolute left-0 mt-1 hidden bg-white text-gray-800 shadow-lg rounded-lg w-56 z-50 p-2 group-hover:block">
-                        <li><a class="block px-4 py-2 hover:bg-gray-200" href="#">Admin Roles</a></li>
-                        <li><a class="block px-4 py-2 hover:bg-gray-200" href="#">Profile Settings</a></li>
+                        <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.admin-roles.index') }}">Admin Roles</a></li>
+                        <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.profile-settings.index') }}">Profile Settings</a></li>
                         <li><a class="block px-4 py-2 hover:bg-gray-200" href="#">User Management</a></li>
-                        <li><a class="block px-4 py-2 hover:bg-gray-200" href="#">Audit Logs</a></li>
+                        <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.audit-logs.index') }}">Audit Logs</a></li>
                         <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.verified-voters.index') }}">Verify Voters</a></li>
-                        <li><a class="block px-4 py-2 hover:bg-gray-200" href="#">Set Current Academic Year</a></li>
+                        <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.academic-year.index') }}">Set Current Academic Year</a></li>
                     </ul>
                 </li>
 
