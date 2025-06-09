@@ -387,9 +387,9 @@ Thanks for taking over the development or maintenance of the **University Online
 
 
 
-### 📥 Verified Students Import
+### 📥 Verified Voters/Students Import
 
-* To import verified students, use the Excel template with the following column headers:
+* To import verified voters, use the Excel template with the following column headers:
 
   ```
   Name, ID Number, Academic Year, Semester
@@ -469,7 +469,7 @@ Here are some important directories and files in this Laravel project that you s
 ### 🔹 `app\Imports\` and `app\Exports\`
 
 * Used for **importing and exporting** data using Laravel Excel.
-* Be mindful of the required CSV format when importing.
+* Be mindful of the required CSV or XLSX format when importing.
 
 ### 🔹 `resources\views\`
 
