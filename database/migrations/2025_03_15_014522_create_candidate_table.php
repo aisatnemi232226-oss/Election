@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('candidate', function (Blueprint $table) {
+            $table->engine = 'InnoDB';
             $table->bigIncrements('id')->primary();
             $table->string('name'); 
             $table->string('id_number')->unique();

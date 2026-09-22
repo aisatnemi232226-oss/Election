@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes; 
+use App\Models\Position;
 
 class Candidate extends Model
 {
@@ -15,8 +16,8 @@ class Candidate extends Model
     const UPDATED_AT = null;
 
     protected $fillable = [
-        'name', 'id_number', 'course_id', 'electionparty_id', 'platforms',
-        'description', 'status', 'profile_img', 'banner_img',
+        'users_id', 'name', 'id_number', 'course_id', 'position_id', 'electionparty_id', 'platforms',
+        'related_events', 'joined_elections', 'description', 'status', 'profile_img', 'banner_img',
     ];
 
     protected $dates = ['deleted_at'];
@@ -34,6 +35,11 @@ class Candidate extends Model
     public function party()
     {
         return $this->belongsTo(ElectionParty::class, 'electionparty_id', 'id');
+    }
+
+    public function position()
+    {
+        return $this->belongsTo(Position::class, 'position_id');
     }
 }
 

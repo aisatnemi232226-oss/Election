@@ -18,6 +18,7 @@ class AuditLogController extends Controller
                 $q->where('action', 'like', "%{$filter}%")
                   ->orWhere('description', 'like', "%{$filter}%")
                   ->orWhere('log_type', 'like', "%{$filter}%")
+                  ->orWhere('operation', 'like', "%{$filter}%")
                   ->orWhereHas('user', function ($userQuery) use ($filter) {
                       $userQuery->where('name', 'like', "%{$filter}%");
                   });
@@ -28,21 +29,33 @@ class AuditLogController extends Controller
             $query->where('log_type', $request->log_type);
         }
 
+        if ($request->has('operation') && $request->operation) {
+            $query->where('operation', $request->operation);
+        }
+
         $logs = $query->paginate(50);
 
-        return view('admin.audit-logs', compact('logs'));
+        $logTypes = ['AUDIT', 'SECURITY', 'USER_ACTIVITY', 'TRANSACTION'];
+        $operations = ['INSERT', 'UPDATE', 'DELETE', 'READ', 'LOGIN', 'LOGOUT'];
+
+        return view('admin.audit-logs', compact('logs', 'logTypes', 'operations'));
     }
 
     public function export()
     {
         $logs = AuditLog::with('user')->orderBy('created_at', 'desc')->get();
 
-        $csvData = "Timestamp,User,Action,Details\n";
+        $csvData = "Timestamp,User,Log Type,Operation,Table,Record ID,IP,Action,Details\n";
         
         foreach ($logs as $log) {
-            $csvData .= '"' . $log->formatted_timestamp . '","' . 
-                       $log->user_name . '","' . 
-                       $log->action . '","' . 
+            $csvData .= '"' . $log->formatted_timestamp . '","' .
+                       $log->user_name . '","' .
+                       ($log->log_type ?? '') . '","' .
+                       ($log->operation ?? '') . '","' .
+                       ($log->table_name ?? '') . '","' .
+                       ($log->record_id ?? '') . '","' .
+                       ($log->ip_address ?? '') . '","' .
+                       $log->action . '","' .
                        $log->description . '"' . "\n";
         }
 

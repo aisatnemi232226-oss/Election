@@ -33,13 +33,14 @@ class ReportsController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'type' => 'nullable|string',
+            'type' => 'nullable|in:Voting statistics,Candidate performance,Election summary,User participation,System logs',
         ]);
 
         Report::create([
             'name' => $request->name,
-            'description' => $request->description,
-            'type' => $request->type ?? 'pending',
+            'description' => $request->description ?? '',
+            'datalisted' => 'pending',
+            'type' => $request->type ?? 'System logs',
             'admin_id' => Auth::id(),
         ]);
 

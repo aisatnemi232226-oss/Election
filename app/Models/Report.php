@@ -13,7 +13,7 @@ class Report extends Model
     protected $fillable = [
         'name',
         'description',
-        'dataslisted',
+        'datalisted',
         'type',
         'admin_id',
     ];

@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('electionparty', function (Blueprint $table) {
+            $table->engine = 'InnoDB';
             $table->bigIncrements('id');
             $table->string('name')->nullable();
             $table->string('status')->nullable();

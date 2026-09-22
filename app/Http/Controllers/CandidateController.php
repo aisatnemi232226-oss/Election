@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Course;
 use App\Models\VerifiedVoter;
 use App\Models\ElectionParty;
+use App\Models\Position;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -31,14 +32,31 @@ class CandidateController extends Controller
             Log::info('Raw candidate count: ' . $candidateCount);
             
             $perPage = 10;
-            $candidates = Candidate::orderBy('created_at', 'desc')->paginate($perPage);
+            $isArchived = request()->boolean('archived');
+            $status = request()->query('status');
+            $candidatesQuery = Candidate::with(['course', 'party', 'position'])->orderBy('created_at', 'desc');
+            if ($isArchived) {
+                $candidatesQuery->onlyTrashed();
+            }
+
+            if (!$isArchived && !empty($status)) {
+                $candidatesQuery->where('status', $status);
+            }
+
+            $candidates = $candidatesQuery
+                ->paginate($perPage)
+                ->appends([
+                    'archived' => $isArchived ? 1 : 0,
+                    'status' => $status,
+                ]);
             
             // Get courses and parties separately to avoid relationship issues
             $courses = Course::all();
             $parties = ElectionParty::all();
+            $positions = Position::all();
             
             Log::info('CandidateController@index - Success');
-            return view('admin.candidates', compact('candidates', 'courses', 'parties'));
+            return view('admin.candidates', compact('candidates', 'courses', 'parties', 'positions', 'isArchived', 'status'));
         } catch (\Exception $e) {
             Log::error('Error in candidates index: ' . $e->getMessage());
             Log::error('Stack trace: ' . $e->getTraceAsString());
@@ -55,6 +73,8 @@ class CandidateController extends Controller
   public function store(Request $request)
 {
     Log::info('Store method triggered', $request->all());
+
+    $wantsJson = $request->expectsJson() || $request->ajax();
     
     try {
         // Auto-generate ID number if not provided
@@ -68,25 +88,31 @@ class CandidateController extends Controller
         }
 
         // Validate the request
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'profile_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             'banner_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             'description' => 'required|string',
             'course_id' => 'required|exists:courses,id',
+            'position_id' => 'nullable|exists:positions,id',
             'party_id' => 'nullable|exists:electionparty,id',
             'platforms' => 'required|string',
+            'related_events' => 'nullable|string',
+            'joined_elections' => 'nullable|string',
             'status' => 'required|in:Active,Inactive',
             'id_number' => 'required|string|max:255|unique:candidate,id_number',
         ]);
 
         // Verify course exists
-        $course = Course::find($request->course_id);
+        $course = Course::find($validated['course_id']);
         if (!$course) {
-            return response()->json([
-                'success' => false, 
-                'message' => 'Course not found. Please select a valid course.'
-            ], 422);
+            if ($wantsJson) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Course not found. Please select a valid course.'
+                ], 422);
+            }
+            return back()->withInput()->withErrors(['course_id' => 'Course not found. Please select a valid course.']);
         }
 
         // Verify party exists if provided
@@ -94,32 +120,35 @@ class CandidateController extends Controller
         if ($request->filled('party_id')) {
             $party = ElectionParty::find($request->party_id);
             if (!$party) {
-                return response()->json([
-                    'success' => false, 
-                    'message' => 'Party not found. Please select a valid party.'
-                ], 422);
+                if ($wantsJson) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Party not found. Please select a valid party.'
+                    ], 422);
+                }
+                return back()->withInput()->withErrors(['party_id' => 'Party not found. Please select a valid party.']);
             }
         }
 
         // Create new candidate instance
         $candidate = new Candidate();
-        $candidate->name = $request->name;
-        $candidate->description = $request->description;
+        $candidate->name = $validated['name'];
+        $candidate->description = $validated['description'];
         $candidate->course_id = $course->id;
+        $candidate->position_id = $validated['position_id'] ?? null;
         $candidate->electionparty_id = $party ? $party->id : null;
-        $candidate->platforms = $request->platforms;
-        $candidate->status = $request->status;
-        $candidate->id_number = $request->id_number;
+        $candidate->platforms = $validated['platforms'];
+        $candidate->related_events = $validated['related_events'] ?? null;
+        $candidate->joined_elections = $validated['joined_elections'] ?? null;
+        $candidate->status = $validated['status'];
+        $candidate->id_number = $validated['id_number'];
 
         // Handle profile image upload
         if ($request->hasFile('profile_img')) {
             $profileFile = $request->file('profile_img');
             $profileFilename = time() . '_' . Str::random(10) . '_profile.' . $profileFile->getClientOriginalExtension();
-            
-            // Store the file
             $profileFile->storeAs('upload/profile-picture', $profileFilename, 'public');
             $candidate->profile_img = $profileFilename;
-            
             Log::info('Profile image uploaded: ' . $profileFilename);
         }
 
@@ -127,11 +156,8 @@ class CandidateController extends Controller
         if ($request->hasFile('banner_img')) {
             $bannerFile = $request->file('banner_img');
             $bannerFilename = time() . '_' . Str::random(10) . '_banner.' . $bannerFile->getClientOriginalExtension();
-            
-            // Store the file
             $bannerFile->storeAs('upload/banner', $bannerFilename, 'public');
             $candidate->banner_img = $bannerFilename;
-            
             Log::info('Banner image uploaded: ' . $bannerFilename);
         }
 
@@ -140,27 +166,38 @@ class CandidateController extends Controller
 
         Log::info('Candidate created successfully with ID: ' . $candidate->id);
 
-        return response()->json([
-            'success' => true, 
-            'message' => 'Candidate created successfully.',
-            'candidate' => $candidate
-        ], 201);
+        if ($wantsJson) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Candidate created successfully.',
+                'candidate' => $candidate
+            ], 201);
+        }
+
+        return redirect()->route('admin.candidates.index')->with('success', 'Candidate created successfully.');
 
     } catch (\Illuminate\Validation\ValidationException $e) {
         Log::error('Validation error creating candidate: ' . json_encode($e->errors()));
-        return response()->json([
-            'success' => false, 
-            'message' => 'Validation failed.',
-            'errors' => $e->errors()
-        ], 422);
+        if ($wantsJson) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed.',
+                'errors' => $e->errors()
+            ], 422);
+        }
+        throw $e;
     } catch (\Exception $e) {
         Log::error('Error creating candidate: ' . $e->getMessage());
         Log::error('Stack trace: ' . $e->getTraceAsString());
-        
-        return response()->json([
-            'success' => false, 
-            'message' => 'Error creating candidate: ' . $e->getMessage()
-        ], 500);
+
+        if ($wantsJson) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error creating candidate: ' . $e->getMessage()
+            ], 500);
+        }
+
+        return back()->withInput()->with('error', 'Error creating candidate: ' . $e->getMessage());
     }
 }
 
@@ -191,6 +228,7 @@ class CandidateController extends Controller
 public function update(Request $request, $id)
 {
     Log::info('Update method triggered', $request->all());
+    $wantsJson = $request->expectsJson() || $request->ajax();
     
     try {
         // Find the existing candidate first
@@ -216,10 +254,13 @@ public function update(Request $request, $id)
             'name' => 'required|string|max:255',
             'id_number' => 'required|string|max:255|unique:candidate,id_number,' . $id,
             'course_id' => 'required|exists:courses,id',
+            'position_id' => 'nullable|exists:positions,id',
             'party_id' => 'nullable|exists:electionparty,id',
             'status' => 'required|string',
             'platforms' => 'required|string',
             'description' => 'required|string',
+            'related_events' => 'nullable|string',
+            'joined_elections' => 'nullable|string',
         ]);
         
         // Verify course exists
@@ -232,6 +273,10 @@ public function update(Request $request, $id)
                 ]);
             }
             $candidate->course_id = $course->id;
+        }
+
+        if ($request->has('position_id')) {
+            $candidate->position_id = $request->position_id ?: null;
         }
         
         // Verify party exists if provided
@@ -274,16 +319,27 @@ public function update(Request $request, $id)
         if ($request->has('status')) $candidate->status = $request->status;
         if ($request->has('platforms')) $candidate->platforms = $request->platforms;
         if ($request->has('description')) $candidate->description = $request->description;
+        if ($request->has('related_events')) $candidate->related_events = $request->related_events;
+        if ($request->has('joined_elections')) $candidate->joined_elections = $request->joined_elections;
         
         $candidate->save();
         
-        return response()->json(['success' => true, 'message' => 'Candidate updated successfully.']);
+        if ($wantsJson) {
+            return response()->json(['success' => true, 'message' => 'Candidate updated successfully.']);
+        }
+
+        return redirect()->route('admin.candidates.index')->with('success', 'Candidate updated successfully.');
     } catch (\Exception $e) {
         Log::error('Error updating candidate: ' . $e->getMessage());
-        return response()->json([
-            'success' => false, 
-            'message' => 'Error updating candidate: ' . $e->getMessage()
-        ], 500);
+
+        if ($wantsJson) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Error updating candidate: ' . $e->getMessage()
+            ], 500);
+        }
+
+        return back()->withInput()->with('error', 'Error updating candidate: ' . $e->getMessage());
     }
 }
 
@@ -296,45 +352,141 @@ public function update(Request $request, $id)
     public function destroy($id)
     {
         Log::info('Destroy method triggered for candidate ID: ' . $id);
+        $wantsJson = request()->expectsJson() || request()->ajax();
         
         try {
             $candidate = Candidate::findOrFail($id);
-            
-            // Delete associated images
-            if ($candidate->profile_img && Storage::disk('public')->exists('upload/profile-picture/' . $candidate->profile_img)) {
-                Storage::disk('public')->delete('upload/profile-picture/' . $candidate->profile_img);
-                Log::info('Deleted profile image: ' . $candidate->profile_img);
-            }
-            
-            if ($candidate->banner_img && Storage::disk('public')->exists('upload/banner/' . $candidate->banner_img)) {
-                Storage::disk('public')->delete('upload/banner/' . $candidate->banner_img);
-                Log::info('Deleted banner image: ' . $candidate->banner_img);
-            }
-            
-            // Delete the candidate record
+
             $candidate->delete();
             
             Log::info('Candidate deleted successfully with ID: ' . $id);
             
-            return response()->json([
-                'success' => true, 
-                'message' => 'Candidate deleted successfully.'
-            ]);
+            if ($wantsJson) {
+                return response()->json([
+                    'success' => true, 
+                    'message' => 'Candidate archived successfully.'
+                ]);
+            }
+
+            return redirect()->route('admin.candidates.index')->with('success', 'Candidate archived successfully.');
             
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             Log::error('Candidate not found for deletion: ' . $id);
-            return response()->json([
-                'success' => false, 
-                'message' => 'Candidate not found.'
-            ], 404);
+            if ($wantsJson) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Candidate not found.'
+                ], 404);
+            }
+
+            return redirect()->route('admin.candidates.index')->with('error', 'Candidate not found.');
         } catch (\Exception $e) {
             Log::error('Error deleting candidate: ' . $e->getMessage());
             Log::error('Stack trace: ' . $e->getTraceAsString());
             
-            return response()->json([
-                'success' => false, 
-                'message' => 'Error deleting candidate: ' . $e->getMessage()
-            ], 500);
+            if ($wantsJson) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Error deleting candidate: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->route('admin.candidates.index')->with('error', 'Error deleting candidate: ' . $e->getMessage());
+        }
+    }
+
+    public function restore($id)
+    {
+        Log::info('Restore method triggered for candidate ID: ' . $id);
+        $wantsJson = request()->expectsJson() || request()->ajax();
+
+        try {
+            $candidate = Candidate::onlyTrashed()->findOrFail($id);
+            $candidate->restore();
+
+            if ($wantsJson) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Candidate restored successfully.'
+                ]);
+            }
+
+            return redirect()->route('admin.candidates.index', ['archived' => 1])->with('success', 'Candidate restored successfully.');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::error('Candidate not found for restore: ' . $id);
+            if ($wantsJson) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Candidate not found.'
+                ], 404);
+            }
+
+            return redirect()->route('admin.candidates.index', ['archived' => 1])->with('error', 'Candidate not found.');
+        } catch (\Exception $e) {
+            Log::error('Error restoring candidate: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+
+            if ($wantsJson) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error restoring candidate: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->route('admin.candidates.index', ['archived' => 1])->with('error', 'Error restoring candidate: ' . $e->getMessage());
+        }
+    }
+
+    public function forceDestroy($id)
+    {
+        Log::info('ForceDestroy method triggered for candidate ID: ' . $id);
+        $wantsJson = request()->expectsJson() || request()->ajax();
+
+        try {
+            $candidate = Candidate::withTrashed()->findOrFail($id);
+
+            if ($candidate->profile_img && Storage::disk('public')->exists('upload/profile-picture/' . $candidate->profile_img)) {
+                Storage::disk('public')->delete('upload/profile-picture/' . $candidate->profile_img);
+                Log::info('Deleted profile image: ' . $candidate->profile_img);
+            }
+
+            if ($candidate->banner_img && Storage::disk('public')->exists('upload/banner/' . $candidate->banner_img)) {
+                Storage::disk('public')->delete('upload/banner/' . $candidate->banner_img);
+                Log::info('Deleted banner image: ' . $candidate->banner_img);
+            }
+
+            $candidate->forceDelete();
+
+            if ($wantsJson) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Candidate permanently deleted successfully.'
+                ]);
+            }
+
+            return redirect()->route('admin.candidates.index', ['archived' => 1])->with('success', 'Candidate permanently deleted successfully.');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::error('Candidate not found for force delete: ' . $id);
+            if ($wantsJson) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Candidate not found.'
+                ], 404);
+            }
+
+            return redirect()->route('admin.candidates.index', ['archived' => 1])->with('error', 'Candidate not found.');
+        } catch (\Exception $e) {
+            Log::error('Error force deleting candidate: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+
+            if ($wantsJson) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error deleting candidate: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->route('admin.candidates.index', ['archived' => 1])->with('error', 'Error deleting candidate: ' . $e->getMessage());
         }
     }
 
@@ -349,6 +501,8 @@ public function update(Request $request, $id)
         try {
             Log::info('paginateCandidates called with params: ', $request->all());
             $currentDateTime = Carbon::now()->format('Y-m-d H:i:s');
+
+            $isArchived = $request->boolean('archived');
             
             // Get authenticated user info safely
             $currentUser = 'guest';
@@ -360,7 +514,12 @@ public function update(Request $request, $id)
             // Build the base query with course join for search
             $query = Candidate::leftJoin('courses', 'candidate.course_id', '=', 'courses.id')
                              ->leftJoin('electionparty', 'candidate.electionparty_id', '=', 'electionparty.id')
+                             ->leftJoin('positions', 'candidate.position_id', '=', 'positions.id')
                              ->select('candidate.*');
+
+            if ($isArchived) {
+                $query->onlyTrashed();
+            }
             
             // Apply search filter if provided - now includes course names
             if ($request->filled('search')) {
@@ -371,7 +530,8 @@ public function update(Request $request, $id)
                     $q->where('candidate.name', 'LIKE', "%{$searchTerm}%")
                       ->orWhere('candidate.status', 'LIKE', "%{$searchTerm}%")
                       ->orWhere('courses.name', 'LIKE', "%{$searchTerm}%")
-                      ->orWhere('electionparty.name', 'LIKE', "%{$searchTerm}%");
+                      ->orWhere('electionparty.name', 'LIKE', "%{$searchTerm}%")
+                      ->orWhere('positions.name', 'LIKE', "%{$searchTerm}%");
                 });
             }
             
@@ -412,6 +572,14 @@ public function update(Request $request, $id)
                 } else {
                     $candidateArray['party'] = null;
                 }
+
+                // Get position data
+                if ($candidate->position_id) {
+                    $position = Position::find($candidate->position_id);
+                    $candidateArray['position'] = $position ? $position->toArray() : null;
+                } else {
+                    $candidateArray['position'] = null;
+                }
                 
                 $candidatesData[] = $candidateArray;
             }
@@ -428,6 +596,7 @@ public function update(Request $request, $id)
                 'metadata' => [
                     'timestamp' => $currentDateTime,
                     'user' => $currentUser,
+                    'archived' => $isArchived,
                     'total' => $candidates->total(),
                     'page' => $candidates->currentPage(),
                     'last_page' => $candidates->lastPage(),

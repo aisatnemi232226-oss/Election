@@ -80,7 +80,7 @@ class AdminRoleController extends BaseController // Make sure extending BaseCont
         } catch (\Exception $e) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Failed to create role. Please try again.');
+                ->with('error', 'Failed to create role: ' . $e->getMessage());
         }
     }
 
@@ -151,7 +151,7 @@ class AdminRoleController extends BaseController // Make sure extending BaseCont
         } catch (\Exception $e) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Failed to update role. Please try again.');
+                ->with('error', 'Failed to update role: ' . $e->getMessage());
         }
     }
 
@@ -182,7 +182,7 @@ class AdminRoleController extends BaseController // Make sure extending BaseCont
                 ->with('error', 'Role not found.');
         } catch (\Exception $e) {
             return redirect()->route('admin.admin-roles.index')
-                ->with('error', 'Failed to delete role(s). Please try again.');
+                ->with('error', 'Failed to delete role(s): ' . $e->getMessage());
         }
     }
 

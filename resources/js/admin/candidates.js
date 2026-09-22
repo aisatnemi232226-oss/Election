@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // ===== MODULE DEFINITIONS =====
+    const isArchivedView = new URLSearchParams(window.location.search).get('archived') === '1';
+
     const ModalController = {
         modals: {
             view: document.getElementById('candidate-modal'),
@@ -81,6 +83,18 @@ document.addEventListener('DOMContentLoaded', () => {
             status: '',
             isLoading: false
         },
+        setupStatusFilters() {
+            const container = document.getElementById('candidate-status-filters');
+            if (!container) return;
+
+            container.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-status-filter]');
+                if (!btn) return;
+                const status = btn.getAttribute('data-status-filter') || '';
+                this.filters.status = status;
+                this.loadCandidates(1);
+            });
+        },
         setupPaginationLinks() {
             // Handle pagination clicks on both top and bottom containers
             document.addEventListener('click', (e) => {
@@ -111,14 +125,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const paginationContainer = document.querySelector('#pagination-container');
             
             if (tableBody) {
-                tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Loading...</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4">Loading...</td></tr>';
             }
             
             const url = `/admin/candidates/paginateCandidates?page=${page}` +
                 `&search=${encodeURIComponent(this.filters.search)}` +
                 `&course=${encodeURIComponent(this.filters.course)}` +
                 `&name=${encodeURIComponent(this.filters.name)}` +
-                `&status=${encodeURIComponent(this.filters.status)}`;
+                `&status=${encodeURIComponent(this.filters.status)}` +
+                `&archived=${isArchivedView ? 1 : 0}`;
             
             fetch(url, {
                 method: 'GET',
@@ -136,54 +151,99 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 if (data.success) {
                     if (!data.data || !data.data.length) {
-                        tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4">No candidates found</td></tr>';
+                        tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4">No candidates found</td></tr>';
                     } else {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         tableBody.innerHTML = data.data.map(candidate => `
                             <tr>
+                                <td class="py-2 px-4 border-b">
+                                    <img 
+                                        src="${candidate.profile_img ? '/storage/upload/profile-picture/' + candidate.profile_img : '/images/default-profile.jpg'}"
+                                        alt="${candidate.name}"
+                                        class="w-10 h-10 object-cover rounded-full"
+                                        onerror="this.onerror=null; this.src='/images/default-profile.jpg';"
+                                    >
+                                </td>
                                 <td class="py-2 px-4 border-b">${candidate.name}</td>
                                 <td class="py-2 px-4 border-b">${candidate.course?.name || 'N/A'}</td>
+                                <td class="py-2 px-4 border-b">${candidate.party ? candidate.party.name : 'No Party'}</td>
+                                <td class="py-2 px-4 border-b">${candidate.position?.name || 'N/A'}</td>
                                 <td class="py-2 px-4 border-b">
-                                    <span class="px-2 py-1 text-xs rounded-full ${candidate.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                                        ${candidate.status}
-                                    </span>
+                                    <div class="flex flex-wrap items-center gap-1">
+                                        <span class="px-2 py-1 text-xs rounded-full ${candidate.status === 'Active' ? 'bg-green-100 text-green-800' : (candidate.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800')}">
+                                            ${candidate.status}
+                                        </span>
+                                        ${isArchivedView ? '<span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">Archived</span>' : ''}
+                                    </div>
                                 </td>
                                 <td class="py-2 px-4 border-b">
                                     <div class="flex gap-2">
+                                        ${!isArchivedView && candidate.status === 'Pending' ? `
+                                            <form method="POST" action="/admin/candidates/${candidate.id}/approve" class="inline">
+                                                <input type="hidden" name="_token" value="${token}">
+                                                <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700">Approve</button>
+                                            </form>
+                                            <form method="POST" action="/admin/candidates/${candidate.id}/reject" class="inline">
+                                                <input type="hidden" name="_token" value="${token}">
+                                                <button type="submit" class="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700">Reject</button>
+                                            </form>
+                                        ` : ''}
                                         <button class="view-button bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700" 
                                             data-id="${candidate.id}" 
                                             data-candidate="${candidate.name}" 
                                             data-course="${candidate.course?.name || 'N/A'}" 
+                                            data-position="${candidate.position?.name || 'N/A'}"
                                             data-party="${candidate.party ? candidate.party.name : 'No Party'}" 
                                             data-description="${(candidate.description || '').replace(/"/g, '&quot;')}" 
                                             data-status="${candidate.status}" 
                                             data-profile-image="${candidate.profile_img ? '/storage/upload/profile-picture/' + candidate.profile_img : '/images/default-profile.jpg'}" 
                                             data-banner-image="${candidate.banner_img ? '/storage/upload/banner/' + candidate.banner_img : '/images/default-banner.png'}" 
                                             data-platforms="${(candidate.platforms || 'No Platforms').replace(/"/g, '&quot;')}" 
-                                            data-related-events="Organized Tech Fest 2022, Led Community Service Day 2021" 
-                                            data-joined-elections='[{"year": "2022", "position": "Vice President", "winner": true}, {"year": "2023", "position": "Representative", "winner": false}]'>
+                                            data-related-events="${(candidate.related_events || '').replace(/"/g, '&quot;')}" 
+                                            data-joined-elections="${String(candidate.joined_elections || '').replace(/"/g, '&quot;')}">
                                             View
                                         </button>
-                                        <button class="edit-button bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700" 
-                                            data-id="${candidate.id}" 
-                                            data-candidate="${candidate.name}" 
-                                            data-course="${candidate.course?.name || ''}" 
-                                            data-course-id="${candidate.course?.id || ''}" 
-                                            data-party="${candidate.party ? candidate.party.name : 'No Party'}" 
-                                            data-party-id="${candidate.party ? candidate.party.id : ''}" 
-                                            data-description="${(candidate.description || '').replace(/"/g, '&quot;')}" 
-                                            data-status="${candidate.status}" 
-                                            data-profile-image="${candidate.profile_img ? '/storage/upload/profile-picture/' + candidate.profile_img : '/images/default-profile.jpg'}" 
-                                            data-banner-image="${candidate.banner_img ? '/storage/upload/banner/' + candidate.banner_img : '/images/default-banner.png'}" 
-                                            data-platforms="${(candidate.platforms || '').replace(/"/g, '&quot;')}">
-                                            Edit
-                                        </button>
-                                        <form method="POST" action="/admin/candidates/${candidate.id}" id="delete-form-${candidate.id}" class="inline">
-                                            <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
-                                            <input type="hidden" name="_method" value="DELETE">
-                                            <button type="button" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 delete-button" data-id="${candidate.id}">
-                                                Delete
+                                        ${!isArchivedView ? `
+                                            <button class="edit-button bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700" 
+                                                data-id="${candidate.id}" 
+                                                data-candidate="${candidate.name}" 
+                                                data-course="${candidate.course?.name || ''}" 
+                                                data-course-id="${candidate.course?.id || ''}" 
+                                                data-position="${candidate.position?.name || ''}"
+                                                data-position-id="${candidate.position?.id || ''}"
+                                                data-party="${candidate.party ? candidate.party.name : 'No Party'}" 
+                                                data-party-id="${candidate.party ? candidate.party.id : ''}" 
+                                                data-description="${(candidate.description || '').replace(/"/g, '&quot;')}" 
+                                                data-status="${candidate.status}" 
+                                                data-profile-image="${candidate.profile_img ? '/storage/upload/profile-picture/' + candidate.profile_img : '/images/default-profile.jpg'}" 
+                                                data-banner-image="${candidate.banner_img ? '/storage/upload/banner/' + candidate.banner_img : '/images/default-banner.png'}" 
+                                                data-platforms="${(candidate.platforms || '').replace(/"/g, '&quot;')}"
+                                                data-related-events="${(candidate.related_events || '').replace(/"/g, '&quot;')}"
+                                                data-joined-elections="${String(candidate.joined_elections || '').replace(/"/g, '&quot;')}">
+                                                Edit
                                             </button>
-                                        </form>
+                                        ` : ''}
+                                        ${isArchivedView ? `
+                                            <form method="POST" action="/admin/candidates/${candidate.id}/restore" class="inline">
+                                                <input type="hidden" name="_token" value="${token}">
+                                                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Restore</button>
+                                            </form>
+                                            <form method="POST" action="/admin/candidates/${candidate.id}/force" id="force-delete-form-${candidate.id}" class="inline">
+                                                <input type="hidden" name="_token" value="${token}">
+                                                <input type="hidden" name="_method" value="DELETE">
+                                                <button type="button" class="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800 force-delete-button" data-id="${candidate.id}">
+                                                    Permanent Delete
+                                                </button>
+                                            </form>
+                                        ` : `
+                                            <form method="POST" action="/admin/candidates/${candidate.id}" id="delete-form-${candidate.id}" class="inline">
+                                                <input type="hidden" name="_token" value="${token}">
+                                                <input type="hidden" name="_method" value="DELETE">
+                                                <button type="button" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 delete-button" data-id="${candidate.id}">
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        `}
                                     </div>
                                 </td>
                             </tr>
@@ -210,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => {
                 console.error('Error:', error);
                 if (tableBody) {
-                    tableBody.innerHTML = `<tr><td colspan="4" class="text-center text-red-500">Error loading data: ${error.message}</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500">Error loading data: ${error.message}</td></tr>`;
                 }
                 NotificationController.showError(`Failed to load candidates: ${error.message}`);
             })
@@ -235,6 +295,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.addEventListener('click', () => {
                     const candidateId = btn.getAttribute('data-id');
                     CandidateController.handleDeleteClick(candidateId);
+                });
+            });
+
+            document.querySelectorAll('.force-delete-button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const candidateId = btn.getAttribute('data-id');
+                    CandidateController.handleForceDeleteClick(candidateId);
                 });
             });
         },
@@ -321,6 +388,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     return false;
                 }
             }
+
+            for (const field of imageFields) {
+                const file = formData.get(field);
+                if (!file || (file instanceof File && file.size === 0)) {
+                    NotificationController.showError(`Please choose a ${field.replace('_', ' ')}.`);
+                    return false;
+                }
+            }
             
             const courseValue = formData.get('course_id');
             if (!courseValue || courseValue === "") {
@@ -375,12 +450,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log(`Submitting to ${url} with method ${method}`);
                 
                 if (method !== 'POST') {
-                    formData.append('_method', method);
+                    formData.set('_method', method);
                 }
                 
                 const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
                 if (token) {
-                    formData.append('_token', token);
+                    formData.set('_token', token);
                 } else {
                     throw new Error('CSRF token not found');
                 }
@@ -390,7 +465,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: formData,
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': token
+                    'X-CSRF-TOKEN': token,
+                    'Accept': 'application/json'
                 }
             });
 
@@ -399,6 +475,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (contentType && contentType.includes('application/json')) {
                     const data = await response.json();
                     if (!response.ok) {
+                        if (data && data.errors && typeof data.errors === 'object') {
+                            const firstKey = Object.keys(data.errors)[0];
+                            const firstMsg = firstKey ? (data.errors[firstKey]?.[0] || data.errors[firstKey]) : null;
+                            if (firstMsg) {
+                                throw new Error(firstMsg);
+                            }
+                        }
                         if (data.errors && data.errors.course_id) {
                             throw new Error("Course not found. Please select a valid course.");
                         }
@@ -406,6 +489,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     return data;
                 } else {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text);
                     throw new Error(`Server error: ${response.status}. Please check the server logs.`);
                 }
             } catch (error) {
@@ -425,6 +510,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('candidate-status').textContent = btn.getAttribute('data-status') || "N/A";
             document.getElementById('candidate-name').textContent = btn.getAttribute('data-candidate') || "N/A";
             document.getElementById('candidate-course').textContent = btn.getAttribute('data-course') || "N/A";
+            const posEl = document.getElementById('candidate-position');
+            if (posEl) posEl.textContent = btn.getAttribute('data-position') || "N/A";
             document.getElementById('candidate-party').textContent = btn.getAttribute('data-party') || "N/A";
             
             const descriptionContent = btn.getAttribute('data-description') || "No description available.";
@@ -500,14 +587,13 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         
         handleEditClick(btn) {
-            document.getElementById('edit-candidate-id').value = btn.getAttribute('data-id') || '';
+            const id = btn.getAttribute('data-id');
+            
+            document.getElementById('edit-candidate-id').value = id;
             document.getElementById('edit-candidate-name').value = btn.getAttribute('data-candidate') || '';
-            
-            const courseId = btn.getAttribute('data-course-id') || '';
-            document.getElementById('edit-candidate-course').value = courseId;
-            
-            document.getElementById('edit-candidate-description').value = btn.getAttribute('data-description') || '';
-            document.getElementById('edit-candidate-platforms').value = btn.getAttribute('data-platforms') || '';
+            document.getElementById('edit-candidate-course').value = btn.getAttribute('data-course-id') || '';
+            const editPos = document.getElementById('edit-candidate-position');
+            if (editPos) editPos.value = btn.getAttribute('data-position-id') || '';
             document.getElementById('edit-candidate-party').value = btn.getAttribute('data-party-id') || '';
             document.getElementById('edit-candidate-status').value = btn.getAttribute('data-status') || 'Active';
             
@@ -541,12 +627,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.QuillEditors.editPlatforms.root.innerHTML = platforms;
                 }
             }
+
+            const relatedEl = document.getElementById('edit-candidate-related-events');
+            if (relatedEl) relatedEl.value = btn.getAttribute('data-related-events') || '';
+
+            const joinedEl = document.getElementById('edit-candidate-joined-elections');
+            if (joinedEl) joinedEl.value = btn.getAttribute('data-joined-elections') || '';
             
             ModalController.show('edit');
         },
         
         handleDeleteClick(id) {
             this.candidateToDelete = document.querySelector(`#delete-form-${id}`);
+            ModalController.show('confirmation');
+        },
+
+        handleForceDeleteClick(id) {
+            this.candidateToDelete = document.querySelector(`#force-delete-form-${id}`);
             ModalController.show('confirmation');
         },
         
@@ -558,8 +655,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Get form values
             const name = document.getElementById('new-candidate-name').value;
             const course = document.getElementById('new-candidate-course').value;
+            const position = document.getElementById('new-candidate-position')?.value;
             const status = document.getElementById('new-candidate-status').value;
             const party = document.getElementById('new-candidate-party').value;
+            const relatedEvents = document.getElementById('new-candidate-related-events')?.value || '';
+            const joinedElections = document.getElementById('new-candidate-joined-elections')?.value || '';
             
             let description = '';
             let platforms = '';
@@ -569,22 +669,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 description = window.QuillEditors.newDescription.root.innerHTML;
                 platforms = window.QuillEditors.newPlatforms.root.innerHTML;
             } else {
-                description = document.getElementById('new-candidate-description').value;
-                platforms = document.getElementById('new-candidate-platforms').value;
+                const descEditor = document.getElementById('new-description-editor');
+                const platsEditor = document.getElementById('new-platforms-editor');
+                description = descEditor ? descEditor.innerHTML : document.getElementById('new-candidate-description')?.value;
+                platforms = platsEditor ? platsEditor.innerHTML : document.getElementById('new-candidate-platforms')?.value;
             }
             
             // Append all data to FormData
             formData.set('name', name);
             formData.set('description', description);
             formData.set('course_id', course);
+            formData.set('position_id', position || '');
             formData.set('platforms', platforms);
             formData.set('status', status);
             formData.set('party_id', party || '');
+            formData.set('related_events', relatedEvents);
+            formData.set('joined_elections', joinedElections);
             
             // Validate required fields
             const requiredFields = ['name', 'description', 'course_id', 'platforms', 'status'];
+            const imageFields = ['profile_img', 'banner_img'];
             
-            if (!FormController.validateForm(formData, requiredFields)) {
+            if (!FormController.validateForm(formData, requiredFields, imageFields)) {
                 return;
             }
             
@@ -621,8 +727,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Get form values
             const name = document.getElementById('edit-candidate-name').value;
             const course = document.getElementById('edit-candidate-course').value;
+            const position = document.getElementById('edit-candidate-position')?.value;
             const status = document.getElementById('edit-candidate-status').value;
             const party = document.getElementById('edit-candidate-party').value;
+            const relatedEvents = document.getElementById('edit-candidate-related-events')?.value || '';
+            const joinedElections = document.getElementById('edit-candidate-joined-elections')?.value || '';
             
             let description = '';
             let platforms = '';
@@ -632,17 +741,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 description = window.QuillEditors.editDescription.root.innerHTML;
                 platforms = window.QuillEditors.editPlatforms.root.innerHTML;
             } else {
-                description = document.getElementById('edit-candidate-description').value;
-                platforms = document.getElementById('edit-candidate-platforms').value;
+                const descEditor = document.getElementById('edit-description-editor');
+                const platsEditor = document.getElementById('edit-platforms-editor');
+                description = descEditor ? descEditor.innerHTML : document.getElementById('edit-candidate-description')?.value;
+                platforms = platsEditor ? platsEditor.innerHTML : document.getElementById('edit-candidate-platforms')?.value;
             }
             
             // Append all data to FormData
             formData.set('name', name);
             formData.set('description', description);
             formData.set('course_id', course);
+            formData.set('position_id', position || '');
             formData.set('platforms', platforms);
             formData.set('status', status);
             formData.set('party_id', party || '');
+            formData.set('related_events', relatedEvents);
+            formData.set('joined_elections', joinedElections);
             
             // Validate required fields
             const requiredFields = ['name', 'description', 'course_id', 'platforms', 'status'];
@@ -711,6 +825,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.addEventListener('click', () => {
                     const candidateId = btn.getAttribute('data-id');
                     this.handleDeleteClick(candidateId);
+                });
+            });
+
+            document.querySelectorAll('.force-delete-button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const candidateId = btn.getAttribute('data-id');
+                    this.handleForceDeleteClick(candidateId);
                 });
             });
         },
@@ -782,7 +903,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 theme: 'snow',
                 modules: {
                     toolbar: [
-                        [{ 'font': [] }, { 'size': [] }],
+                        [{ 'font': ['roboto', 'arial', 'georgia', 'times-new-roman', 'verdana', 'courier-new'] }, { 'size': ['12px', '14px', '16px', '18px', '24px', '32px'] }],
                         ['bold', 'italic', 'underline'],
                         [{ 'list': 'ordered' }, { 'list': 'bullet' }],
                         ['link', 'clean']
@@ -834,8 +955,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ===== INITIALIZATION =====
     ModalController.init();
-    FormController.init();
-    CandidateController.init();
+    PaginationController.setupPaginationLinks();
+    PaginationController.setupStatusFilters();
     RichTextController.init();
+    
+    // Load initial candidates
+    PaginationController.loadCandidates(1);
     PaginationController.init();
 });

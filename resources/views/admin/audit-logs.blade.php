@@ -56,23 +56,44 @@
                                type="text" 
                                placeholder="Search by user, action, or details"
                                value="{{ request('filter') }}">
+                        <input type="hidden" name="log_type" value="{{ request('log_type') }}">
+                        <input type="hidden" name="operation" value="{{ request('operation') }}">
                     </form>
                 </div>
                 <div class="w-full md:w-1/4">
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="log-type">Log Type</label>
                     <form method="GET" action="{{ route('admin.audit-logs.index') }}" id="log-type-form">
                         <input type="hidden" name="filter" value="{{ request('filter') }}">
+                        <input type="hidden" name="operation" value="{{ request('operation') }}">
                         <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
                                 id="log-type" 
                                 name="log_type" 
                                 onchange="this.form.submit()">
                             <option value="">All</option>
-                            <option value="Login" {{ request('log_type') == 'Login' ? 'selected' : '' }}>Login</option>
-                            <option value="Create Election" {{ request('log_type') == 'Create Election' ? 'selected' : '' }}>Create Election</option>
-                            <option value="Edit Article" {{ request('log_type') == 'Edit Article' ? 'selected' : '' }}>Edit Article</option>
+                            @foreach(($logTypes ?? ['AUDIT','SECURITY','USER_ACTIVITY','TRANSACTION']) as $t)
+                                <option value="{{ $t }}" {{ request('log_type') == $t ? 'selected' : '' }}>{{ $t }}</option>
+                            @endforeach
                         </select>
                     </form>
                 </div>
+
+                <div class="w-full md:w-1/4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="operation">Operation</label>
+                    <form method="GET" action="{{ route('admin.audit-logs.index') }}" id="operation-form">
+                        <input type="hidden" name="filter" value="{{ request('filter') }}">
+                        <input type="hidden" name="log_type" value="{{ request('log_type') }}">
+                        <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                                id="operation" 
+                                name="operation" 
+                                onchange="this.form.submit()">
+                            <option value="">All</option>
+                            @foreach(($operations ?? ['INSERT','UPDATE','DELETE','READ','LOGIN','LOGOUT']) as $op)
+                                <option value="{{ $op }}" {{ request('operation') == $op ? 'selected' : '' }}>{{ $op }}</option>
+                            @endforeach
+                        </select>
+                    </form>
+                </div>
+
                 <a href="{{ route('admin.audit-logs.export') }}" 
                    class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 w-full md:w-auto">
                     Export Logs
@@ -85,6 +106,10 @@
                         <tr>
                             <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Timestamp</th>
                             <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">User</th>
+                            <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Log Type</th>
+                            <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Operation</th>
+                            <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Table</th>
+                            <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Record</th>
                             <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Action</th>
                             <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Details</th>
                         </tr>
@@ -99,6 +124,18 @@
                                     {{ $log->user_name }}
                                 </td>
                                 <td class="py-2 px-4 border-b border-gray-300">
+                                    {{ $log->log_type }}
+                                </td>
+                                <td class="py-2 px-4 border-b border-gray-300">
+                                    {{ $log->operation }}
+                                </td>
+                                <td class="py-2 px-4 border-b border-gray-300">
+                                    {{ $log->table_name }}
+                                </td>
+                                <td class="py-2 px-4 border-b border-gray-300">
+                                    {{ $log->record_id }}
+                                </td>
+                                <td class="py-2 px-4 border-b border-gray-300">
                                     {{ $log->action }}
                                 </td>
                                 <td class="py-2 px-4 border-b border-gray-300">
@@ -107,7 +144,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="py-4 px-4 text-center text-gray-500">
+                                <td colspan="8" class="py-4 px-4 text-center text-gray-500">
                                     No audit logs found.
                                 </td>
                             </tr>

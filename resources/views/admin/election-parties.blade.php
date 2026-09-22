@@ -27,8 +27,8 @@ transition: opacity 0.3s ease;
 }
 </style>
 
-
 <!-- Success/Error Messages -->
+<div class="mt-6">
 @if(session('success'))
     <div id="success-alert" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
         <span class="close-btn float-right cursor-pointer text-green-700 hover:text-green-900">&times;</span>
@@ -43,7 +43,20 @@ transition: opacity 0.3s ease;
     </div>
 @endif
 
-<section class="text-center my-8">
+@if($errors->any())
+    <div id="error-alert" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <span class="close-btn float-right cursor-pointer text-red-700 hover:text-red-900">&times;</span>
+        <div class="font-semibold mb-1">Please fix the following:</div>
+        <ul class="list-disc pl-5">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+</div>
+
+<section class="text-center mt-12 mb-8">
     <h2 class="text-4xl font-bold text-gray-800 mb-4">Manage Election Party</h2>
     <p class="text-gray-600 text-lg">Here you can manage all the election parties.</p>
 </section>
@@ -51,18 +64,30 @@ transition: opacity 0.3s ease;
 <section class="my-8">
     <div class="flex justify-between items-center mb-4">
         <h3 class="text-3xl font-bold text-gray-800">Election Party List</h3>
-        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 hidden md:block" id="new-party-button">New Party</button>
+        <div class="flex items-center gap-2">
+            <a
+                href="{{ ($isArchived ?? false) ? route('admin.election-parties.index') : route('admin.election-parties.index', ['archived' => 1]) }}"
+                class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                {{ ($isArchived ?? false) ? 'Back to List' : 'Archive' }}
+            </a>
+
+            @if (!($isArchived ?? false))
+                <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 hidden md:block" id="new-party-button">New Party</button>
+            @endif
+        </div>
     </div>
-    <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mb-4 md:hidden" id="new-party-button-mobile">New Party</button>
+    @if (!($isArchived ?? false))
+        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mb-4 md:hidden" id="new-party-button-mobile">New Party</button>
+    @endif
     
     <div class="bg-white p-6 rounded-lg shadow-lg">
         <div class="overflow-x-auto">
-            <form id="bulk-action-form" method="POST">
+            <form id="bulk-action-form" method="POST" action="{{ route('admin.election-parties.bulk-delete') }}">
                 @csrf
-                @method('DELETE')
                 <table class="min-w-full bg-white">
                     <thead>
                         <tr>
+                            <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Logo</th>
                             <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Party Name</th>
                             <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Description</th>
                             <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Actions</th>
@@ -71,35 +96,65 @@ transition: opacity 0.3s ease;
                     <tbody>
                         @forelse($electionParties as $party)
                             <tr data-party-id="{{ $party->id }}">
+                                <td class="py-2 px-4 border-b border-gray-300">
+                                    @php
+                                        $partyLogoUrl = null;
+                                        if (!empty($party->logo)) {
+                                            $partyLogoFile = basename($party->logo);
+                                            $partyLogoUrl = route('storage.image', ['folder' => 'election-parties', 'filename' => $partyLogoFile]) . '?v=' . urlencode($party->logo);
+                                        }
+                                    @endphp
+                                    @if($partyLogoUrl)
+                                        <img src="{{ $partyLogoUrl }}" alt="{{ $party->name }}" class="w-10 h-10 object-cover rounded" onerror="this.onerror=null;this.style.display='none';" />
+                                    @else
+                                        <div class="w-10 h-10 bg-gray-200 rounded"></div>
+                                    @endif
+                                </td>
                                 <td class="py-2 px-4 border-b border-gray-300">{{ $party->name }}</td>
                                 <td class="py-2 px-4 border-b border-gray-300">
                                     {{ $party->description ?? 'No description available' }}
                                 </td>
                                 <td class="py-2 px-4 border-b border-gray-300">
                                     <div class="flex flex-col md:flex-row md:space-x-2">
-                                        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 view-button mb-2 md:mb-0" 
+                                        <button type="button" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 view-button mb-2 md:mb-0" 
                                                 data-party-id="{{ $party->id }}"
                                                 data-party-name="{{ $party->name }}"
-                                                data-party-description="{{ $party->description }}">
+                                                data-party-description="{{ $party->description }}"
+                                                data-party-logo-url="{{ $partyLogoUrl }}">
                                             View
                                         </button>
-                                        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 edit-button mb-2 md:mb-0" 
-                                                data-party-id="{{ $party->id }}"
-                                                data-party-name="{{ $party->name }}"
-                                                data-party-description="{{ $party->description }}">
-                                            Edit
-                                        </button>
-                                        <button class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 delete-button" 
-                                                data-party-id="{{ $party->id }}"
-                                                data-party-name="{{ $party->name }}">
-                                            Delete
-                                        </button>
+                                        @if (!($isArchived ?? false))
+                                            <button type="button" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 edit-button mb-2 md:mb-0" 
+                                                    data-party-id="{{ $party->id }}"
+                                                    data-party-name="{{ $party->name }}"
+                                                    data-party-description="{{ $party->description }}"
+                                                    data-party-status="{{ $party->status }}">
+                                                Edit
+                                            </button>
+                                            <button type="button" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 delete-button" 
+                                                    data-party-id="{{ $party->id }}"
+                                                    data-party-name="{{ $party->name }}"
+                                                    data-delete-url="{{ route('admin.election-parties.destroy', $party->id) }}">
+                                                Delete
+                                            </button>
+                                        @else
+                                            <form method="POST" action="{{ route('admin.election-parties.restore', $party->id) }}" class="inline">
+                                                @csrf
+                                                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 mb-2 md:mb-0">Restore</button>
+                                            </form>
+                                            <button type="button" class="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800 delete-button" 
+                                                    data-party-id="{{ $party->id }}"
+                                                    data-party-name="{{ $party->name }}"
+                                                    data-delete-url="{{ route('admin.election-parties.forceDestroy', $party->id) }}">
+                                                Permanent Delete
+                                            </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="3" class="py-4 px-4 text-center text-gray-500">
+                                <td colspan="4" class="py-4 px-4 text-center text-gray-500">
                                     No election parties found.
                                 </td>
                             </tr>
@@ -121,6 +176,9 @@ transition: opacity 0.3s ease;
             <div class="bg-white p-6">
                 <div class="flex items-center mb-4">
                     <h3 class="text-2xl font-bold text-gray-800" id="view-party-name">Party Name</h3>
+                </div>
+                <div class="mb-4">
+                    <img id="view-party-logo" class="w-24 h-24 object-cover rounded hidden" alt="" />
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Description:</label>
@@ -160,7 +218,7 @@ transition: opacity 0.3s ease;
         <div class="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full">
             <div class="bg-white p-6">
                 <h2 class="text-2xl font-bold mb-4">New Party</h2>
-                <form id="new-party-form" method="POST" action="{{ route('admin.election-parties.store') }}">
+                <form id="new-party-form" method="POST" action="{{ route('admin.election-parties.store') }}" enctype="multipart/form-data">
                     @csrf
                     <div class="mb-4">
                         <label class="block text-gray-700 text-sm font-bold mb-2" for="new-party-name">Party Name</label>
@@ -176,9 +234,14 @@ transition: opacity 0.3s ease;
                         <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
                                 id="new-party-description" 
                                 name="description" 
+                                data-quill="1"
                                 rows="3"
                                 placeholder="Enter party description" 
                                 required></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="new-party-logo">Logo / Banner</label>
+                        <input class="block w-full text-sm text-gray-700" id="new-party-logo" name="logo" type="file" accept="image/*" />
                     </div>
                     <div class="flex justify-end">
                         <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mr-2" type="submit">Save</button>
@@ -199,9 +262,10 @@ transition: opacity 0.3s ease;
         <div class="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full">
             <div class="bg-white p-6">
                 <h2 class="text-2xl font-bold mb-4">Edit Party</h2>
-                <form id="edit-party-form" method="POST">
+                <form id="edit-party-form" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
+                    <input type="hidden" id="edit-party-status" name="status" value="">
                     <div class="mb-4">
                         <label class="block text-gray-700 text-sm font-bold mb-2" for="edit-party-name">Party Name</label>
                         <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
@@ -216,9 +280,14 @@ transition: opacity 0.3s ease;
                         <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
                                 id="edit-party-description" 
                                 name="description" 
+                                data-quill="1"
                                 rows="3"
                                 placeholder="Enter party description" 
                                 required></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="edit-party-logo">Logo / Banner</label>
+                        <input class="block w-full text-sm text-gray-700" id="edit-party-logo" name="logo" type="file" accept="image/*" />
                     </div>
                     <div class="flex justify-end">
                         <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mr-2" type="submit">Save</button>
@@ -270,9 +339,21 @@ transition: opacity 0.3s ease;
             button.addEventListener('click', () => {
                 const partyName = button.getAttribute('data-party-name');
                 const partyDescription = button.getAttribute('data-party-description');
+                const partyLogoUrl = button.getAttribute('data-party-logo-url');
                 
                 document.getElementById('view-party-name').textContent = partyName;
                 document.getElementById('view-party-description').textContent = partyDescription || 'No description available';
+
+                const logoEl = document.getElementById('view-party-logo');
+                if (logoEl) {
+                    if (partyLogoUrl) {
+                        logoEl.src = partyLogoUrl;
+                        logoEl.classList.remove('hidden');
+                    } else {
+                        logoEl.removeAttribute('src');
+                        logoEl.classList.add('hidden');
+                    }
+                }
                 
                 viewModal.classList.remove('hidden');
             });
@@ -308,7 +389,10 @@ transition: opacity 0.3s ease;
                 // Create a form and submit it for deletion
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = `{{ route('admin.election-parties.index') }}/${deletePartyId}`;
+                
+                const row = document.querySelector(`tr[data-party-id="${deletePartyId}"]`);
+                const url = row ? row.querySelector('.delete-button')?.getAttribute('data-delete-url') : null;
+                form.action = url || `{{ route('admin.election-parties.index') }}/${deletePartyId}`;
                 
                 const csrfToken = document.createElement('input');
                 csrfToken.type = 'hidden';
@@ -333,17 +417,23 @@ transition: opacity 0.3s ease;
         const newPartyModal = document.getElementById('new-party-modal');
         const cancelNewParty = document.getElementById('cancel-new-party');
 
-        newPartyButton.addEventListener('click', () => {
-            newPartyModal.classList.remove('hidden');
-        });
+        if (newPartyButton) {
+            newPartyButton.addEventListener('click', () => {
+                newPartyModal.classList.remove('hidden');
+            });
+        }
 
-        newPartyButtonMobile.addEventListener('click', () => {
-            newPartyModal.classList.remove('hidden');
-        });
+        if (newPartyButtonMobile) {
+            newPartyButtonMobile.addEventListener('click', () => {
+                newPartyModal.classList.remove('hidden');
+            });
+        }
 
-        cancelNewParty.addEventListener('click', () => {
-            newPartyModal.classList.add('hidden');
-        });
+        if (cancelNewParty) {
+            cancelNewParty.addEventListener('click', () => {
+                newPartyModal.classList.add('hidden');
+            });
+        }
 
         // Edit Party Modal functionality
         const editButtons = document.querySelectorAll('.edit-button');
@@ -351,24 +441,32 @@ transition: opacity 0.3s ease;
         const editPartyForm = document.getElementById('edit-party-form');
         const editPartyName = document.getElementById('edit-party-name');
         const editPartyDescription = document.getElementById('edit-party-description');
+        const editPartyStatus = document.getElementById('edit-party-status');
 
         editButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const partyId = button.getAttribute('data-party-id');
                 const partyName = button.getAttribute('data-party-name');
                 const partyDescription = button.getAttribute('data-party-description');
-                
+                const partyStatus = button.getAttribute('data-party-status');
+
                 editPartyName.value = partyName;
                 editPartyDescription.value = partyDescription || '';
+                if (editPartyStatus) {
+                    editPartyStatus.value = partyStatus || '';
+                }
                 editPartyForm.action = `{{ route('admin.election-parties.index') }}/${partyId}`;
-                
+
                 editPartyModal.classList.remove('hidden');
             });
         });
 
-        document.getElementById('cancel-edit-party').addEventListener('click', () => {
-            editPartyModal.classList.add('hidden');
-        });
+        const cancelEditParty = document.getElementById('cancel-edit-party');
+        if (cancelEditParty) {
+            cancelEditParty.addEventListener('click', () => {
+                editPartyModal.classList.add('hidden');
+            });
+        }
 
         // Close modals when clicking outside
         window.addEventListener('click', function(event) {

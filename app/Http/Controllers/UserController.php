@@ -9,7 +9,11 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::all();
-        return view('users.index', compact('users'));
+        $users = User::query()
+            ->where('is_admin', false)
+            ->orderBy('name')
+            ->paginate(20);
+
+        return view('admin.users.index', compact('users'));
     }
 }

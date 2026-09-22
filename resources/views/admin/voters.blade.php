@@ -18,6 +18,19 @@
         }
     @endphp
 
+    @php
+        $roles = $roles ?? collect();
+        if ($roles->isEmpty()) {
+            if (class_exists(\App\Models\Role::class)) {
+                try {
+                    $roles = \App\Models\Role::all();
+                } catch (\Throwable $e) {
+                    $roles = collect();
+                }
+            }
+        }
+    @endphp
+
     <section class="text-center my-8">
         <h2 class="text-4xl font-bold text-gray-800 mb-4">Manage Voters</h2>
         <p class="text-gray-600 text-lg">Here you can manage all the users.</p>
@@ -50,6 +63,17 @@
             </div>
         @endif
 
+        @if (session('importFailures'))
+            <div id="import-failures" class="bg-yellow-50 text-yellow-900 px-4 py-3 rounded mb-4 border border-yellow-200">
+                <div class="font-bold mb-2">Import Warnings / Failures:</div>
+                <ul class="list-disc pl-5">
+                    @foreach ((array) session('importFailures') as $failure)
+                        <li class="text-sm">{{ is_string($failure) ? $failure : json_encode($failure) }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <div class="flex items-center justify-between px-6 py-4 bg-gray-50">
             <h1 class="text-2xl font-bold text-gray-800">Users List</h1>
             
@@ -64,6 +88,13 @@
                     class="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
                     id="new-voter-btn">
                     New User
+                </button>
+
+                <button
+                    type="button"
+                    class="px-5 py-2 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700"
+                    id="import-voters-btn">
+                    Import
                 </button>
             </div>
         </div>
@@ -119,6 +150,26 @@
                                         <button class="bg-green-600 text-white px-3 py-1 text-sm rounded hover:bg-green-700 registration-btn"
                                             data-id="{{ $voter->id }}"
                                             data-name="{{ $voter->name }}">Registration</button>
+
+                                        <form method="POST" action="{{ route('admin.voters.votes.resetAll', $voter->id) }}" onsubmit="return confirm('Reset ALL votes for {{ $voter->name }}?');">
+                                            @csrf
+                                            <button type="submit" class="bg-purple-600 text-white px-3 py-1 text-sm rounded hover:bg-purple-700">
+                                                Reset All Votes
+                                            </button>
+                                        </form>
+
+                                        <form method="POST" action="{{ route('admin.voters.votes.resetPosition', $voter->id) }}" onsubmit="return confirm('Reset vote for the selected position for {{ $voter->name }}?');">
+                                            @csrf
+                                            <select name="position_id" class="px-2 py-1 border rounded text-sm" required>
+                                                <option value="" disabled selected>Reset per position</option>
+                                                @foreach(($positions ?? collect()) as $p)
+                                                    <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <button type="submit" class="bg-purple-600 text-white px-3 py-1 text-sm rounded hover:bg-purple-700">
+                                                Reset
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
@@ -172,9 +223,15 @@
                     <label class="block text-gray-700 text-sm font-bold mb-2">Admin Role</label>
                     <select name="admin_role" class="w-full px-4 py-2 border rounded-lg">
                         <option value="">Select Role</option>
-                        <option value="Admin">Admin</option>
-                        <option value="Moderator">Moderator</option>
-                        <option value="User">User</option>
+                        @if(isset($roles) && $roles->count())
+                            @foreach($roles as $role)
+                                <option value="{{ $role->name ?? $role->role_name ?? $role->id }}">
+                                    {{ $role->name ?? $role->role_name ?? ('Role '.$role->id) }}
+                                </option>
+                            @endforeach
+                        @else
+                            <option value="">No roles found</option>
+                        @endif
                     </select>
                 </div>
                 
@@ -195,61 +252,87 @@
         </div>
     </div>
 
+    <!-- Import Users Modal -->
+    <div id="import-voters-modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 items-center justify-center hidden z-50">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h3 class="text-2xl font-bold mb-2">Import Users (Voters)</h3>
+            <p class="text-sm text-gray-600 mb-4">
+                Upload a CSV/XLSX file. Download a sample file
+                <a href="{{ route('admin.voters.sample') }}" class="text-blue-600 hover:underline">here</a>.
+            </p>
+
+            <form method="POST" action="{{ route('admin.voters.import') }}" enctype="multipart/form-data" id="import-voters-form">
+                @csrf
+                <input type="file" name="importFile" id="import-voters-file" accept=".csv,.xlsx,.xls" class="w-full border rounded-lg px-3 py-2" required>
+
+                <div class="flex justify-end gap-2 mt-4">
+                    <button type="button" class="bg-gray-600 text-white px-4 py-2 rounded-lg" id="close-import-voters-modal">Cancel</button>
+                    <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700">Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Edit User Modal -->
-    <div id="edit-voter-modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 items-center justify-center hidden z-50">
-        <div class="bg-white p-6 rounded-lg shadow-lg w-1/2 max-h-screen overflow-y-auto">
-            <h3 class="text-2xl font-bold mb-4">Edit User</h3>
-            <form method="POST" id="edit-voter-form" action="" enctype="multipart/form-data">
+    <div id="edit-voter-modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-2xl max-h-screen overflow-y-auto transition-all duration-300">
+            <h3 class="text-3xl font-extrabold mb-6 text-blue-700 text-center">Edit User</h3>
+            <form method="POST" id="edit-voter-form" action="" enctype="multipart/form-data" class="space-y-6">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="id" id="edit-voter-id">
-                
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Name</label>
-                    <input type="text" name="name" id="edit-voter-name" class="w-full px-4 py-2 border rounded-lg" required>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-semibold mb-2">Name</label>
+                        <input type="text" name="name" id="edit-voter-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-semibold mb-2">Student ID</label>
+                        <input type="text" name="idnumber" id="edit-voter-student-id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-semibold mb-2">Course</label>
+                        <input type="text" name="course" id="edit-voter-course" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
+                        <input type="email" name="email" id="edit-voter-email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" required>
+                    </div>
                 </div>
-                
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Student ID</label>
-                    <input type="text" name="idnumber" id="edit-voter-student-id" class="w-full px-4 py-2 border rounded-lg" required>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-semibold mb-2">Profile Image</label>
+                        <input type="file" name="profile_image" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" accept="image/*">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-semibold mb-2">Admin Role</label>
+                        <select name="admin_role" id="edit-voter-admin-role" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
+                            <option value="">Select Role</option>
+                            @if(isset($roles) && $roles->count())
+                                @foreach($roles as $role)
+                                    <option value="{{ $role->name ?? $role->role_name ?? $role->id }}">
+                                        {{ $role->name ?? $role->role_name ?? ('Role '.$role->id) }}
+                                    </option>
+                                @endforeach
+                            @else
+                                <option value="">No roles found</option>
+                            @endif
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-semibold mb-2">Status</label>
+                        <select name="status" id="edit-voter-status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" required>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
                 </div>
-                
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Course</label>
-                    <input type="text" name="course" id="edit-voter-course" class="w-full px-4 py-2 border rounded-lg" required>
-                </div>
-                
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
-                    <input type="email" name="email" id="edit-voter-email" class="w-full px-4 py-2 border rounded-lg" required>
-                </div>
-                
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Profile Image</label>
-                    <input type="file" name="profile_image" class="w-full px-4 py-2 border rounded-lg" accept="image/*">
-                </div>
-                
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Admin Role</label>
-                    <select name="admin_role" id="edit-voter-admin-role" class="w-full px-4 py-2 border rounded-lg">
-                        <option value="">Select Role</option>
-                        <option value="Admin">Admin</option>
-                        <option value="Moderator">Moderator</option>
-                        <option value="User">User</option>
-                    </select>
-                </div>
-                
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Status</label>
-                    <select name="status" id="edit-voter-status" class="w-full px-4 py-2 border rounded-lg" required>
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                    </select>
-                </div>
-                
-                <div class="flex justify-end">
-                    <button type="button" class="bg-gray-600 text-white px-4 py-2 rounded-lg mr-2" id="close-edit-voter-modal">Cancel</button>
-                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg">Save</button>
+
+                <div class="flex flex-col md:flex-row justify-end gap-3 mt-8">
+                    <button type="button" class="bg-gray-500 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors duration-200" id="close-edit-voter-modal">Cancel</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-800 text-white px-6 py-2 rounded-lg font-semibold transition-colors duration-200 shadow">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -530,6 +613,30 @@
                 registrationModal.classList.add('hidden');
                 registrationModal.classList.remove('flex');
             });
+
+            // Import Users Modal
+            const importVotersBtn = document.getElementById('import-voters-btn');
+            const importVotersModal = document.getElementById('import-voters-modal');
+            const closeImportVotersModal = document.getElementById('close-import-voters-modal');
+
+            if (importVotersBtn && importVotersModal && closeImportVotersModal) {
+                importVotersBtn.addEventListener('click', () => {
+                    importVotersModal.classList.remove('hidden');
+                    importVotersModal.classList.add('flex');
+                });
+
+                closeImportVotersModal.addEventListener('click', () => {
+                    importVotersModal.classList.add('hidden');
+                    importVotersModal.classList.remove('flex');
+                });
+
+                importVotersModal.addEventListener('click', (e) => {
+                    if (e.target === importVotersModal) {
+                        importVotersModal.classList.add('hidden');
+                        importVotersModal.classList.remove('flex');
+                    }
+                });
+            }
 
             // Function to handle auto-hide of alerts
             function setupAlerts() {

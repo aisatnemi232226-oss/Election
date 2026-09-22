@@ -23,7 +23,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('election_id')->references('id')->on('elections');
+            $table->foreign('election_id')->references('id')->on('election');
             $table->foreign('candidate_id')->references('id')->on('candidates');
         });
     }

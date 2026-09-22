@@ -10,6 +10,28 @@
     </section>
 
     <section class="my-8">
+        @if (session('success'))
+            <div class="mb-4 rounded-lg bg-green-50 p-4 text-green-800 border border-green-200">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="mb-4 rounded-lg bg-red-50 p-4 text-red-800 border border-red-200">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="mb-4 rounded-lg bg-red-50 p-4 text-red-800 border border-red-200">
+                <ul class="list-disc pl-5">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <div class="bg-white p-6 rounded-lg shadow-lg">
             <!-- Header with title, search, pagination, and new button -->
             <div class="flex items-center justify-between mb-6">
@@ -26,84 +48,184 @@
                 </div>
                 
                 <div class="flex items-center space-x-4">
+                    <a
+                        href="{{ $isArchived ? route('admin.candidates.index') : route('admin.candidates.index', ['archived' => 1]) }}"
+                        class="px-5 py-2 text-sm font-medium text-white {{ $isArchived ? 'bg-gray-700 hover:bg-gray-800' : 'bg-gray-600 hover:bg-gray-700' }} rounded-md"
+                        id="archive-toggle-btn">
+                        {{ $isArchived ? 'Back to List' : 'Archive' }}
+                    </a>
+
                     <!-- Pagination at the top - properly aligned -->
                     <div id="pagination-container-top" class="flex items-center">
-                        {{ $candidates->links('components.pagination') }}
+                        {{ $candidates->appends(['archived' => $isArchived ? 1 : 0, 'status' => $status ?? request('status')])->links('components.pagination') }}
                     </div>
                     
-                    <button 
-                        class="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                        id="new-candidate-btn">
-                        New Candidate
-                    </button>
+                    @if (!$isArchived)
+                        <button 
+                            type="button"
+                            class="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                            id="new-candidate-btn">
+                            New Candidate
+                        </button>
+                    @endif
                 </div>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-2 mb-4" id="candidate-status-filters">
+                <button type="button" class="px-3 py-2 text-sm font-medium rounded-md border border-gray-200 bg-white hover:bg-gray-50" data-status-filter="">All</button>
+                <button type="button" class="px-3 py-2 text-sm font-medium rounded-md border border-gray-200 bg-white hover:bg-gray-50" data-status-filter="Pending">Pending</button>
+                <button type="button" class="px-3 py-2 text-sm font-medium rounded-md border border-gray-200 bg-white hover:bg-gray-50" data-status-filter="Active">Active</button>
+                <button type="button" class="px-3 py-2 text-sm font-medium rounded-md border border-gray-200 bg-white hover:bg-gray-50" data-status-filter="Inactive">Inactive</button>
             </div>
             
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-white border-collapse">
                     <thead>
                         <tr>
+                            <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Photo</th>
                             <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Name</th>
                             <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Course</th>
+                            <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Party</th>
+                            <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Position</th>
                             <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Status</th>
                             <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="candidates-table-body">
                         @foreach ($candidates as $candidate)
+                            @php
+                                $profileRelative = $candidate->profile_img
+                                    ? (\Illuminate\Support\Str::contains($candidate->profile_img, '/') ? $candidate->profile_img : ('profile-picture/' . $candidate->profile_img))
+                                    : null;
+                                $bannerRelative = $candidate->banner_img
+                                    ? (\Illuminate\Support\Str::contains($candidate->banner_img, '/') ? $candidate->banner_img : ('banner/' . $candidate->banner_img))
+                                    : null;
+
+                                $profileExists = $profileRelative
+                                    ? \Illuminate\Support\Facades\Storage::disk('public')->exists('upload/' . $profileRelative)
+                                    : false;
+                                $bannerExists = $bannerRelative
+                                    ? \Illuminate\Support\Facades\Storage::disk('public')->exists('upload/' . $bannerRelative)
+                                    : false;
+
+                                $profileUrl = $profileExists
+                                    ? route('storage.image', ['folder' => 'upload', 'filename' => $profileRelative])
+                                    : asset('images/default-profile.jpg');
+                                $bannerUrl = $bannerExists
+                                    ? route('storage.image', ['folder' => 'upload', 'filename' => $bannerRelative])
+                                    : asset('images/default-banner.png');
+                            @endphp
                             <tr>
+                                <td class="py-2 px-4 border-b">
+                                    <img 
+                                        src="{{ $profileUrl }}" 
+                                        alt="{{ $candidate->name }}"
+                                        class="w-10 h-10 object-cover rounded-full"
+                                        onerror="this.onerror=null; this.src='{{ asset('images/default-profile.jpg') }}';"
+                                    >
+                                </td>
                                 <td class="py-2 px-4 border-b">{{ $candidate->name }}</td>
                                 <td class="py-2 px-4 border-b">{{ optional($candidate->course)->name ?? 'N/A' }}</td>
+                                <td class="py-2 px-4 border-b">{{ $candidate->party ? $candidate->party->name : 'No Party' }}</td>
+                                <td class="py-2 px-4 border-b">{{ optional($candidate->position)->name ?? 'N/A' }}</td>
                                 <td class="py-2 px-4 border-b">
-                                    <span class="px-2 py-1 text-xs rounded-full {{ $candidate->status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                        {{ $candidate->status }}
-                                    </span>
+                                    <div class="flex flex-wrap items-center gap-1">
+                                        <span class="px-2 py-1 text-xs rounded-full {{ $candidate->status === 'Active' ? 'bg-green-100 text-green-800' : ($candidate->status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                                            {{ $candidate->status }}
+                                        </span>
+                                        @if ($isArchived)
+                                            <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">Archived</span>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="py-2 px-4 border-b">
                                     <div class="flex gap-2">
+                                        @if (!$isArchived)
+                                            @if (($candidate->status ?? '') === 'Pending')
+                                                <form method="POST" action="{{ route('admin.candidates.approve', $candidate->id) }}" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700">
+                                                        Approve
+                                                    </button>
+                                                </form>
+                                                <form method="POST" action="{{ route('admin.candidates.reject', $candidate->id) }}" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700">
+                                                        Reject
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        @endif
+
                                         <button 
                                             type="button"
                                             class="view-button bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
                                             data-id="{{ $candidate->id }}"
                                             data-candidate="{{ $candidate->name }}"
                                             data-course="{{ optional($candidate->course)->name ?? 'N/A' }}"
+                                            data-position="{{ optional($candidate->position)->name ?? 'N/A' }}"
                                             data-party="{{ $candidate->party ? $candidate->party->name : 'No Party' }}"
                                             data-description="{{ $candidate->description ?? 'No description available.' }}"
                                             data-status="{{ $candidate->status }}"
-                                            data-profile-image="{{ $candidate->profile_img ? asset('storage/upload/profile-picture/' . $candidate->profile_img) : asset('images/default-profile.jpg') }}"
-                                            data-banner-image="{{ $candidate->banner_img ? asset('storage/upload/banner/' . $candidate->banner_img) : asset('images/default-banner.png') }}"
+                                            data-profile-image="{{ $profileUrl }}"
+                                            data-banner-image="{{ $bannerUrl }}"
                                             data-platforms="{{ $candidate->platforms ?? 'No Platforms' }}"
-                                            data-related-events="Organized Tech Fest 2023, Led Community Service Day 2024"
-                                            data-joined-elections='[{"year": "2023", "position": "Vice President", "winner": true}, {"year": "2024", "position": "Representative", "winner": false}]'>
+                                            data-related-events="{{ $candidate->related_events ?? '' }}"
+                                            data-joined-elections="{{ e($candidate->joined_elections ?? '') }}">
                                             View
                                         </button>
 
-                                        <button 
-                                            type="button"
-                                            class="edit-button bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-                                            data-id="{{ $candidate->id }}"
-                                            data-candidate="{{ $candidate->name }}"
-                                            data-course="{{ optional($candidate->course)->name ?? '' }}"
-                                            data-course-id="{{ optional($candidate->course)->id ?? '' }}"
-                                            data-party="{{ $candidate->party ? $candidate->party->name : 'No Party' }}"
-                                            data-party-id="{{ $candidate->party ? $candidate->party->id : '' }}"
-                                            data-description="{{ $candidate->description ?? '' }}"
-                                            data-status="{{ $candidate->status }}"
-                                            data-profile-image="{{ $candidate->profile_img ? asset('storage/upload/profile-picture/' . $candidate->profile_img) : asset('images/default-profile.jpg') }}"
-                                            data-banner-image="{{ $candidate->banner_img ? asset('storage/upload/banner/' . $candidate->banner_img) : asset('images/default-banner.png') }}"
-                                            data-platforms="{{ $candidate->platforms ?? '' }}">
-                                            Edit
-                                        </button>
-
-                                        <form method="POST" action="{{ route('admin.candidates.destroy', $candidate->id) }}" id="delete-form-{{ $candidate->id }}" class="inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="button" 
-                                                class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 delete-button"
-                                                data-id="{{ $candidate->id }}">
-                                                Delete
+                                        @if (!$isArchived)
+                                            <button 
+                                                type="button"
+                                                class="edit-button bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                                                data-id="{{ $candidate->id }}"
+                                                data-candidate="{{ $candidate->name }}"
+                                                data-course="{{ optional($candidate->course)->name ?? '' }}"
+                                                data-course-id="{{ optional($candidate->course)->id ?? '' }}"
+                                                data-position="{{ optional($candidate->position)->name ?? '' }}"
+                                                data-position-id="{{ optional($candidate->position)->id ?? '' }}"
+                                                data-party="{{ $candidate->party ? $candidate->party->name : 'No Party' }}"
+                                                data-party-id="{{ $candidate->party ? $candidate->party->id : '' }}"
+                                                data-description="{{ $candidate->description ?? '' }}"
+                                                data-status="{{ $candidate->status }}"
+                                                data-profile-image="{{ $profileUrl }}"
+                                                data-banner-image="{{ $bannerUrl }}"
+                                                data-platforms="{{ $candidate->platforms ?? '' }}"
+                                                data-related-events="{{ $candidate->related_events ?? '' }}"
+                                                data-joined-elections="{{ e($candidate->joined_elections ?? '') }}">
+                                                Edit
                                             </button>
-                                        </form>
+                                        @endif
+                                        
+                                        @if ($isArchived)
+                                            <form method="POST" action="{{ route('admin.candidates.restore', $candidate->id) }}" class="inline">
+                                                @csrf
+                                                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                                                    Restore
+                                                </button>
+                                            </form>
+
+                                            <form method="POST" action="{{ route('admin.candidates.forceDestroy', $candidate->id) }}" id="force-delete-form-{{ $candidate->id }}" class="inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="button" 
+                                                    class="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800 force-delete-button"
+                                                    data-id="{{ $candidate->id }}">
+                                                    Permanent Delete
+                                                </button>
+                                            </form>
+                                        @else
+                                            <form method="POST" action="{{ route('admin.candidates.destroy', $candidate->id) }}" id="delete-form-{{ $candidate->id }}" class="inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="button" 
+                                                    class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 delete-button"
+                                                    data-id="{{ $candidate->id }}">
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -114,7 +236,7 @@
             
             <!-- Hidden pagination container for backup -->
             <div id="pagination-container" class="mt-4" style="display: none;">
-                {{ $candidates->links('components.pagination') }}
+                {{ $candidates->appends(['archived' => $isArchived ? 1 : 0])->links('components.pagination') }}
             </div>
         </div>
     </section>
@@ -125,23 +247,65 @@
             <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity modal-backdrop"></div>
 
             <div class="relative bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full">
-                <div class="bg-white p-6">
-                    <img id="candidate-banner-image" class="w-full h-32 object-cover rounded-lg mb-4" alt="Banner Image">
-                    <div class="flex items-center mb-4">
-                        <img id="candidate-profile-image" class="w-16 h-16 object-cover rounded-full mr-4" alt="Profile Image">
-                        <h3 class="text-2xl font-bold" id="candidate-name"></h3>
+                <div class="bg-white">
+                    <div class="relative">
+                        <img id="candidate-banner-image" class="w-full h-36 object-cover" alt="Banner Image" onerror="this.onerror=null; this.src='{{ asset('images/default-banner.png') }}';">
+                        <div class="absolute -bottom-8 left-6 flex items-end gap-4">
+                            <img id="candidate-profile-image" class="w-16 h-16 object-cover rounded-full border-4 border-white shadow" alt="Profile Image" onerror="this.onerror=null; this.src='{{ asset('images/default-profile.jpg') }}';">
+                            <div class="pb-1">
+                                <h3 class="text-2xl font-bold text-gray-900" id="candidate-name"></h3>
+                                <div class="mt-1">
+                                    <span id="candidate-status-badge" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800"></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <p class="text-gray-800 mb-2"><strong>Status:</strong> <span id="candidate-status"></span></p>
-                    <p class="text-gray-800 mb-2"><strong>Course:</strong> <span id="candidate-course"></span></p>
-                    <p class="text-gray-800 mb-2"><strong>Party:</strong> <span id="candidate-party"></span></p>
-                    <p class="text-gray-800 mb-2" id="candidate-description"></p>
-                    <h4 class="text-xl font-bold text-gray-800 mb-2">Platforms</h4>
-                    <ul class="list-disc list-inside text-gray-800 mb-2" id="candidate-platforms"></ul>
-                    <h4 class="text-xl font-bold text-gray-800 mb-2">Related Events</h4>
-                    <ul class="list-disc list-inside text-gray-800 mb-2" id="candidate-related-events"></ul>
-                    <h4 class="text-xl font-bold text-gray-800 mb-2">Joined Elections</h4>
-                    <ul class="list-disc list-inside text-gray-800 mb-2" id="candidate-joined-elections"></ul>
-                    <button type="button" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mt-4" id="close-modal">Close</button>
+
+                    <div class="p-6 pt-12">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <div class="text-xs font-semibold text-gray-500">Status</div>
+                                <div class="text-sm font-medium text-gray-900" id="candidate-status"></div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <div class="text-xs font-semibold text-gray-500">Course</div>
+                                <div class="text-sm font-medium text-gray-900" id="candidate-course"></div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <div class="text-xs font-semibold text-gray-500">Position</div>
+                                <div class="text-sm font-medium text-gray-900" id="candidate-position"></div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-3 sm:col-span-2">
+                                <div class="text-xs font-semibold text-gray-500">Party</div>
+                                <div class="text-sm font-medium text-gray-900" id="candidate-party"></div>
+                            </div>
+                        </div>
+
+                        <div class="mt-5">
+                            <div class="text-sm font-bold text-gray-900 mb-2">Description</div>
+                            <div class="text-sm text-gray-800 bg-white border border-gray-200 rounded-lg p-3" id="candidate-description"></div>
+                        </div>
+
+                        <div class="mt-5">
+                            <div class="text-sm font-bold text-gray-900 mb-2">Platforms</div>
+                            <div class="text-sm text-gray-800 bg-white border border-gray-200 rounded-lg p-3" id="candidate-platforms"></div>
+                        </div>
+
+                        <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <div class="text-sm font-bold text-gray-900 mb-2">Related Events</div>
+                                <ul class="list-disc pl-5 text-sm text-gray-800 bg-white border border-gray-200 rounded-lg p-3" id="candidate-related-events"></ul>
+                            </div>
+                            <div>
+                                <div class="text-sm font-bold text-gray-900 mb-2">Joined Elections</div>
+                                <ul class="list-disc pl-5 text-sm text-gray-800 bg-white border border-gray-200 rounded-lg p-3" id="candidate-joined-elections"></ul>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex justify-end">
+                            <button type="button" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700" id="close-modal">Close</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -188,7 +352,7 @@
             <div class="relative bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full">
                 <div class="bg-white p-6">
                     <h3 class="text-2xl font-bold mb-4">Edit Candidate</h3>
-                    <form id="edit-candidate-form">
+                    <form id="edit-candidate-form" method="POST" action="" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
                         <input type="hidden" id="edit-candidate-id" name="id">
@@ -211,7 +375,7 @@
                                     </svg>
                                 </button>
                             </div>
-                            <img id="edit-profile-image-preview" src="" alt="Profile Image" class="w-32 h-32 rounded-full mt-2 hidden object-cover">
+                            <img id="edit-profile-image-preview" src="" alt="Profile Image" class="w-32 h-32 rounded-full mt-2 hidden object-cover" onerror="this.onerror=null; this.src='{{ asset('images/default-profile.jpg') }}';">
                         </div>
 
                         <!-- Custom Banner Image Upload -->
@@ -227,13 +391,13 @@
                                     </svg>
                                 </button>
                             </div>
-                            <img id="edit-banner-image-preview" src="" alt="Banner Image" class="w-full h-40 object-cover rounded-lg mt-2 hidden">
+                            <img id="edit-banner-image-preview" src="" alt="Banner Image" class="w-full h-40 object-cover rounded-lg mt-2 hidden" onerror="this.onerror=null; this.src='{{ asset('images/default-banner.png') }}';">
                         </div>
 
                         <div class="mb-4">
                             <label for="edit-candidate-description" class="block font-medium">Description</label>
-                            <div id="edit-description-editor" class="bg-white border rounded shadow min-h-32"></div>
-                            <input type="hidden" id="edit-candidate-description" name="description">
+                            <div id="edit-description-editor" class="bg-white border rounded shadow min-h-32 p-2" contenteditable="true"></div>
+                            <input type="hidden" id="edit-candidate-description" name="description" data-quill="1">
                         </div>
                         <div class="mb-4">
                             <label for="edit-candidate-course" class="block font-medium">Course</label>
@@ -244,6 +408,17 @@
                                 @endforeach
                             </select>
                         </div>
+
+                        <div class="mb-4">
+                            <label for="edit-candidate-position" class="block font-medium">Position</label>
+                            <select id="edit-candidate-position" name="position_id" class="border border-gray-300 p-2 w-full rounded">
+                                <option value="">-- Select a Position --</option>
+                                @foreach ($positions as $position)
+                                    <option value="{{ $position->id }}">{{ $position->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         <div class="mt-4">
                             <label class="block mb-2" for="edit-candidate-party">Party</label>
                             <select id="edit-candidate-party" name="party_id" class="border border-gray-300 p-2 w-full rounded">
@@ -255,9 +430,20 @@
                         </div>
                         <div class="mb-4">
                             <label for="edit-candidate-platforms" class="block font-medium">Platforms</label>
-                            <div id="edit-platforms-editor" class="bg-white border rounded shadow min-h-32"></div>
-                            <input type="hidden" id="edit-candidate-platforms" name="platforms">
+                            <div id="edit-platforms-editor" class="bg-white border rounded shadow min-h-32 p-2" contenteditable="true"></div>
+                            <input type="hidden" id="edit-candidate-platforms" name="platforms" data-quill="1">
                         </div>
+
+                        <div class="mb-4">
+                            <label for="edit-candidate-related-events" class="block font-medium">Related Events</label>
+                            <textarea id="edit-candidate-related-events" name="related_events" class="w-full p-2 border border-gray-300 rounded" rows="3" placeholder="One per line or comma-separated"></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="edit-candidate-joined-elections" class="block font-medium">Joined Elections</label>
+                            <textarea id="edit-candidate-joined-elections" name="joined_elections" class="w-full p-2 border border-gray-300 rounded" rows="3" placeholder='JSON (e.g. [{"year":"2024","position":"Representative","winner":false}]) or plain text'></textarea>
+                        </div>
+
                         <div class="mb-4">
                             <label for="edit-candidate-status" class="block font-medium">Status</label>
                             <select id="edit-candidate-status" name="status" class="w-full p-2 border border-gray-300 rounded" required>
@@ -282,7 +468,7 @@
             <div class="relative bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full">
                 <div class="p-6">
                     <h3 class="text-lg font-bold text-gray-800 mb-4">Create New Candidate</h3>
-                    <form id="new-candidate-form">
+                    <form id="new-candidate-form" method="POST" action="{{ route('admin.candidates.store') }}" enctype="multipart/form-data">
                         @csrf
                         <div>
                             <label class="block mb-2" for="new-candidate-name">Name</label>
@@ -302,7 +488,7 @@
                                     </svg>
                                 </button>
                             </div>
-                            <img id="new-candidate-image-preview" src="" alt="Profile Preview" class="w-32 h-32 object-cover rounded-full mt-2 hidden">
+                            <img id="new-candidate-image-preview" src="" alt="Profile Preview" class="w-32 h-32 object-cover rounded-full mt-2 hidden" onerror="this.onerror=null; this.src='{{ asset('images/default-profile.jpg') }}';">
                         </div>
 
                         <!-- Custom Banner Image Upload -->
@@ -318,13 +504,13 @@
                                     </svg>
                                 </button>
                             </div>
-                            <img id="new-candidate-banner-preview" src="" alt="Banner Preview" class="w-full h-40 object-cover rounded-lg mt-2 hidden">
+                            <img id="new-candidate-banner-preview" src="" alt="Banner Preview" class="w-full h-40 object-cover rounded-lg mt-2 hidden" onerror="this.onerror=null; this.src='{{ asset('images/default-banner.png') }}';">
                         </div>
 
                         <div class="mt-4">
                             <label class="block mb-2" for="new-candidate-description">Description</label>
-                            <div id="new-description-editor" class="bg-white border rounded shadow min-h-32"></div>
-                            <input type="hidden" id="new-candidate-description" name="description">
+                            <div id="new-description-editor" class="bg-white border rounded shadow min-h-32 p-2" contenteditable="true"></div>
+                            <input type="hidden" id="new-candidate-description" name="description" data-quill="1">
                         </div>
                         <div class="mt-4">
                             <label class="block mb-2" for="new-candidate-course">Course</label>
@@ -335,6 +521,17 @@
                                 @endforeach
                             </select>
                         </div>
+
+                        <div class="mt-4">
+                            <label class="block mb-2" for="new-candidate-position">Position</label>
+                            <select id="new-candidate-position" name="position_id" class="border border-gray-300 p-2 w-full rounded">
+                                <option value="">-- Select a Position --</option>
+                                @foreach ($positions as $position)
+                                    <option value="{{ $position->id }}">{{ $position->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         <div class="mt-4">
                             <label class="block mb-2" for="new-candidate-party">Party</label>
                             <select id="new-candidate-party" name="party_id" class="border border-gray-300 p-2 w-full rounded">
@@ -346,9 +543,20 @@
                         </div>
                         <div class="mt-4">
                             <label class="block mb-2" for="new-candidate-platforms">Platforms</label>
-                            <div id="new-platforms-editor" class="bg-white border rounded shadow min-h-32"></div>
-                            <input type="hidden" id="new-candidate-platforms" name="platforms">
+                            <div id="new-platforms-editor" class="bg-white border rounded shadow min-h-32 p-2" contenteditable="true"></div>
+                            <input type="hidden" id="new-candidate-platforms" name="platforms" data-quill="1">
                         </div>
+
+                        <div class="mt-4">
+                            <label class="block mb-2" for="new-candidate-related-events">Related Events</label>
+                            <textarea id="new-candidate-related-events" name="related_events" class="w-full p-2 border border-gray-300 rounded" rows="3" placeholder="One per line or comma-separated"></textarea>
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="block mb-2" for="new-candidate-joined-elections">Joined Elections</label>
+                            <textarea id="new-candidate-joined-elections" name="joined_elections" class="w-full p-2 border border-gray-300 rounded" rows="3" placeholder='JSON (e.g. [{"year":"2024","position":"Representative","winner":false}]) or plain text'></textarea>
+                        </div>
+
                         <div class="mb-4">
                             <label for="new-candidate-status" class="block font-medium">Status</label>
                             <select id="new-candidate-status" name="status" class="w-full p-2 border border-gray-300 rounded" required>
@@ -365,19 +573,255 @@
             </div>
         </div>
     </div>
-</section>
 
 @push('scripts')
     <!-- Load the SearchBox component script -->
-    @vite(['resources/js/admin/candidates.js'])
-    <!-- Load the Candidates script -->
     @vite(['resources/js/components/search-box.js'])
+    <!-- Load the Candidates script -->
+    @vite(['resources/js/admin/candidates.js'])
 
     <script>
         // Custom file input functionality
         document.addEventListener('DOMContentLoaded', function() {
+            const newCandidateBtn = document.getElementById('new-candidate-btn');
+            const newCandidateModal = document.getElementById('new-candidate-modal');
+            const cancelNewCandidateBtn = document.getElementById('cancel-new-candidate');
+
+            const viewModal = document.getElementById('candidate-modal');
+            const editModal = document.getElementById('edit-modal');
+            const confirmationModal = document.getElementById('confirmation-modal');
+            const confirmDeleteBtn = document.getElementById('confirm-delete');
+            let deleteFormToSubmit = null;
+
+            const closeViewBtn = document.getElementById('close-modal');
+            const cancelEditBtn = document.getElementById('cancel-edit');
+            const cancelDeleteBtn = document.getElementById('cancel-delete');
+            const closeErrorBtn = document.getElementById('close-error');
+
+            const hideModal = (modalEl) => {
+                if (!modalEl) return;
+                modalEl.classList.add('hidden');
+                if (!document.querySelector('.fixed.inset-0.overflow-y-auto:not(.hidden)')) {
+                    document.body.style.overflow = '';
+                }
+            };
+
+            if (closeViewBtn) {
+                closeViewBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    hideModal(viewModal);
+                });
+            }
+
+            if (cancelEditBtn) {
+                cancelEditBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    hideModal(editModal);
+                });
+            }
+
+            if (cancelDeleteBtn) {
+                cancelDeleteBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    hideModal(confirmationModal);
+                });
+            }
+
+            if (closeErrorBtn) {
+                closeErrorBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    hideModal(document.getElementById('error-modal'));
+                });
+            }
+
+            // Backdrop click closes any open modal
+            document.addEventListener('click', function(e) {
+                if (e.target && e.target.classList && e.target.classList.contains('modal-backdrop')) {
+                    hideModal(viewModal);
+                    hideModal(editModal);
+                    hideModal(confirmationModal);
+                    hideModal(document.getElementById('error-modal'));
+                    hideModal(newCandidateModal);
+                }
+            });
+
+            if (newCandidateBtn && newCandidateModal) {
+                newCandidateBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    newCandidateModal.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                });
+            }
+
+            if (cancelNewCandidateBtn && newCandidateModal) {
+                cancelNewCandidateBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    newCandidateModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                });
+            }
+
+            // View/Edit/Delete fallback handlers (works even if candidates.js doesn't load)
+            document.addEventListener('click', function(e) {
+                const viewBtn = e.target.closest('.view-button');
+                if (viewBtn && viewModal) {
+                    e.preventDefault();
+                    const get = (key, fallback = '') => viewBtn.getAttribute(key) ?? fallback;
+
+                    const nameEl = document.getElementById('candidate-name');
+                    const statusEl = document.getElementById('candidate-status');
+                    const courseEl = document.getElementById('candidate-course');
+                    const positionEl = document.getElementById('candidate-position');
+                    const partyEl = document.getElementById('candidate-party');
+                    const descriptionEl = document.getElementById('candidate-description');
+                    const platformsEl = document.getElementById('candidate-platforms');
+                    const profileImgEl = document.getElementById('candidate-profile-image');
+                    const bannerImgEl = document.getElementById('candidate-banner-image');
+                    const statusBadgeEl = document.getElementById('candidate-status-badge');
+
+                    if (nameEl) nameEl.textContent = get('data-candidate', '');
+                    const statusVal = get('data-status', '');
+                    if (statusEl) statusEl.textContent = statusVal;
+                    if (courseEl) courseEl.textContent = get('data-course', '');
+                    if (positionEl) positionEl.textContent = get('data-position', '');
+                    if (partyEl) partyEl.textContent = get('data-party', '');
+                    if (descriptionEl) descriptionEl.innerHTML = get('data-description', '');
+
+                    if (platformsEl) {
+                        const plats = get('data-platforms', '');
+                        platformsEl.innerHTML = (plats && plats.trim() !== '') ? plats : '<span class="text-gray-500">No platforms provided.</span>';
+                    }
+                    if (profileImgEl) profileImgEl.src = get('data-profile-image', '');
+                    if (bannerImgEl) bannerImgEl.src = get('data-banner-image', '');
+
+                    if (statusBadgeEl) {
+                        statusBadgeEl.textContent = statusVal;
+                    }
+
+                    viewModal.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                    return;
+                }
+
+                const editBtn = e.target.closest('.edit-button');
+                if (editBtn && editModal) {
+                    e.preventDefault();
+                    const candidateId = editBtn.getAttribute('data-id');
+
+                    const editForm = document.getElementById('edit-candidate-form');
+                    if (editForm && candidateId) {
+                        editForm.action = `/admin/candidates/${candidateId}`;
+                    }
+
+                    const editId = document.getElementById('edit-candidate-id');
+                    const editName = document.getElementById('edit-candidate-name');
+                    const editCourse = document.getElementById('edit-candidate-course');
+                    const editPosition = document.getElementById('edit-candidate-position');
+                    const editParty = document.getElementById('edit-candidate-party');
+                    const editStatus = document.getElementById('edit-candidate-status');
+                    const editDescHidden = document.getElementById('edit-candidate-description');
+                    const editPlatHidden = document.getElementById('edit-candidate-platforms');
+                    const editDescEditor = document.getElementById('edit-description-editor');
+                    const editPlatEditor = document.getElementById('edit-platforms-editor');
+                    const profilePreview = document.getElementById('edit-profile-image-preview');
+                    const bannerPreview = document.getElementById('edit-banner-image-preview');
+
+                    if (editId) editId.value = candidateId || '';
+                    if (editName) editName.value = editBtn.getAttribute('data-candidate') || '';
+                    if (editCourse) editCourse.value = editBtn.getAttribute('data-course-id') || '';
+                    if (editPosition) editPosition.value = editBtn.getAttribute('data-position-id') || '';
+                    if (editParty) editParty.value = editBtn.getAttribute('data-party-id') || '';
+                    if (editStatus) editStatus.value = editBtn.getAttribute('data-status') || 'Active';
+
+                    const desc = editBtn.getAttribute('data-description') || '';
+                    const plats = editBtn.getAttribute('data-platforms') || '';
+                    if (editDescHidden) editDescHidden.value = desc;
+                    if (editPlatHidden) editPlatHidden.value = plats;
+                    if (editDescEditor) editDescEditor.innerHTML = desc;
+                    if (editPlatEditor) editPlatEditor.innerHTML = plats;
+
+                    const profileImg = editBtn.getAttribute('data-profile-image');
+                    const bannerImg = editBtn.getAttribute('data-banner-image');
+                    if (profilePreview && profileImg) {
+                        profilePreview.src = profileImg;
+                        profilePreview.classList.remove('hidden');
+                    }
+                    if (bannerPreview && bannerImg) {
+                        bannerPreview.src = bannerImg;
+                        bannerPreview.classList.remove('hidden');
+                    }
+
+                    editModal.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                    return;
+                }
+
+                const deleteBtn = e.target.closest('.delete-button');
+                if (deleteBtn && confirmationModal) {
+                    e.preventDefault();
+                    const id = deleteBtn.getAttribute('data-id');
+                    deleteFormToSubmit = id ? document.getElementById(`delete-form-${id}`) : null;
+                    confirmationModal.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                    return;
+                }
+
+                const forceDeleteBtn = e.target.closest('.force-delete-button');
+                if (forceDeleteBtn && confirmationModal) {
+                    e.preventDefault();
+                    const id = forceDeleteBtn.getAttribute('data-id');
+                    deleteFormToSubmit = id ? document.getElementById(`force-delete-form-${id}`) : null;
+                    confirmationModal.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+
+            if (confirmDeleteBtn) {
+                confirmDeleteBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (deleteFormToSubmit) {
+                        deleteFormToSubmit.submit();
+                    }
+                });
+            }
+
+            const newCandidateForm = document.getElementById('new-candidate-form');
+            if (newCandidateForm) {
+                newCandidateForm.addEventListener('submit', function() {
+                    const descriptionHidden = document.getElementById('new-candidate-description');
+                    const platformsHidden = document.getElementById('new-candidate-platforms');
+                    const descriptionEditor = document.getElementById('new-description-editor');
+                    const platformsEditor = document.getElementById('new-platforms-editor');
+
+                    if (descriptionHidden && descriptionEditor && (!descriptionHidden.value || descriptionHidden.value.trim() === '')) {
+                        descriptionHidden.value = descriptionEditor.innerHTML;
+                    }
+                    if (platformsHidden && platformsEditor && (!platformsHidden.value || platformsHidden.value.trim() === '')) {
+                        platformsHidden.value = platformsEditor.innerHTML;
+                    }
+                });
+            }
+
+            const editCandidateForm = document.getElementById('edit-candidate-form');
+            if (editCandidateForm) {
+                editCandidateForm.addEventListener('submit', function() {
+                    const descriptionHidden = document.getElementById('edit-candidate-description');
+                    const platformsHidden = document.getElementById('edit-candidate-platforms');
+                    const descriptionEditor = document.getElementById('edit-description-editor');
+                    const platformsEditor = document.getElementById('edit-platforms-editor');
+
+                    if (descriptionHidden && descriptionEditor) {
+                        descriptionHidden.value = descriptionEditor.innerHTML;
+                    }
+                    if (platformsHidden && platformsEditor) {
+                        platformsHidden.value = platformsEditor.innerHTML;
+                    }
+                });
+            }
+
             // Profile image handlers
-            document.getElementById('new-candidate-image').addEventListener('change', function() {
+            const newCandidateImage = document.getElementById('new-candidate-image');
+            if (newCandidateImage) newCandidateImage.addEventListener('change', function() {
                 const filename = this.files[0]?.name || 'Choose profile image...';
                 document.getElementById('new-profile-filename').textContent = filename;
                 
@@ -392,7 +836,8 @@
                 }
             });
 
-            document.getElementById('edit-profile-image').addEventListener('change', function() {
+            const editProfileImage = document.getElementById('edit-profile-image');
+            if (editProfileImage) editProfileImage.addEventListener('change', function() {
                 const filename = this.files[0]?.name || 'Choose profile image...';
                 document.getElementById('edit-profile-filename').textContent = filename;
                 
@@ -408,7 +853,8 @@
             });
 
             // Banner image handlers
-            document.getElementById('new-candidate-banner').addEventListener('change', function() {
+            const newCandidateBanner = document.getElementById('new-candidate-banner');
+            if (newCandidateBanner) newCandidateBanner.addEventListener('change', function() {
                 const filename = this.files[0]?.name || 'Choose banner image...';
                 document.getElementById('new-banner-filename').textContent = filename;
                 
@@ -423,7 +869,8 @@
                 }
             });
 
-            document.getElementById('edit-banner-image').addEventListener('change', function() {
+            const editBannerImage = document.getElementById('edit-banner-image');
+            if (editBannerImage) editBannerImage.addEventListener('change', function() {
                 const filename = this.files[0]?.name || 'Choose banner image...';
                 document.getElementById('edit-banner-filename').textContent = filename;
                 

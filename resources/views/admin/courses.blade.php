@@ -33,9 +33,19 @@
     <section class="my-8">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-3xl font-bold text-gray-800">Courses</h3>
-            <a href="{{ route('admin.courses.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                New Course
-            </a>
+            <div class="flex items-center gap-2">
+                <a
+                    href="{{ ($isArchived ?? false) ? route('admin.courses.index') : route('admin.courses.index', ['archived' => 1]) }}"
+                    class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                    {{ ($isArchived ?? false) ? 'Back to List' : 'Archive' }}
+                </a>
+
+                @if (!($isArchived ?? false))
+                    <a href="{{ route('admin.courses.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        New Course
+                    </a>
+                @endif
+            </div>
         </div>
         
         <div class="bg-white p-6 rounded-lg shadow-lg">            
@@ -56,15 +66,33 @@
                                 <td class="py-2 px-4 border-b border-gray-300">{{ $course->coursecode }}</td>
                                 <td class="py-2 px-4 border-b border-gray-300">{{ $course->name }}</td>
                                 <td class="py-2 px-4 border-b border-gray-300">
-                                    <form method="POST" action="{{ route('admin.courses.destroy', $course->id) }}" 
-                                          onsubmit="return confirm('Are you sure you want to delete this course?')" 
-                                          style="display: inline;">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
-                                            Delete
-                                        </button>
-                                    </form>
+                                    @if (!($isArchived ?? false))
+                                        <form method="POST" action="{{ route('admin.courses.destroy', $course->id) }}" 
+                                              onsubmit="return confirm('Are you sure you want to delete this course?')" 
+                                              style="display: inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    @else
+                                        <form method="POST" action="{{ route('admin.courses.restore', $course->id) }}" style="display: inline;">
+                                            @csrf
+                                            <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                                                Restore
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{{ route('admin.courses.forceDestroy', $course->id) }}"
+                                              onsubmit="return confirm('Are you sure you want to permanently delete this course?')"
+                                              style="display: inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800">
+                                                Permanent Delete
+                                            </button>
+                                        </form>
+                                    @endif
                                 </td>
                             </tr>
                         @empty

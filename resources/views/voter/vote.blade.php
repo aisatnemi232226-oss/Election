@@ -1,7 +1,7 @@
 <html>
  <head>
   <title>
-   University Online Election System - Vote
+   Philippine Christian University Online Election System - Vote
   </title>
   <script src="https://cdn.tailwindcss.com">
   </script>
@@ -27,12 +27,16 @@
         }
   </style>
  </head>
- <body class="bg-gray-100">
-  <header class="bg-blue-600 text-white p-4">
+ <body class="relative bg-gray-100">
+  <div class="pointer-events-none fixed inset-0 flex items-center justify-center opacity-30 z-0" aria-hidden="true">
+   <img src="{{ asset('images/pculogo.png') }}" alt="" class="w-[62vw] max-w-[820px] h-auto" />
+  </div>
+  <header class="relative z-10 bg-blue-600 text-white p-4">
    <div class="container mx-auto flex flex-col items-center md:flex-row md:justify-between">
-    <h1 class="text-3xl font-bold mb-4 md:mb-0">
-        <a href="{{ url('/') }}" class="text-inherit">University Online Election System</a>
-    </h1>
+    <a href="{{ url('/') }}" class="flex items-center gap-3 mb-4 md:mb-0">
+        <img src="{{ asset('images/pculogo.png') }}" alt="School Logo" class="w-16 h-16 md:w-24 md:h-24 -my-4 object-contain flex-shrink-0" onerror="this.onerror=null;this.style.display='none';">
+        <h1 class="text-3xl font-bold">Philippine Christian University Online Election System</h1>
+    </a>
     <nav class="w-full md:w-auto">
      <div class="flex justify-center md:hidden">
       <button class="text-white focus:outline-none" id="menu-toggle">
@@ -66,16 +70,38 @@
         Contact
        </a>
       </li>
+      @guest
       <li>
-       <a class="hover:underline" href="{{ url('/login ') }}">
+       <a class="hover:underline" href="{{ \Illuminate\Support\Facades\Route::has('login') ? route('login') : url('/login') }}">
         Log In
        </a>
       </li>
+      @endguest
+      @auth
+      <li class="relative">
+       <button type="button" class="flex items-center space-x-2 focus:outline-none" data-profile-toggle>
+        <span class="inline-flex items-center justify-center w-8 h-8 bg-white text-blue-600 rounded-full">
+         <i class="fas fa-user"></i>
+        </span>
+        <span class="hidden md:inline text-sm">{{ auth()->user()->name ?? 'Profile' }}</span>
+       </button>
+       <div class="hidden absolute right-0 mt-2 w-56 bg-white text-gray-800 rounded-md shadow-lg z-50 pointer-events-auto" data-profile-menu>
+        <div class="px-4 py-2 border-b">
+         <p class="font-semibold text-sm truncate">{{ auth()->user()->name }}</p>
+         <p class="text-xs text-gray-500 truncate">{{ auth()->user()->email }}</p>
+        </div>
+        <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('logout') ? route('logout') : url('/logout') }}" class="border-t">
+         @csrf
+         <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Log out</button>
+        </form>
+       </div>
+      </li>
+      @endauth
      </ul>
     </nav>
    </div>
   </header>
-  <main class="container mx-auto p-4">
+  <main class="relative z-10 container mx-auto p-4">
    <section class="text-center my-8">
     <h2 class="text-4xl font-bold text-gray-800 mb-4">
      Choose an Election Event to Vote
@@ -86,35 +112,84 @@
    </section>
    <section class="my-8">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-     <div class="bg-white p-6 rounded-lg shadow-lg text-center tile">
-      <img alt="Election Event 1: Presidential Election" class="rounded-lg mx-auto mb-4" height="200" src="https://storage.googleapis.com/a1aa/image/lhFfvIk4Y8wBXyF0s6f7lFgIlrmPYRftwJHFFDDFv3naqMNoA.jpg" width="300"/>
-      <h4 class="text-2xl font-bold text-gray-800 mb-2">
-       Presidential Election
-      </h4>
-      <p class="text-gray-600">
-       Vote for the next student body president.
-      </p>
-     </div>
-     <div class="bg-white p-6 rounded-lg shadow-lg text-center tile">
-      <img alt="Election Event 2: Vice Presidential Election" class="rounded-lg mx-auto mb-4" height="200" src="https://storage.googleapis.com/a1aa/image/Qxcl5e8XJ7ThBC4DmUe30TM93oX1e5Rn453sqkiafWdrUZaQB.jpg" width="300"/>
-      <h4 class="text-2xl font-bold text-gray-800 mb-2">
-       Vice Presidential Election
-      </h4>
-      <p class="text-gray-600">
-       Vote for the next student body vice president.
-      </p>
-     </div>
-     <div class="bg-white p-6 rounded-lg shadow-lg text-center tile">
-      <img alt="Election Event 3: Secretary Election" class="rounded-lg mx-auto mb-4" height="200" src="https://storage.googleapis.com/a1aa/image/7ePWeky3U5qsXECimTkVewb9UDfufN1xXmzhEZ5yyTfDTlpBF.jpg" width="300"/>
-      <h4 class="text-2xl font-bold text-gray-800 mb-2">
-       Secretary Election
-      </h4>
-      <p class="text-gray-600">
-       Vote for the next student body secretary.
-      </p>
-     </div>
+     @php
+        $votePositions = $positions ?? collect();
+
+        $tileImages = [
+            'https://storage.googleapis.com/a1aa/image/lhFfvIk4Y8wBXyF0s6f7lFgIlrmPYRftwJHFFDDFv3naqMNoA.jpg',
+            'https://storage.googleapis.com/a1aa/image/Qxcl5e8XJ7ThBC4DmUe30TM93oX1e5Rn453sqkiafWdrUZaQB.jpg',
+            'https://storage.googleapis.com/a1aa/image/7ePWeky3U5qsXECimTkVewb9UDfufN1xXmzhEZ5yyTfDTlpBF.jpg',
+        ];
+     @endphp
+
+     @forelse($votePositions as $p)
+      @php
+        $defaultTileImage = $tileImages[$loop->index % max(1, count($tileImages))] ?? null;
+
+        $customTileRelative = $p->tile_img ? $p->tile_img : null;
+        $customTileExists = $customTileRelative
+            ? \Illuminate\Support\Facades\Storage::disk('public')->exists('upload/' . $customTileRelative)
+            : false;
+        $tileImage = $customTileExists
+            ? route('storage.image', ['folder' => 'upload', 'filename' => $customTileRelative])
+            : $defaultTileImage;
+      @endphp
+      <a href="{{ route('election.details', ['position' => $p->id]) }}" class="bg-white p-6 rounded-lg shadow-lg text-center tile block hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+       <div class="w-full h-52 rounded-lg bg-gray-100 mb-4 overflow-hidden">
+        <img alt="{{ $p->name }}" class="w-full h-full object-cover" height="200" src="{{ $tileImage }}" width="300"/>
+       </div>
+       <h4 class="text-2xl font-bold text-gray-800 mb-2">
+        {{ $p->name }}
+       </h4>
+       <p class="text-gray-600">
+        Click to view candidates.
+       </p>
+      </a>
+     @empty
+      <div class="bg-white p-6 rounded-lg shadow-lg text-center text-gray-600">No election positions available.</div>
+     @endforelse
     </div>
    </section>
+
+   <section class="my-8">
+    <h3 class="text-3xl font-bold text-gray-800 mb-4">
+     Parties
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+     @php
+        $voteParties = $parties ?? collect();
+     @endphp
+
+     @forelse($voteParties as $party)
+      @php
+        $partyLogoUrl = null;
+        if (!empty($party->logo)) {
+            $partyLogoFile = basename($party->logo);
+            $partyLogoUrl = route('storage.image', ['folder' => 'election-parties', 'filename' => $partyLogoFile]);
+        }
+      @endphp
+      <a href="{{ route('party.roster', ['party' => $party->id]) }}" class="bg-white p-6 rounded-lg shadow-lg text-center tile block hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+       <div class="w-full h-52 rounded-lg bg-gray-100 mb-4 overflow-hidden flex items-center justify-center">
+        @if($partyLogoUrl)
+         <img alt="{{ $party->name }}" class="w-full h-full object-cover" height="200" src="{{ $partyLogoUrl }}" width="300" onerror="this.onerror=null;this.style.display='none';"/>
+        @else
+         <div class="w-full h-full flex items-center justify-center text-gray-400 text-sm">No logo</div>
+        @endif
+       </div>
+       <h4 class="text-2xl font-bold text-gray-800 mb-2">
+        {{ $party->name }}
+       </h4>
+       <p class="text-gray-600">
+        {{ $party->description ?: 'No description available.' }}
+       </p>
+       <p class="text-gray-500 text-sm mt-2">Click to view roster.</p>
+      </a>
+     @empty
+      <div class="bg-white p-6 rounded-lg shadow-lg text-center text-gray-600">No parties available.</div>
+     @endforelse
+    </div>
+   </section>
+
    <section class="my-8">
     <h3 class="text-3xl font-bold text-gray-800 mb-4">
      Polls
@@ -268,11 +343,11 @@
     </div>
    </section>
   </main>
-  <footer class="bg-blue-600 text-white p-4 text-center">
-   <p>
-    © 2023 University Online Election System. All rights reserved.
-   </p>
-  </footer>
+    <footer class="relative z-10 bg-blue-600 text-white p-4 text-center">
+     <p>
+        © 2026 Philippine Christian University Online Election System. All rights reserved.
+     </p>
+    </footer>
   <div class="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75 hidden" id="login-modal">
    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
     <h2 class="text-2xl font-bold text-gray-800 mb-4">
@@ -300,10 +375,28 @@
    </div>
   </div>
   <script>
-   document.querySelector('a[href="login"]').addEventListener('click', function(event) {
-            event.preventDefault();
-            document.getElementById('login-modal').classList.remove('hidden');
-        });
+   const loginLink = document.querySelector('a[href="login"]');
+        if (loginLink) {
+            loginLink.addEventListener('click', function(event) {
+                event.preventDefault();
+                document.getElementById('login-modal').classList.remove('hidden');
+            });
+        }
+
+        const profileToggle = document.querySelector('[data-profile-toggle]');
+        const profileMenu = document.querySelector('[data-profile-menu]');
+        if (profileToggle && profileMenu) {
+            profileToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                profileMenu.classList.toggle('hidden');
+            });
+            profileMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+            document.addEventListener('click', () => {
+                profileMenu.classList.add('hidden');
+            });
+        }
 
         const menuToggle = document.getElementById('menu-toggle');
         const menu = document.getElementById('menu');

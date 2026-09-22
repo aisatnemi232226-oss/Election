@@ -5,6 +5,28 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-8">
+    @if(session('success'))
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <ul class="list-disc list-inside text-left">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <h1 class="text-3xl font-bold text-center mb-2">Manage Election Articles</h1>
     <p class="text-gray-600 text-center mb-8">Here you can manage all the articles related to the elections, including debates and candidate articles.</p>
 
@@ -26,6 +48,7 @@
             <thead class="bg-gray-50">
                 <tr>
                     <th class="px-6 py-3 text-left text-base font-semibold text-gray-600">Title</th>
+                    <th class="px-6 py-3 text-left text-base font-semibold text-gray-600">Image</th>
                     <th class="px-6 py-3 text-left text-base font-semibold text-gray-600">Author</th>
                     <th class="px-6 py-3 text-left text-base font-semibold text-gray-600">Date</th>
                     <th class="px-6 py-3 text-left text-base font-semibold text-gray-600">Election</th>
@@ -35,8 +58,19 @@
             </thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($articles as $article)
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-gray-50 article-row" data-id="{{ $article->id }}">
                         <td class="px-6 py-4 text-base">{{ $article->articles->title }}</td>
+                        <td class="px-6 py-4 text-base">
+                            @php
+                                $imgUrl = $article->articles->featured_image_url ?? null;
+                            @endphp
+
+                            @if(!empty($imgUrl))
+                                <img src="{{ $imgUrl }}" alt="Thumbnail" class="w-16 h-16 object-cover rounded border" onerror="this.onerror=null;this.src='https://via.placeholder.com/64x64?text=No+Image'">
+                            @else
+                                <span class="text-gray-400 text-sm">No image</span>
+                            @endif
+                        </td>
                         <td class="px-6 py-4 text-base">{{ $article->articles->author }}</td>
                         <td class="px-6 py-4 text-base">{{ \Carbon\Carbon::parse($article->articles->created_at)->format('F j, Y') }}</td>
                         <td class="px-6 py-4 text-base">
@@ -69,11 +103,58 @@
                         </td>
                     </tr>
                 @empty
+                                            // remember id for AJAX submit handler
+                                            form.dataset.articleId = id;
                     <tr>
-                        <td colspan="6" class="px-6 py-4 text-center text-gray-500 text-base">
+                        <td colspan="7" class="px-6 py-4 text-center text-gray-500 text-base">
                             No articles found. Please create your first article.
                         </td>
                     </tr>
+                                    // Submit delete via AJAX to avoid navigating to JSON response page
+                                    const deleteForm = document.getElementById('delete-form');
+                                    if (deleteForm) {
+                                        deleteForm.addEventListener('submit', async function (e) {
+                                            e.preventDefault();
+                                            const url = this.action;
+                                            const articleId = this.dataset.articleId;
+                                            try {
+                                                const res = await fetchJson(url, { method: 'DELETE' });
+                                                // close modal
+                                                const modal = document.getElementById('delete-modal');
+                                                modal.classList.add('hidden'); modal.classList.remove('flex');
+
+                                                // remove table row for the deleted article
+                                                if (articleId) {
+                                                    const rowBtn = document.querySelector(`.delete-article[data-id="${articleId}"]`);
+                                                    const tr = rowBtn ? rowBtn.closest('tr') : null;
+                                                    if (tr) tr.remove();
+                                                }
+
+                                                // show success modal then refresh the table (reload page)
+                                                const successModal = document.getElementById('delete-success-modal');
+                                                if (successModal) {
+                                                    successModal.classList.remove('hidden'); successModal.classList.add('flex');
+                                                }
+
+                                                // remove the row immediately for snappy UI
+                                                if (articleId) {
+                                                    const rowBtn = document.querySelector(`.delete-article[data-id="${articleId}"]`);
+                                                    const tr = rowBtn ? rowBtn.closest('tr') : null;
+                                                    if (tr) tr.remove();
+                                                }
+
+                                                // after short delay, hide modal and reload to refresh table state
+                                                setTimeout(() => {
+                                                    if (successModal) { successModal.classList.add('hidden'); successModal.classList.remove('flex'); }
+                                                    // reload table/page to ensure server-side pagination/sorting is consistent
+                                                    location.reload();
+                                                }, 900);
+                                            } catch (err) {
+                                                console.error(err);
+                                                alert('Unable to delete article. See console for details.');
+                                            }
+                                        });
+                                    }
                 @endforelse
             </tbody>
         </table>
@@ -96,8 +177,15 @@
                     Tags: <span id="view-tags" class="font-medium"></span>
                 </div>
                 
-                <div class="mt-6">
-                    <div id="view-content" class="prose max-w-none"></div>
+                <div class="mt-6 space-y-4">
+                    <div id="view-featured-image-wrapper" class="hidden">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-1">Featured Image</h4>
+                        <img id="view-featured-image" src="" alt="Featured" class="max-w-full h-auto rounded-lg border" />
+                    </div>
+
+                    <div>
+                        <div id="view-content" class="prose max-w-none"></div>
+                    </div>
                 </div>
             </div>
             <div class="bg-gray-50 px-6 py-4 flex justify-end border-t border-gray-200">
@@ -150,14 +238,12 @@
 
                     <!-- Tags -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Tags</label>
-                        <div id="edit-tags-container" class="flex flex-wrap gap-2 mb-3"></div>
-                        <select id="edit-tag-input" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" multiple>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tags (Candidates)</label>
+                        <select id="edit-tags" name="tags[]" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" multiple>
                             @foreach($candidates as $candidate)
                                 <option value="{{ $candidate->id }}">{{ $candidate->name }}</option>
                             @endforeach
                         </select>
-                        <input type="hidden" id="edit-tags" name="tags">
                         @error('tags')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
@@ -172,15 +258,26 @@
                     <!-- Content -->
                     <div>
                         <label for="edit-content" class="block text-sm font-medium text-gray-700 mb-2">Content</label>
-                        <div id="edit-content" class="border border-gray-300 rounded-lg min-h-[300px]"></div>
-                        <input type="hidden" id="edit-content-input" name="content">
+                        <textarea id="edit-content" name="content" rows="8" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" data-quill="1"></textarea>
                         @error('content')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
 
-                    <!-- Hidden input for storing image URLs -->
-                    <input type="hidden" id="edit-image-urls" name="featured_image">
+                    <!-- Featured Image (optional) -->
+                    <div>
+                        <label for="edit-featured-image" class="block text-sm font-medium text-gray-700 mb-2">Featured Image (optional)</label>
+                        <input type="file" id="edit-featured-image" name="featured_image" accept="image/*" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                        <p class="text-xs text-gray-500 mt-1">Upload a JPG, PNG, or GIF image up to 3MB.</p>
+                        @error('featured_image')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+
+                        <div id="edit-featured-preview-wrapper" class="mt-3 hidden">
+                            <p class="text-xs font-medium text-gray-600 mb-1">Current / New Preview:</p>
+                            <img id="edit-featured-preview" src="" alt="Featured preview" class="max-w-full h-32 object-cover rounded border">
+                        </div>
+                    </div>
                 </div>
 
                 <div class="mt-8 flex justify-end space-x-3 pt-4 border-t border-gray-200">
@@ -217,6 +314,19 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Success Modal -->
+    <div id="delete-success-modal" class="fixed inset-0 bg-gray-800 bg-opacity-60 items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-lg w-[360px] mx-auto">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-bold text-gray-800">Delete Successful</h2>
+            </div>
+            <div class="p-6 text-center">
+                <p class="text-gray-700 mb-4">The article was deleted successfully.</p>
+                <button id="delete-success-close" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">OK</button>
             </div>
         </div>
     </div>
@@ -261,13 +371,11 @@
                     <!-- Tags -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Tags (Candidates)</label>
-                        <div id="new-tags-container" class="flex flex-wrap gap-2 mb-3"></div>
-                        <select id="new-tag-input" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" multiple>
+                        <select id="new-tags" name="tags[]" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" multiple>
                             @foreach($candidates as $candidate)
                                 <option value="{{ $candidate->id }}">{{ $candidate->name }}</option>
                             @endforeach
                         </select>
-                        <input type="hidden" id="new-tags" name="tags" value="{{ old('tags') }}">
                         @error('tags')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
@@ -282,15 +390,26 @@
                     <!-- Content -->
                     <div>
                         <label for="new-content" class="block text-sm font-medium text-gray-700 mb-2">Content</label>
-                        <div id="new-content" class="border border-gray-300 rounded-lg min-h-[300px]"></div>
-                        <input type="hidden" id="new-content-input" name="content" value="{{ old('content') }}">
+                        <textarea id="new-content" name="content" rows="8" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" data-quill="1">{{ old('content') }}</textarea>
                         @error('content')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
 
-                    <!-- Hidden input for storing image URLs -->
-                    <input type="hidden" id="new-image-urls" name="featured_image">
+                    <!-- Featured Image (optional) -->
+                    <div>
+                        <label for="new-featured-image" class="block text-sm font-medium text-gray-700 mb-2">Featured Image (optional)</label>
+                        <input type="file" id="new-featured-image" name="featured_image" accept="image/*" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                        <p class="text-xs text-gray-500 mt-1">Upload a JPG, PNG, or GIF image up to 3MB.</p>
+                        @error('featured_image')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+
+                        <div id="new-featured-preview-wrapper" class="mt-3 hidden">
+                            <p class="text-xs font-medium text-gray-600 mb-1">Image Preview:</p>
+                            <img id="new-featured-preview" src="" alt="Featured preview" class="max-w-full h-32 object-cover rounded border">
+                        </div>
+                    </div>
                 </div>
 
                 <div class="mt-8 flex justify-end space-x-3 pt-4 border-t border-gray-200">
@@ -349,7 +468,242 @@
 
 @push('scripts')
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
     @vite(['resources/js/admin/election-articles.js'])
+
+    <script>
+        // Base URL for AJAX endpoints (handles apps served from subfolders)
+        window.baseUrl = "{{ url('') }}";
+        // Fallback: ensure New Article button always opens the modal
+        document.addEventListener('DOMContentLoaded', function () {
+            var newBtn = document.getElementById('new-article-button');
+            var newModal = document.getElementById('new-article-modal');
+            if (newBtn && newModal) {
+                newBtn.addEventListener('click', function () {
+                    newModal.classList.remove('hidden');
+                    newModal.classList.add('flex');
+                });
+            }
+
+            // Fallback: all close-modal buttons hide their parent modal
+            var closeButtons = document.querySelectorAll('.close-modal');
+            closeButtons.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var modal = this.closest('.fixed.inset-0');
+                    if (modal) {
+                        modal.classList.add('hidden');
+                        modal.classList.remove('flex');
+                    }
+                });
+            });
+        });
+    </script>
+    <script>
+        // Attach handlers for View / Edit / Delete buttons (works without npm build)
+        document.addEventListener('DOMContentLoaded', function () {
+            const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            async function fetchJson(url, opts = {}) {
+                opts.headers = Object.assign({ 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest' }, opts.headers || {});
+                const res = await fetch(url, opts);
+                if (!res.ok) throw new Error('Network error ' + res.status);
+                return res.json();
+            }
+
+            function setImageWithFallback(imgEl, url) {
+                const placeholder = 'https://via.placeholder.com/800x450?text=No+Image';
+                if (!imgEl) return;
+                imgEl.onerror = null; // clear previous
+                if (!url) { imgEl.src = placeholder; return; }
+                // try the provided url first
+                imgEl.src = url;
+                // on error, try replacement strategies
+                imgEl.onerror = function() {
+                    try {
+                        const u = url;
+                        // if contains featured-images, try article-images
+                        if (u.indexOf('featured-images') !== -1) {
+                            const alt = u.replace('featured-images', 'article-images');
+                            imgEl.onerror = function() {
+                                // final fallback: try basename in article-images
+                                const base = encodeURIComponent(u.split('/').pop());
+                                imgEl.onerror = null;
+                                imgEl.src = '/storage/article-images/' + base;
+                            };
+                            imgEl.src = alt;
+                            return;
+                        }
+                        // if url contains /storage/, try article-images with basename
+                        if (u.indexOf('/storage/') !== -1) {
+                            const base = encodeURIComponent(u.split('/').pop());
+                            imgEl.onerror = function() { imgEl.onerror = null; imgEl.src = '/storage/article-images/' + base; };
+                            imgEl.src = '/storage/article-images/' + base;
+                            return;
+                        }
+                        // last resort: set empty
+                        imgEl.onerror = null; imgEl.src = placeholder;
+                    } catch (e) { imgEl.onerror = null; imgEl.src = ''; }
+                };
+            }
+
+            // Prevent action buttons from triggering row click
+            document.querySelectorAll('.view-article, .edit-article, .delete-article').forEach(btn => {
+                btn.addEventListener('click', function(e) { e.stopPropagation(); });
+            });
+
+            // View
+            document.querySelectorAll('.view-article').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.getAttribute('data-id');
+                    try {
+                        const url = (window.baseUrl || '') + `/admin/election-articles/${id}`;
+                        const data = await fetchJson(url);
+                        document.getElementById('view-title').textContent = data.title || '';
+                        document.getElementById('view-author').textContent = data.author || '';
+                        document.getElementById('view-date').textContent = data.created_at || '';
+                        document.getElementById('view-election').textContent = data.election ? data.election.name : 'No Election';
+                        document.getElementById('view-show-status').textContent = data.show_status ? 'Yes' : 'No';
+                        document.getElementById('view-tags').textContent = data.tags || '';
+                        const imgWrapper = document.getElementById('view-featured-image-wrapper');
+                        const img = document.getElementById('view-featured-image');
+                        const imgUrl = data.featured_image_url || data.featured_image || null;
+                        if (imgUrl) {
+                            setImageWithFallback(img, imgUrl);
+                            imgWrapper.classList.remove('hidden');
+                        } else {
+                            setImageWithFallback(img, null);
+                            imgWrapper.classList.remove('hidden');
+                        }
+                        document.getElementById('view-content').innerHTML = data.content || '';
+                        const modal = document.getElementById('view-modal');
+                        modal.classList.remove('hidden'); modal.classList.add('flex');
+                    } catch (e) {
+                        console.error(e);
+                        alert('Unable to load article details.');
+                    }
+                });
+
+                // Click on row opens view modal
+                document.querySelectorAll('tr.article-row').forEach(row => {
+                    row.addEventListener('click', async () => {
+                        const id = row.getAttribute('data-id');
+                        if (!id) return;
+                        try {
+                            const url = (window.baseUrl || '') + `/admin/election-articles/${id}`;
+                            const data = await fetchJson(url);
+                            document.getElementById('view-title').textContent = data.title || '';
+                            document.getElementById('view-author').textContent = data.author || '';
+                            document.getElementById('view-date').textContent = data.created_at || '';
+                            document.getElementById('view-election').textContent = data.election ? data.election.name : 'No Election';
+                            document.getElementById('view-show-status').textContent = data.show_status ? 'Yes' : 'No';
+                            document.getElementById('view-tags').textContent = data.tags || '';
+                            const imgWrapper = document.getElementById('view-featured-image-wrapper');
+                            const img = document.getElementById('view-featured-image');
+                            const imgUrl = data.featured_image_url || data.featured_image || null;
+                            if (imgUrl) { setImageWithFallback(img, imgUrl); imgWrapper.classList.remove('hidden'); } else { setImageWithFallback(img, null); imgWrapper.classList.remove('hidden'); }
+                            document.getElementById('view-content').innerHTML = data.content || '';
+                            const modal = document.getElementById('view-modal');
+                            modal.classList.remove('hidden'); modal.classList.add('flex');
+                        } catch (e) {
+                            console.error(e);
+                            alert('Unable to load article details.');
+                        }
+                    });
+                });
+            });
+
+            // Edit
+            document.querySelectorAll('.edit-article').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.getAttribute('data-id');
+                    try {
+                        const url = (window.baseUrl || '') + `/admin/election-articles/${id}/edit`;
+                        const data = await fetchJson(url);
+                        const form = document.getElementById('edit-form');
+                        form.action = (window.baseUrl || '') + `/admin/election-articles/${id}`;
+                        document.getElementById('edit-id').value = data.id || '';
+                        document.getElementById('edit-title').value = data.title || '';
+                        document.getElementById('edit-author').value = data.author || '';
+                        document.getElementById('edit-election').value = data.election_name || '';
+                        // tags: if provided as array, select options
+                        if (Array.isArray(data.tags)) {
+                            const select = document.getElementById('edit-tags');
+                            Array.from(select.options).forEach(opt => { opt.selected = data.tags.includes(opt.value) || data.tags.includes(Number(opt.value)); });
+                        }
+                        document.getElementById('edit-show-status').checked = !!data.show_status;
+                        const previewWrapper = document.getElementById('edit-featured-preview-wrapper');
+                        const previewImg = document.getElementById('edit-featured-preview');
+                        const imgUrl = data.featured_image_url || data.featured_image || null;
+                        if (imgUrl) { setImageWithFallback(previewImg, imgUrl); previewWrapper.classList.remove('hidden'); } else { previewImg.src = ''; previewWrapper.classList.add('hidden'); }
+                        document.getElementById('edit-content').value = data.content || '';
+                        const modal = document.getElementById('edit-modal');
+                        modal.classList.remove('hidden'); modal.classList.add('flex');
+                    } catch (e) {
+                        console.error(e);
+                        alert('Unable to load article for editing.');
+                    }
+                });
+            });
+
+            // Delete
+            document.querySelectorAll('.delete-article').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.getAttribute('data-id');
+                    const form = document.getElementById('delete-form');
+                    form.action = (window.baseUrl || '') + `/admin/election-articles/${id}`;
+                    // store id so submit handler knows which row to remove
+                    form.dataset.articleId = id;
+                    const modal = document.getElementById('delete-modal');
+                    modal.classList.remove('hidden'); modal.classList.add('flex');
+                });
+            });
+
+            // Submit delete via AJAX to avoid navigating to JSON response page
+            const deleteForm = document.getElementById('delete-form');
+            if (deleteForm) {
+                deleteForm.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+                    const url = this.action;
+                    const articleId = this.dataset.articleId;
+                    try {
+                        const res = await fetchJson(url, { method: 'DELETE' });
+                        // close modal
+                        const modal = document.getElementById('delete-modal');
+                        modal.classList.add('hidden'); modal.classList.remove('flex');
+
+                        // show success modal then refresh the table (reload page)
+                        const successModal = document.getElementById('delete-success-modal');
+                        if (successModal) {
+                            successModal.classList.remove('hidden'); successModal.classList.add('flex');
+                        }
+
+                        // remove the row immediately for snappy UI
+                        if (articleId) {
+                            const rowBtn = document.querySelector(`.delete-article[data-id="${articleId}"]`);
+                            const tr = rowBtn ? rowBtn.closest('tr') : null;
+                            if (tr) tr.remove();
+                        }
+
+                        // after short delay, hide modal and reload to refresh table state
+                        setTimeout(() => {
+                            if (successModal) { successModal.classList.add('hidden'); successModal.classList.remove('flex'); }
+                            location.reload();
+                        }, 900);
+                    } catch (err) {
+                        console.error(err);
+                        alert('Unable to delete article. See console for details.');
+                    }
+                });
+            }
+
+            // Close button on success modal: hide and reload immediately
+            const successClose = document.getElementById('delete-success-close');
+            if (successClose) {
+                successClose.addEventListener('click', function () {
+                    const sm = document.getElementById('delete-success-modal');
+                    if (sm) { sm.classList.add('hidden'); sm.classList.remove('flex'); }
+                    location.reload();
+                });
+            }
+        });
+    </script>
 @endpush

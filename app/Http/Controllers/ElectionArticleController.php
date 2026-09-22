@@ -70,13 +70,16 @@ class ElectionArticleController extends Controller
         try {
             Log::info('New article creation request received', $request->all());
             
+            // Note: featured_image can be an existing path OR an uploaded file.
+            // We validate it as nullable here and only treat it as an image
+            // when an actual file is uploaded (see hasFile() check below).
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
                 'author' => 'required|string|max:255',
                 'content' => 'required|string',
                 'election_name' => 'required|string|max:255',
                 'show_status' => 'nullable',
-                'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:3072',
+                'featured_image' => 'nullable',
                 'tags' => 'nullable',
             ]);
 
@@ -111,13 +114,20 @@ class ElectionArticleController extends Controller
                 Log::info('Featured image saved at: ' . $featuredImagePath);
             }
 
-            // Parse tags
+            // Parse tags (accept array from multi-select or JSON/string)
             $tags = [];
             if (!empty($validated['tags'])) {
+                $rawTags = $validated['tags'];
                 try {
-                    $tags = json_decode($validated['tags'], true);
-                    if (!is_array($tags)) {
-                        $tags = [];
+                    if (is_array($rawTags)) {
+                        $tags = array_values($rawTags);
+                    } elseif (is_string($rawTags)) {
+                        $decoded = json_decode($rawTags, true);
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                            $tags = $decoded;
+                        } else {
+                            $tags = array_filter(array_map('trim', explode(',', $rawTags)));
+                        }
                     }
                     Log::info('Parsed tags for new article:', $tags);
                 } catch (\Exception $e) {
@@ -126,13 +136,13 @@ class ElectionArticleController extends Controller
                 }
             }
 
-            // Create article
+            // Create article (Article model casts 'tags' to array/json for us)
             $article = Article::create([
                 'title' => $validated['title'],
                 'author' => $validated['author'],
                 'content' => $validated['content'],
                 'featured_image' => $featuredImagePath,
-                'tags' => json_encode($tags)
+                'tags' => $tags,
             ]);
             
             Log::info('Created new article with ID: ' . $article->id);
@@ -233,6 +243,7 @@ class ElectionArticleController extends Controller
                 'tags_array' => $tags,
                 'created_at' => $article->created_at ? $article->created_at->format('Y-m-d H:i:s') : null,
                 'featured_image' => $article->featured_image ?? null,
+                'featured_image_url' => $article->featured_image_url ?? null,
                 'election_id' => $electionArticle->election_id ?? null,
                 'show_status' => $electionArticle->show_status ?? 0,
             ];
@@ -330,6 +341,7 @@ class ElectionArticleController extends Controller
                 'candidate_tags' => $candidateNames,
                 'created_at' => $article->created_at ? $article->created_at->format('Y-m-d H:i:s') : null,
                 'featured_image' => $article->featured_image ?? null,
+                'featured_image_url' => $article->featured_image_url ?? null,
                 'election_name' => $electionArticle->election ? $electionArticle->election->name : '',
                 'election_id' => $electionArticle->election ? $electionArticle->election->id : null,
                 'show_status' => (int) $electionArticle->show_status,
@@ -368,13 +380,14 @@ class ElectionArticleController extends Controller
 
             $article = $electionArticle->articles;
 
+            // Same logic as store(): featured_image may be an existing path or a new upload.
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
                 'author' => 'required|string|max:255',
                 'content' => 'required|string',
                 'election_name' => 'required|string|max:255',
                 'show_status' => 'nullable|in:0,1',
-                'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:3072',
+                'featured_image' => 'nullable',
                 'tags' => 'nullable'
             ]);
 
@@ -413,11 +426,18 @@ class ElectionArticleController extends Controller
             }
 
             $tags = [];
-            if ($validated['tags']) {
+            if (!empty($validated['tags'])) {
+                $rawTags = $validated['tags'];
                 try {
-                    $tags = json_decode($validated['tags'], true);
-                    if (!is_array($tags)) {
-                        $tags = [];
+                    if (is_array($rawTags)) {
+                        $tags = array_values($rawTags);
+                    } elseif (is_string($rawTags)) {
+                        $decoded = json_decode($rawTags, true);
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                            $tags = $decoded;
+                        } else {
+                            $tags = array_filter(array_map('trim', explode(',', $rawTags)));
+                        }
                     }
                 } catch (\Exception $e) {
                     Log::warning('Error parsing tags in update: ' . $e->getMessage());
@@ -430,7 +450,7 @@ class ElectionArticleController extends Controller
                 'author' => $validated['author'],
                 'content' => $validated['content'],
                 'featured_image' => $featuredImagePath,
-                'tags' => json_encode($tags)
+                'tags' => $tags,
             ]);
 
             // Get show_status value correctly from request
@@ -570,6 +590,59 @@ class ElectionArticleController extends Controller
                 'success' => false,
                 'message' => 'Error uploading image: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Serve article image files from storage/app/public/article-images.
+     * This avoids public symlink issues on some Windows/dev setups.
+     */
+    public function serveArticleImage($filename)
+    {
+        try {
+            $path = 'article-images/' . $filename;
+            if (!Storage::disk('public')->exists($path)) {
+                abort(404);
+            }
+
+            $full = storage_path('app/public/' . $path);
+            $mime = mime_content_type($full) ?: 'application/octet-stream';
+
+            return response()->file($full, [
+                'Content-Type' => $mime,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error serving article image: ' . $e->getMessage());
+            abort(404);
+        }
+    }
+
+    /**
+     * Serve image files from storage/app/public/{folder}/{filename}.
+     * Only allow a small safe set of folders to avoid exposing other files.
+     */
+    public function serveStorageImage($folder, $filename)
+    {
+        try {
+            $allowed = ['article-images', 'featured-images', 'quill-images', 'upload'];
+            if (!in_array($folder, $allowed, true)) {
+                abort(404);
+            }
+
+            $path = $folder . '/' . $filename;
+            if (!Storage::disk('public')->exists($path)) {
+                abort(404);
+            }
+
+            $full = storage_path('app/public/' . $path);
+            $mime = mime_content_type($full) ?: 'application/octet-stream';
+
+            return response()->file($full, [
+                'Content-Type' => $mime,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error serving storage image: ' . $e->getMessage());
+            abort(404);
         }
     }
 }

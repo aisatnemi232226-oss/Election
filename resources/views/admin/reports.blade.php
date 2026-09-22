@@ -159,6 +159,7 @@
                         <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
                                   id="report-description" 
                                   name="description" 
+                                  data-quill="1"
                                   rows="3" 
                                   placeholder="Enter report description"></textarea>
                     </div>
@@ -204,6 +205,7 @@
                         <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
                                   id="edit-report-description" 
                                   name="description" 
+                                  data-quill="1"
                                   rows="3" 
                                   placeholder="Enter report description"></textarea>
                     </div>

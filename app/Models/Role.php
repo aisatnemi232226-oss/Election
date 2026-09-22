@@ -12,6 +12,9 @@ class Role extends Model
 
     protected $table = 'roles';
 
+    // Disable automatic created_at/updated_at handling since the table does not have an updated_at column
+    public $timestamps = false;
+
     protected $fillable = [
         'name',
         'description',

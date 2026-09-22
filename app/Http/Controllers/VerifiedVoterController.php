@@ -7,6 +7,8 @@ use App\Models\VerifiedVoter;
 use App\Models\User;
 use App\Models\Acadyr;
 use App\Models\Semesters;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\VerifiedVotersExport;
 use App\Imports\VerifiedVotersImport;
@@ -18,43 +20,99 @@ class VerifiedVoterController extends Controller
     {
         \Log::info('Verified Voters Query Started');
     
-        // Get filter and pagination parameters
-        $academicYear = $request->input('academic_year');
-        $perPage = $request->input('perPage', 10); // Default to 10 per page
-        $perPage = $perPage === 'all' ? VerifiedVoter::count() : (int)$perPage;
-    
-        $query = VerifiedVoter::with(['users', 'acadyr', 'semesters']);
-    
-        // Apply academic year filter only if it's not "all"
-        if (!empty($academicYear) && $academicYear !== "all") {
-            $query->whereHas('acadyr', function ($q) use ($academicYear) {
-                $q->where('name', $academicYear);
-            });
+        $perPage = (int) $request->input('perPage', 10);
+        $page = (int) max(1, $request->input('page', 1));
+
+        // Counts for pagination
+        $baseQuery = User::query()->where('is_admin', false);
+        $totalUsers = $baseQuery->count();
+        $totalUnverified = (clone $baseQuery)->whereDoesntHave('verifiedVoter')->count();
+
+        // Determine which users belong to this page: first consume unverified users, then verified
+        $start = ($page - 1) * $perPage;
+        $usersForPage = collect();
+
+        if ($start < $totalUnverified) {
+            $unverifiedSkip = $start;
+            $unverifiedTake = min($perPage, $totalUnverified - $start);
+            $unverifiedUsers = (clone $baseQuery)
+                ->whereDoesntHave('verifiedVoter')
+                ->orderByDesc('id')
+                ->skip($unverifiedSkip)
+                ->take($unverifiedTake)
+                ->get();
+
+            $usersForPage = $usersForPage->merge($unverifiedUsers);
+
+            if ($unverifiedTake < $perPage) {
+                $remaining = $perPage - $unverifiedTake;
+                $verifiedUsers = (clone $baseQuery)
+                    ->whereHas('verifiedVoter')
+                    ->with(['verifiedVoter.acadyr', 'verifiedVoter.semesters'])
+                    ->orderByDesc('id')
+                    ->skip(0)
+                    ->take($remaining)
+                    ->get();
+
+                $usersForPage = $usersForPage->merge($verifiedUsers);
+            }
+        } else {
+            // Page is entirely within verified users
+            $verifiedSkip = $start - $totalUnverified;
+            $verifiedUsers = (clone $baseQuery)
+                ->whereHas('verifiedVoter')
+                ->with(['verifiedVoter.acadyr', 'verifiedVoter.semesters'])
+                ->orderByDesc('id')
+                ->skip($verifiedSkip)
+                ->take($perPage)
+                ->get();
+
+            $usersForPage = $verifiedUsers;
         }
-    
-        // Always apply pagination
-        $verifiedVoters = $query->paginate($perPage)->appends($request->except('page'));
-    
-        \Log::info('Verified Voters Count: ' . $verifiedVoters->total());
+
+        $voters = new LengthAwarePaginator($usersForPage, $totalUsers, $perPage, $page, [
+            'path' => url()->current(),
+            'query' => $request->query(),
+        ]);
+
+        \Log::info('Verify Voters (users) Count: ' . $voters->total());
     
         // Check if it's an AJAX request (for filtering & pagination)
         if ($request->ajax()) {
             return response()->json([
-                'verifiedVoters' => $verifiedVoters->items(),
+                'voters' => collect($voters->items())->map(function ($user) {
+                    $verified = $user->verifiedVoter;
+                    return [
+                        'user' => [
+                            'id' => $user->id,
+                            'name' => $user->name,
+                            'idnumber' => $user->idnumber,
+                        ],
+                        'is_verified' => (bool) $verified,
+                        'verified_voter_id' => $verified?->id,
+                        'acadyr' => $verified?->acadyr ? [
+                            'id' => $verified->acadyr->id,
+                            'name' => $verified->acadyr->name,
+                        ] : null,
+                        'semesters' => $verified?->semesters ? [
+                            'id' => $verified->semesters->id,
+                            'name' => $verified->semesters->name,
+                        ] : null,
+                    ];
+                })->values(),
                 'pagination' => [
-                    'total' => $verifiedVoters->total(),
-                    'per_page' => $verifiedVoters->perPage(),
-                    'current_page' => $verifiedVoters->currentPage(),
-                    'last_page' => $verifiedVoters->lastPage(),
-                    'from' => $verifiedVoters->firstItem(),
-                    'to' => $verifiedVoters->lastItem(),
+                    'total' => $voters->total(),
+                    'per_page' => $voters->perPage(),
+                    'current_page' => $voters->currentPage(),
+                    'last_page' => $voters->lastPage(),
+                    'from' => $voters->firstItem(),
+                    'to' => $voters->lastItem(),
                 ],
-                'pagination_html' => view('partials.pagination', compact('verifiedVoters'))->render()
+                'pagination_html' => ''
             ]);
         }
-    
-        // Fetch unique academic years and semesters
-        $academicYearSemesters = VerifiedVoter::with(['acadyr', 'semesters'])   
+
+        $academicYearSemesters = VerifiedVoter::with(['acadyr', 'semesters'])
             ->get()
             ->filter(fn($voter) => $voter->acadyr && $voter->semesters)
             ->map(fn($voter) => [
@@ -65,8 +123,11 @@ class VerifiedVoterController extends Controller
             ->unique('id')
             ->sortBy('semester_order')
             ->values();
-    
-        return view('admin.verified-voters', compact('verifiedVoters', 'academicYearSemesters', 'perPage'));
+
+        $acadyrs = Acadyr::query()->orderByDesc('id')->get(['id', 'name']);
+        $semesters = Semesters::query()->orderBy('id')->get(['id', 'name']);
+
+        return view('admin.verified-voters', compact('voters', 'academicYearSemesters', 'perPage', 'acadyrs', 'semesters'));
     }    
     
     public function search(Request $request)
@@ -76,57 +137,108 @@ class VerifiedVoterController extends Controller
             $acadyrSemester = $request->input('acadyrSemester', '');
             $perPage = $request->input('perPage', 10);
             
-            // Handle 'all' option for perPage
-            if ($perPage === 'all') {
-                $query = VerifiedVoter::with(['users', 'acadyr', 'semesters']);
-                if (!empty($search)) {
-                    $query->whereHas('users', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%")
-                          ->orWhere('idnumber', 'like', "%{$search}%");
-                    });
-                }
-                if (!empty($acadyrSemester)) {
-                    [$acadyrId, $semId] = explode('-', $acadyrSemester);
-                    if ($acadyrId && $semId) {
-                        $query->where('acadyr_id', $acadyrId)
-                              ->where('sem_id', $semId);
-                    }
-                }
-                $perPage = $query->count();
-            }
-    
-            $query = VerifiedVoter::with(['users', 'acadyr', 'semesters']);
-    
+            // Build base query with filters applied so counts and slicing are consistent
+            $baseQuery = User::query()->where('is_admin', false);
+
             if (!empty($search)) {
-                $query->whereHas('users', function ($q) use ($search) {
+                $baseQuery->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('idnumber', 'like', "%{$search}%");
+                        ->orWhere('idnumber', 'like', "%{$search}%");
                 });
             }
-    
+
             if (!empty($acadyrSemester)) {
                 [$acadyrId, $semId] = explode('-', $acadyrSemester);
-    
                 if ($acadyrId && $semId) {
-                    $query->where('acadyr_id', $acadyrId)
-                          ->where('sem_id', $semId);
+                    $baseQuery->whereHas('verifiedVoter', function ($q) use ($acadyrId, $semId) {
+                        $q->where('acadyr_id', $acadyrId)->where('sem_id', $semId);
+                    });
                 }
             }
-    
-            $verifiedVoters = $query->paginate((int)$perPage);
-            
+
+            // Pagination parameters
+            $perPage = ($perPage === 'all') ? (int) $baseQuery->count() : (int) $perPage;
+            $page = (int) max(1, $request->input('page', 1));
+            $start = ($page - 1) * $perPage;
+
+            $totalUsers = $baseQuery->count();
+            $totalUnverified = (clone $baseQuery)->whereDoesntHave('verifiedVoter')->count();
+
+            $usersForPage = collect();
+
+            if ($start < $totalUnverified) {
+                $unverifiedSkip = $start;
+                $unverifiedTake = min($perPage, $totalUnverified - $start);
+                $unverifiedUsers = (clone $baseQuery)
+                    ->whereDoesntHave('verifiedVoter')
+                    ->orderByDesc('id')
+                    ->skip($unverifiedSkip)
+                    ->take($unverifiedTake)
+                    ->get();
+
+                $usersForPage = $usersForPage->merge($unverifiedUsers);
+
+                if ($unverifiedTake < $perPage) {
+                    $remaining = $perPage - $unverifiedTake;
+                    $verifiedUsers = (clone $baseQuery)
+                        ->whereHas('verifiedVoter')
+                        ->with(['verifiedVoter.acadyr', 'verifiedVoter.semesters'])
+                        ->orderByDesc('id')
+                        ->skip(0)
+                        ->take($remaining)
+                        ->get();
+
+                    $usersForPage = $usersForPage->merge($verifiedUsers);
+                }
+            } else {
+                $verifiedSkip = $start - $totalUnverified;
+                $verifiedUsers = (clone $baseQuery)
+                    ->whereHas('verifiedVoter')
+                    ->with(['verifiedVoter.acadyr', 'verifiedVoter.semesters'])
+                    ->orderByDesc('id')
+                    ->skip($verifiedSkip)
+                    ->take($perPage)
+                    ->get();
+
+                $usersForPage = $verifiedUsers;
+            }
+
+            $users = new LengthAwarePaginator($usersForPage, $totalUsers, $perPage, $page, [
+                'path' => url()->current(),
+                'query' => $request->query(),
+            ]);
+
             return response()->json([
-                'voters' => $verifiedVoters->items(),
+                'voters' => collect($users->items())->map(function ($user) {
+                    $verified = $user->verifiedVoter;
+                    return [
+                        'user' => [
+                            'id' => $user->id,
+                            'name' => $user->name,
+                            'idnumber' => $user->idnumber,
+                        ],
+                        'is_verified' => (bool) $verified,
+                        'verified_voter_id' => $verified?->id,
+                        'acadyr' => $verified?->acadyr ? [
+                            'id' => $verified->acadyr->id,
+                            'name' => $verified->acadyr->name,
+                        ] : null,
+                        'semesters' => $verified?->semesters ? [
+                            'id' => $verified->semesters->id,
+                            'name' => $verified->semesters->name,
+                        ] : null,
+                    ];
+                })->values(),
                 'pagination' => [
-                    'total' => $verifiedVoters->total(),
-                    'per_page' => $verifiedVoters->perPage(),
-                    'current_page' => $verifiedVoters->currentPage(),
-                    'last_page' => $verifiedVoters->lastPage(),
-                    'from' => $verifiedVoters->firstItem(),
-                    'to' => $verifiedVoters->lastItem()
+                    'total' => $users->total(),
+                    'per_page' => $users->perPage(),
+                    'current_page' => $users->currentPage(),
+                    'last_page' => $users->lastPage(),
+                    'from' => $users->firstItem(),
+                    'to' => $users->lastItem()
                 ]
             ]);
-    
+
         } catch (\Exception $e) {
             Log::error('Voter search error: ' . $e->getMessage());
             return response()->json(['error' => 'An error occurred while retrieving data'], 500);
@@ -145,6 +257,13 @@ class VerifiedVoterController extends Controller
             ->where('acadyr_id', $request->acadyr_id)
             ->where('sem_id', $request->sem_id)
             ->exists()) {
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User is already verified for this academic year and semester.'
+                ], 422);
+            }
+
             return redirect()->route('admin.verified-voters.index')
                 ->with('error', 'User is already verified for this academic year and semester.');
         }
@@ -154,6 +273,13 @@ class VerifiedVoterController extends Controller
             'acadyr_id' => $request->acadyr_id,
             'sem_id' => $request->sem_id,
         ]);
+
+        if ($request->ajax() || $request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Voter verified successfully.'
+            ]);
+        }
 
         return redirect()->route('admin.verified-voters.index')->with('success', 'Voter verified successfully.');
     }

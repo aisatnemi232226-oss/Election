@@ -49,7 +49,7 @@
                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline"
                     >
                         <option value="">All Years</option>
-                        @foreach ($academicYearSemesters as $item)
+                        @foreach (($academicYearSemesters ?? collect()) as $item)
                             @if (!empty($item['id']) && !empty($item['name']))
                                 <option value="{{ $item['id'] }}">{{ $item['name'] }}</option>
                             @endif
@@ -116,16 +116,45 @@
                     </tr>
                 </thead>
                 <tbody id="voters-table" class="bg-white divide-y divide-gray-200">
-                    @foreach ($verifiedVoters as $voter)
+                    @php
+                        // If $voters is a paginator, get its items; otherwise use the collection/array directly
+                        $voterItems = $voters instanceof \Illuminate\Pagination\AbstractPaginator ? $voters->items() : ($voters ?? []);
+                        $votersCollection = collect($voterItems);
+                        $unverified = $votersCollection->filter(function($u) { return empty($u->verifiedVoter); });
+                        $verified = $votersCollection->filter(function($u) { return !empty($u->verifiedVoter); });
+                    @endphp
+
+                    {{-- Render unverified first, then verified --}}
+                    @foreach (($unverified ?? collect()) as $user)
+                        @php($verified = $user->verifiedVoter)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">{{ optional($voter->users)->name ?? 'N/A' }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">{{ optional($voter->users)->idnumber ?? 'N/A' }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">{{ optional($voter->acadyr)->name ?? 'N/A' }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">{{ optional($voter->semesters)->name ?? 'N/A' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ $user->name ?? 'N/A' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ $user->idnumber ?? 'N/A' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ optional($verified?->acadyr)->name ?? 'N/A' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ optional($verified?->semesters)->name ?? 'N/A' }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <button 
-                                    class="remove-voter bg-red-600 hover:bg-red-700 text-white font-medium py-1.5 px-3 rounded-md transition duration-200" 
-                                    data-id="{{ $voter->id }}"
+                                <button
+                                    class="verify-voter bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-1.5 px-3 rounded-md transition duration-200"
+                                    data-user-id="{{ $user->id }}"
+                                    data-user-name="{{ $user->name }}"
+                                >
+                                    Verify
+                                </button>
+                            </td>
+                        </tr>
+                    @endforeach
+
+                    @foreach (($verified ?? collect()) as $user)
+                        @php($verified = $user->verifiedVoter)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">{{ $user->name ?? 'N/A' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ $user->idnumber ?? 'N/A' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ optional($verified?->acadyr)->name ?? 'N/A' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ optional($verified?->semesters)->name ?? 'N/A' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <button
+                                    class="remove-voter bg-red-600 hover:bg-red-700 text-white font-medium py-1.5 px-3 rounded-md transition duration-200"
+                                    data-id="{{ $verified->id }}"
                                 >
                                     Remove
                                 </button>
@@ -143,7 +172,7 @@
 
     {{-- Import Modal --}}
     <div id="import-modal" class="fixed inset-0 bg-gray-500 bg-opacity-75 items-center justify-center hidden z-50">
-        <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-auto mt-20">
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-auto">
             <h3 class="text-xl font-bold mb-4 text-gray-800">Import Verified Voters</h3>
             <p class="mb-4 text-gray-600">Upload a CSV file to import verified voters. You can download a sample file <a href="{{ route('admin.verified-voters.sample') }}" class="text-blue-600 hover:text-blue-800 underline">here</a>.</p>
             
@@ -162,6 +191,40 @@
         </div>
     </div>
 </section>
+
+<div id="verify-modal" class="fixed inset-0 bg-gray-500 bg-opacity-75 items-center justify-center hidden z-50">
+    <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-auto">
+        <h3 class="text-xl font-bold mb-4 text-gray-800">Verify Voter</h3>
+        <div class="mb-4 text-sm text-gray-700" id="verify-modal-name"></div>
+
+        <input type="hidden" id="verify-user-id" value="">
+
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Academic Year</label>
+            <select id="verify-acadyr" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline">
+                <option value="">Select Academic Year</option>
+                @foreach (($acadyrs ?? collect()) as $ay)
+                    <option value="{{ $ay->id }}">{{ $ay->name }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Semester</label>
+            <select id="verify-sem" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline">
+                <option value="">Select Semester</option>
+                @foreach (($semesters ?? collect()) as $s)
+                    <option value="{{ $s->id }}">{{ $s->name }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="flex justify-end space-x-2">
+            <button id="cancel-verify-button" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition duration-200">Cancel</button>
+            <button id="confirm-verify-button" class="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition duration-200">Verify</button>
+        </div>
+    </div>
+</div>
 
 {{-- Scripts for Search, Filtering, Import & Export --}}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -215,6 +278,7 @@ $(document).ready(function () {
             success: function(response) {
                 updateVotersTable(response.voters);
                 updatePagination(response.pagination);
+                applyFocusFromUrl();
             },
             error: function(xhr, status, error) {
                 console.error("Error fetching data:", error);
@@ -291,26 +355,57 @@ $(document).ready(function () {
     function updateVotersTable(voters) {
         let tableBody = $('#voters-table');
         tableBody.empty();
-        
+        // Ensure unverified voters are displayed first
+        try {
+            if (Array.isArray(voters)) {
+                voters.sort(function(a, b) {
+                    if ((a.is_verified === undefined ? false : a.is_verified) === (b.is_verified === undefined ? false : b.is_verified)) return 0;
+                    return (a.is_verified ? 1 : -1);
+                });
+            }
+        } catch (e) {
+            console.error('Error sorting voters:', e);
+        }
+
         if (!voters || voters.length === 0) {
             tableBody.append('<tr><td colspan="5" class="text-center py-8 text-gray-500">No voters found</td></tr>');
             return;
         }
         
-        voters.forEach(voter => {
+        voters.forEach(v => {
+            const userId = v.user ? v.user.id : '';
+            const name = v.user ? (v.user.name || 'N/A') : 'N/A';
+            const idnumber = v.user ? (v.user.idnumber || 'N/A') : 'N/A';
+            const acadyr = v.acadyr ? (v.acadyr.name || 'N/A') : 'N/A';
+            const sem = v.semesters ? (v.semesters.name || 'N/A') : 'N/A';
+            const isVerified = !!v.is_verified;
+            const verifiedId = v.verified_voter_id || '';
+
+            const actionHtml = isVerified
+                ? `<button class="remove-voter bg-red-600 hover:bg-red-700 text-white font-medium py-1.5 px-3 rounded-md transition duration-200" data-id="${verifiedId}">Remove</button>`
+                : `<button class="verify-voter bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-1.5 px-3 rounded-md transition duration-200" data-user-id="${userId}" data-user-name="${name}">Verify</button>`;
+
             let row = `
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap">${voter.users ? voter.users.name : 'N/A'}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${voter.users ? voter.users.idnumber : 'N/A'}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${voter.acadyr ? voter.acadyr.name : 'N/A'}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${voter.semesters ? voter.semesters.name : 'N/A'}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <button class="remove-voter bg-red-600 hover:bg-red-700 text-white font-medium py-1.5 px-3 rounded-md transition duration-200" 
-                                data-id="${voter.id}">Remove</button>
-                    </td>
+                <tr class="hover:bg-gray-50" data-user-id="${userId}">
+                    <td class="px-6 py-4 whitespace-nowrap">${name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${idnumber}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${acadyr}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${sem}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${actionHtml}</td>
                 </tr>`;
             tableBody.append(row);
         });
+    }
+
+    function applyFocusFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const focus = params.get('focus');
+        if (!focus) return;
+        const row = document.querySelector(`#voters-table tr[data-user-id="${focus}"]`);
+        if (!row) return;
+        row.scrollIntoView({ block: 'center' });
+        row.classList.add('bg-yellow-50');
+        setTimeout(() => row.classList.remove('bg-yellow-50'), 2500);
     }
 
     $(document).on('click', '.remove-voter', function () {
@@ -348,6 +443,81 @@ $(document).ready(function () {
                 }
             });
         }
+    });
+
+    $(document).on('click', '.verify-voter', function () {
+        const userId = $(this).data('user-id');
+        const userName = $(this).data('user-name');
+        $('#verify-user-id').val(userId);
+        $('#verify-modal-name').text(userName ? `Verify: ${userName}` : 'Verify voter');
+        $('#verify-acadyr').val('');
+        $('#verify-sem').val('');
+        $('#verify-modal').removeClass('hidden').addClass('flex');
+    });
+
+    $('#cancel-verify-button').click(function() {
+        $('#verify-modal').removeClass('flex').addClass('hidden');
+    });
+
+    $('#verify-modal').click(function(e) {
+        if (e.target === this) {
+            $(this).removeClass('flex').addClass('hidden');
+        }
+    });
+
+    $('#confirm-verify-button').click(function() {
+        const userId = $('#verify-user-id').val();
+        const acadyrId = $('#verify-acadyr').val();
+        const semId = $('#verify-sem').val();
+
+        if (!userId || !acadyrId || !semId) {
+            alert('Please select Academic Year and Semester.');
+            return;
+        }
+
+        $.ajax({
+            url: '{{ route("admin.verified-voters.store") }}',
+            type: 'POST',
+            data: {
+                user_id: userId,
+                acadyr_id: acadyrId,
+                sem_id: semId
+            },
+            beforeSend: function() {
+                $('#confirm-verify-button')
+                    .prop('disabled', true)
+                    .text('Verifying...');
+            },
+            success: function() {
+                $('#verify-modal').removeClass('flex').addClass('hidden');
+                fetchFilteredVoters(currentPage);
+                $('#message-box')
+                    .removeClass('hidden bg-red-100 text-red-800')
+                    .addClass('bg-green-100 text-green-800')
+                    .text('Voter verified successfully!')
+                    .show();
+                setTimeout(() => $('#message-box').fadeOut('slow', function() {
+                    $(this).addClass('hidden');
+                }), 3000);
+            },
+            error: function(xhr) {
+                let msg = 'Failed to verify voter. Please try again.';
+                if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                $('#message-box')
+                    .removeClass('hidden bg-green-100 text-green-800')
+                    .addClass('bg-red-100 text-red-800')
+                    .text(msg)
+                    .show();
+                setTimeout(() => $('#message-box').fadeOut('slow', function() {
+                    $(this).addClass('hidden');
+                }), 5000);
+            },
+            complete: function() {
+                $('#confirm-verify-button')
+                    .prop('disabled', false)
+                    .text('Verify');
+            }
+        });
     });
 
     $('#export-button').on('click', function () {

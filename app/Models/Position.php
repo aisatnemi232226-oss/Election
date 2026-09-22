@@ -22,7 +22,7 @@ class Position extends Model
     const DELETED_AT = 'deleted_at';
 
     protected $fillable = [
-        'name', 'description', 'status',
+        'name', 'description', 'status', 'tile_img',
     ];
 
     // Update the dates array to use the correct column names

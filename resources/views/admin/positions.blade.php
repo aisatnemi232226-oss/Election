@@ -18,7 +18,7 @@
         }
 
         function getForceDeleteUrl($id) {
-            return route('admin.positions.force-delete', $id);
+            return route('admin.positions.forceDestroy', $id);
         }
     @endphp
     <section class="text-center my-8">
@@ -57,17 +57,26 @@
             <h1 class="text-2xl font-bold text-gray-800">Positions List</h1>
             
             <div class="flex items-center space-x-4">
+                <a
+                    href="{{ ($isArchived ?? false) ? route('admin.positions.index') : route('admin.positions.index', ['archived' => 1]) }}"
+                    class="px-5 py-2 text-sm font-medium text-white {{ ($isArchived ?? false) ? 'bg-gray-700 hover:bg-gray-800' : 'bg-gray-600 hover:bg-gray-700' }} rounded-md"
+                    id="archive-toggle-btn">
+                    {{ ($isArchived ?? false) ? 'Back to List' : 'Archive' }}
+                </a>
+
                 <!-- Search box -->
                 <input type="text" 
                     placeholder="Search positions..." 
                     class="px-4 py-2 border rounded-lg w-64" 
                     id="search-box">
-                            
-                <button 
-                    class="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                    id="new-position-btn">
-                    New Position
-                </button>
+
+                @if (!($isArchived ?? false))
+                    <button 
+                        class="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                        id="new-position-btn">
+                        New Position
+                    </button>
+                @endif
             </div>
         </div>
 
@@ -78,6 +87,7 @@
                         <tr>
                             <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Position Name</th>
                             <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Description</th>
+                            <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Tile Image</th>
                             <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Actions</th>
                         </tr>
                     </thead>
@@ -91,15 +101,42 @@
                                         {{ $position->description }}
                                     </td>
                                     <td class="py-2 px-4 border-b border-gray-300">
+                                        @php
+                                            $tileRelative = $position->tile_img ? $position->tile_img : null;
+                                            $tileExists = $tileRelative
+                                                ? \Illuminate\Support\Facades\Storage::disk('public')->exists('upload/' . $tileRelative)
+                                                : false;
+                                            $tileUrl = $tileExists
+                                                ? route('storage.image', ['folder' => 'upload', 'filename' => $tileRelative])
+                                                : null;
+                                        @endphp
+                                        @if($tileUrl)
+                                            <img src="{{ $tileUrl }}" alt="{{ $position->name }}" class="w-20 h-12 object-cover rounded border" />
+                                        @else
+                                            <span class="text-xs text-gray-400">None</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-2 px-4 border-b border-gray-300">
                                         <div class="flex items-center space-x-2">
-                                            <button class="bg-blue-600 text-white px-3 py-1 text-sm rounded hover:bg-blue-700 edit-btn"
-                                                data-id="{{ $position->id }}"
-                                                data-position-name="{{ $position->name }}"
-                                                data-description="{{ $position->description }}"
-                                                data-update-url="{{ getUpdateUrl($position->id) }}">Edit</button>
-                                            <button class="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700 delete-btn"
-                                                data-id="{{ $position->id }}"
-                                                data-delete-url="{{ getDeleteUrl($position->id) }}">Delete</button>
+                                            @if (!($isArchived ?? false))
+                                                <button class="bg-blue-600 text-white px-3 py-1 text-sm rounded hover:bg-blue-700 edit-btn"
+                                                    data-id="{{ $position->id }}"
+                                                    data-position-name="{{ $position->name }}"
+                                                    data-description="{{ $position->description }}"
+                                                    data-tile-img="{{ $position->tile_img }}"
+                                                    data-update-url="{{ getUpdateUrl($position->id) }}">Edit</button>
+                                                <button class="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700 delete-btn"
+                                                    data-id="{{ $position->id }}"
+                                                    data-delete-url="{{ getDeleteUrl($position->id) }}">Delete</button>
+                                            @else
+                                                <form method="POST" action="{{ getRestoreUrl($position->id) }}" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="bg-indigo-600 text-white px-3 py-1 text-sm rounded hover:bg-indigo-700">Restore</button>
+                                                </form>
+                                                <button class="bg-red-700 text-white px-3 py-1 text-sm rounded hover:bg-red-800 delete-btn"
+                                                    data-id="{{ $position->id }}"
+                                                    data-delete-url="{{ getForceDeleteUrl($position->id) }}">Permanent Delete</button>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -108,7 +145,7 @@
                 </table>
             </div>
             <div class="mt-4">
-                {{ $positions->links('components.pagination') }}
+                {{ $positions->appends(['archived' => ($isArchived ?? false) ? 1 : 0])->links('components.pagination') }}
             </div>
         </div>
     </section>
@@ -117,7 +154,7 @@
     <div id="new-position-modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 items-center justify-center hidden">
         <div class="bg-white p-6 rounded-lg shadow-lg w-1/2">
             <h3 class="text-2xl font-bold mb-4">Create New Position</h3>
-            <form method="POST" action="{{ route('admin.positions.store') }}">
+            <form method="POST" action="{{ route('admin.positions.store') }}" enctype="multipart/form-data">
                 @csrf
                 <div class="mb-4">
                     <label class="block text-gray-700">Position Name</label>
@@ -125,7 +162,11 @@
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700">Description</label>
-                    <textarea name="description" class="w-full px-4 py-2 border rounded-lg" placeholder="Enter description" required></textarea>
+                    <textarea name="description" class="w-full px-4 py-2 border rounded-lg" placeholder="Enter description" data-quill="1" required></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700">Tile Image</label>
+                    <input type="file" name="tile_img" accept="image/*" class="w-full px-4 py-2 border rounded-lg">
                 </div>
                 <div class="flex justify-end">
                     <button type="button" class="bg-gray-600 text-white px-4 py-2 rounded-lg mr-2" id="close-new-position-modal">Cancel</button>
@@ -139,7 +180,7 @@
     <div id="edit-position-modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 items-center justify-center hidden">
         <div class="bg-white p-6 rounded-lg shadow-lg w-1/2">
             <h3 class="text-2xl font-bold mb-4">Edit Position</h3>
-            <form method="POST" id="edit-position-form" action="">
+            <form method="POST" id="edit-position-form" action="" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="id" id="edit-position-id">
@@ -149,7 +190,14 @@
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700">Description</label>
-                    <textarea name="description" id="edit-description" class="w-full px-4 py-2 border rounded-lg" placeholder="Enter description" required></textarea>
+                    <textarea name="description" id="edit-description" class="w-full px-4 py-2 border rounded-lg" placeholder="Enter description" data-quill="1" required></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700">Tile Image</label>
+                    <div id="edit-tile-img-preview-wrap" class="mb-2 hidden">
+                        <img id="edit-tile-img-preview" src="" alt="Tile Image" class="w-full max-w-sm h-40 object-cover rounded border" />
+                    </div>
+                    <input type="file" name="tile_img" accept="image/*" class="w-full px-4 py-2 border rounded-lg">
                 </div>
                 <div class="flex justify-end">
                     <button type="button" class="bg-gray-600 text-white px-4 py-2 rounded-lg mr-2" id="close-edit-position-modal">Cancel</button>
@@ -187,12 +235,12 @@
             const newPositionModal = document.getElementById('new-position-modal');
             const closeNewPositionModal = document.getElementById('close-new-position-modal');
 
-            newPositionBtn.addEventListener('click', () => {
+            if (newPositionBtn) newPositionBtn.addEventListener('click', () => {
                 newPositionModal.classList.remove('hidden');
                 newPositionModal.classList.add('flex');
             });
 
-            closeNewPositionModal.addEventListener('click', () => {
+            if (closeNewPositionModal) closeNewPositionModal.addEventListener('click', () => {
                 newPositionModal.classList.add('hidden');
                 newPositionModal.classList.remove('flex');
             });
@@ -205,6 +253,8 @@
             const editPositionId = document.getElementById('edit-position-id');
             const editPositionName = document.getElementById('edit-position-name');
             const editDescription = document.getElementById('edit-description');
+            const editTileImgPreviewWrap = document.getElementById('edit-tile-img-preview-wrap');
+            const editTileImgPreview = document.getElementById('edit-tile-img-preview');
 
             editBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -212,11 +262,20 @@
                     const positionName = btn.getAttribute('data-position-name');
                     const description = btn.getAttribute('data-description');
                     const updateUrl = btn.getAttribute('data-update-url');
+                    const tileImg = btn.getAttribute('data-tile-img');
                     
                     editPositionId.value = positionId;
                     editPositionName.value = positionName;
                     editDescription.value = description;
                     editPositionForm.action = updateUrl || `/admin/position/${positionId}`;
+
+                    if (tileImg) {
+                        editTileImgPreview.src = `{{ route('storage.image', ['folder' => 'upload', 'filename' => '__FILENAME__']) }}`.replace('__FILENAME__', tileImg);
+                        editTileImgPreviewWrap.classList.remove('hidden');
+                    } else {
+                        editTileImgPreview.src = '';
+                        editTileImgPreviewWrap.classList.add('hidden');
+                    }
                     
                     editPositionModal.classList.remove('hidden');
                     editPositionModal.classList.add('flex');

@@ -1,0 +1,171 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Candidate;
+use App\Models\Course;
+use App\Models\ElectionParty;
+use App\Models\Position;
+use App\Models\User;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+class CandidateRegistrationController extends Controller
+{
+    public function show(Request $request)
+    {
+        $prefillIdNumberRaw = (string) $request->query('idnumber', '');
+        $prefillEmail = (string) $request->query('email', '');
+        $prefillName = (string) $request->query('name', '');
+        $prefillPositionId = (string) $request->query('position_id', '');
+
+        $idNumber = preg_replace('/[^0-9]/', '', $prefillIdNumberRaw);
+        if (!$idNumber && Auth::check()) {
+            $idNumber = preg_replace('/[^0-9]/', '', (string) (Auth::user()->idnumber ?? ''));
+        }
+
+        $hasExistingApplication = false;
+        $existingApplicationStatus = null;
+        if ($idNumber) {
+            $existing = Candidate::query()
+                ->where('id_number', $idNumber)
+                ->whereNull('deleted_at')
+                ->orderByDesc('created_at')
+                ->first();
+
+            if ($existing) {
+                $existingApplicationStatus = $existing->status;
+
+                if (in_array($existing->status, ['Pending', 'Active'], true)) {
+                    $hasExistingApplication = true;
+                }
+                $existingApplicationStatus = $existing->status;
+            }
+        }
+
+        return view('voter.candidate-register', [
+            'courses' => Course::all(),
+            'parties' => ElectionParty::all(),
+            'positions' => Position::all(),
+            'prefillIdNumber' => $prefillIdNumberRaw,
+            'prefillEmail' => $prefillEmail,
+            'prefillName' => $prefillName,
+            'prefillPositionId' => $prefillPositionId,
+            'hasExistingApplication' => $hasExistingApplication,
+            'existingApplicationStatus' => $existingApplicationStatus,
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'idnumber' => 'required|string',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email',
+            'course_id' => 'required|exists:courses,id',
+            'position_id' => 'required|exists:positions,id',
+            'party_id' => 'nullable|exists:electionparty,id',
+            'description' => 'required|string',
+            'platforms' => 'required|string',
+            'profile_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'banner_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        $idNumber = preg_replace('/[^0-9]/', '', (string) $validated['idnumber']);
+
+        $user = Auth::user();
+        if (!$user) {
+            $user = User::query()->where('idnumber', $idNumber)->orWhere('email', $validated['email'])->first();
+            if (!$user) {
+                $redirectTo = route('candidate.register', ['position_id' => (int) $validated['position_id']]);
+                return redirect()->route('register', [
+                    'idnumber' => $idNumber,
+                    'name' => $validated['name'],
+                    'email' => $validated['email'],
+                    'redirect_to' => $redirectTo,
+                ]);
+            }
+        }
+
+        $existingCandidate = Candidate::withTrashed()
+            ->where('id_number', $idNumber)
+            ->first();
+
+        if ($existingCandidate && !$existingCandidate->trashed() && in_array($existingCandidate->status, ['Pending', 'Active'], true)) {
+            return back()->withErrors([
+                'idnumber' => 'You have already submitted a candidate application. Please wait for the admin review.',
+            ])->withInput();
+        }
+
+        $partyId = $request->filled('party_id') ? (int) $validated['party_id'] : null;
+        if ($partyId) {
+            $partyPositionTaken = Candidate::query()
+                ->where('electionparty_id', $partyId)
+                ->where('position_id', (int) $validated['position_id'])
+                ->whereNull('deleted_at')
+                ->whereIn('status', ['Pending', 'Active'])
+                ->when($existingCandidate, function ($q) use ($existingCandidate) {
+                    $q->where('id', '!=', $existingCandidate->id);
+                })
+                ->exists();
+
+            if ($partyPositionTaken) {
+                return back()->withErrors([
+                    'position_id' => 'Position already been filled for this party. Please choose a different position or register as Independent (No Party).',
+                ])->withInput();
+            }
+        }
+
+        try {
+            $candidate = $existingCandidate ?: new Candidate();
+            if (Schema::hasColumn('candidate', 'users_id')) {
+                $candidate->users_id = $user ? $user->id : null;
+            }
+            $candidate->name = $validated['name'];
+            $candidate->id_number = $idNumber;
+            $candidate->course_id = (int) $validated['course_id'];
+            $candidate->position_id = (int) $validated['position_id'];
+            $candidate->electionparty_id = $partyId;
+            $candidate->platforms = $validated['platforms'];
+            $candidate->description = $validated['description'];
+            $candidate->status = 'Pending';
+
+            if ($candidate->trashed()) {
+                $candidate->restore();
+            }
+
+            if ($request->hasFile('profile_img')) {
+                $profileFile = $request->file('profile_img');
+                $profileFilename = time() . '_' . Str::random(10) . '_profile.' . $profileFile->getClientOriginalExtension();
+                $profileFile->storeAs('upload/profile-picture', $profileFilename, 'public');
+                $candidate->profile_img = $profileFilename;
+            }
+
+            if ($request->hasFile('banner_img')) {
+                $bannerFile = $request->file('banner_img');
+                $bannerFilename = time() . '_' . Str::random(10) . '_banner.' . $bannerFile->getClientOriginalExtension();
+                $bannerFile->storeAs('upload/banner', $bannerFilename, 'public');
+                $candidate->banner_img = $bannerFilename;
+            }
+
+            $candidate->save();
+
+            return redirect()->route('candidate.register')->with('success', 'Application submitted. Please wait for admin approval.');
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            return redirect()->route('candidate.register')->withErrors([
+                'idnumber' => 'You have already submitted a candidate application. Please wait for the admin review.',
+            ]);
+        } catch (QueryException $e) {
+            if ((int) ($e->errorInfo[1] ?? 0) === 1062) {
+                return redirect()->route('candidate.register')->withErrors([
+                    'idnumber' => 'You have already submitted a candidate application. Please wait for the admin review.',
+                ]);
+            }
+            throw $e;
+        }
+    }
+}

@@ -2,10 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Imports\UsersVotersImport;
+use App\Models\Position;
+use App\Models\PositionVote;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
 
 class VoterController extends Controller
 {
@@ -28,11 +34,45 @@ class VoterController extends Controller
 
         $voters = $query->orderBy('created_at', 'desc')->paginate(10);
 
+        $positions = collect();
+        if (Schema::hasTable('positions')) {
+            $positions = Position::query()->orderBy('name')->get();
+        }
+
         if ($request->ajax()) {
             return view('admin.voters.table', compact('voters'));
         }
 
-        return view('admin.voters', compact('voters'));
+        return view('admin.voters', compact('voters', 'positions'));
+    }
+
+    public function resetVotesAll($id)
+    {
+        if (!Schema::hasTable('position_votes')) {
+            return back()->with('error', 'Votes table not found.');
+        }
+
+        PositionVote::query()->where('user_id', $id)->delete();
+
+        return back()->with('success', 'All votes have been reset for this voter.');
+    }
+
+    public function resetVotesPosition(Request $request, $id)
+    {
+        $request->validate([
+            'position_id' => ['required', 'integer'],
+        ]);
+
+        if (!Schema::hasTable('position_votes')) {
+            return back()->with('error', 'Votes table not found.');
+        }
+
+        PositionVote::query()
+            ->where('user_id', $id)
+            ->where('position_id', $request->input('position_id'))
+            ->delete();
+
+        return back()->with('success', 'Vote has been reset for the selected position.');
     }
 
     /**
@@ -149,5 +189,53 @@ class VoterController extends Controller
         ]);
 
         return response()->json(['success' => true, 'message' => 'Password reset successfully.']);
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'importFile' => 'required|file|mimes:csv,xlsx,xls',
+        ]);
+
+        try {
+            $import = new UsersVotersImport();
+            Excel::import($import, $request->file('importFile'));
+
+            $successCount = $import->getSuccessCount();
+            $duplicateCount = $import->getDuplicateCount();
+            $failures = $import->getFailures();
+
+            $message = "Import completed: {$successCount} users imported successfully.";
+            if ($duplicateCount > 0) {
+                $message .= " {$duplicateCount} duplicate entries were skipped.";
+            }
+
+            if (!empty($failures)) {
+                return redirect()->back()->with('success', $message)->with('importFailures', $failures);
+            }
+
+            return redirect()->back()->with('success', $message);
+        } catch (\Throwable $e) {
+            Log::error('Users import error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return redirect()->back()->with('error', 'An unexpected error occurred during import: ' . $e->getMessage());
+        }
+    }
+
+    public function downloadSample()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="sample_users.csv"'
+        ];
+
+        $callback = function () {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['name', 'idnumber', 'email', 'course', 'year_level', 'status']);
+            fputcsv($file, ['Juan Dela Cruz', '2026-0001', 'juan@example.com', 'BSIT', '1st Year', 'Active']);
+            fputcsv($file, ['Maria Santos', '2026-0002', 'maria@example.com', 'BSBA', '2nd Year', 'Active']);
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

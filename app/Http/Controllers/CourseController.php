@@ -13,7 +13,12 @@ class CourseController extends Controller
      */
      public function index(Request $request)
     {
+        $isArchived = $request->boolean('archived');
         $query = Course::orderBy('created_at', 'desc');
+
+        if ($isArchived) {
+            $query->onlyTrashed();
+        }
 
         // Handle search/filter
         if ($request->has('filter') && !empty($request->filter)) {
@@ -25,7 +30,7 @@ class CourseController extends Controller
 
         $courses = $query->get();
 
-        return view('admin.courses', compact('courses'));
+        return view('admin.courses', compact('courses', 'isArchived'));
     }
     
     /**
@@ -56,7 +61,7 @@ class CourseController extends Controller
                 ->with('success', 'Course created successfully.');
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'Failed to create course. Please try again.')
+                ->with('error', 'Failed to create course: ' . $e->getMessage())
                 ->withInput();
         }
     }
@@ -106,7 +111,7 @@ class CourseController extends Controller
                 ->with('success', 'Course updated successfully.');
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'Failed to update course. Please try again.')
+                ->with('error', 'Failed to update course: ' . $e->getMessage())
                 ->withInput();
         }
     }
@@ -121,10 +126,38 @@ class CourseController extends Controller
             $course->delete(); // This will use soft delete
 
             return redirect()->route('admin.courses.index')
-                ->with('success', 'Course deleted successfully.');
+                ->with('success', 'Course moved to trash.');
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'Failed to delete course. Please try again.');
+                ->with('error', 'Failed to delete course: ' . $e->getMessage());
+        }
+    }
+
+    public function restore($id)
+    {
+        try {
+            $course = Course::onlyTrashed()->findOrFail($id);
+            $course->restore();
+
+            return redirect()->route('admin.courses.index', ['archived' => 1])
+                ->with('success', 'Course restored successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Failed to restore course: ' . $e->getMessage());
+        }
+    }
+
+    public function forceDestroy($id)
+    {
+        try {
+            $course = Course::withTrashed()->findOrFail($id);
+            $course->forceDelete();
+
+            return redirect()->route('admin.courses.index', ['archived' => 1])
+                ->with('success', 'Course permanently deleted successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Failed to permanently delete course: ' . $e->getMessage());
         }
     }
 

@@ -9,7 +9,7 @@ class Election extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'election'; // Matches schema
+    protected $table = 'election';
 
     public $timestamps = false;
 
@@ -25,7 +25,10 @@ class Election extends Model
         'campaign_end',
         'result_date',
         'election_img',
-        'admin_id'
+        'admin_id',
+        'academic_year_id',
+        'candidates_group',
+        'candidates_result_announcements',
     ];
 
     protected $casts = [
@@ -43,5 +46,10 @@ class Election extends Model
     public function articles()
     {
         return $this->belongsToMany(Article::class, 'election_articles', 'election_id', 'articles_id');
+    }
+
+    public function academicYear()
+    {
+        return $this->belongsTo(AcademicYear::class);
     }
 }

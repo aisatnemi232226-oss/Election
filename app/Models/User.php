@@ -22,10 +22,17 @@ class User extends Authenticatable
         'email',
         'password',
         'idnumber',
+        'course',
+        'year_level',
+        'status',
+        'admin_role',
+        'profile_image',
+        'is_admin',
     ];
 
     protected $attributes = [
-        'idnumber' => ''  // Default empty string instead of null
+        'idnumber' => '',  // Default empty string instead of null
+        'is_admin' => false,
     ];
 
     /**
@@ -48,6 +55,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
     }
 

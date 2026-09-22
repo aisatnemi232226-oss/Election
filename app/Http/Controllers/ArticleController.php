@@ -41,6 +41,13 @@
             return response()->json($article);
         }
 
+        public function publicJson($id)
+        {
+            $article = Article::findOrFail($id);
+
+            return response()->json($article);
+        }
+
 
         public function store(Request $request)
         {
@@ -65,9 +72,9 @@
             if ($request->hasFile('featured_image')) {
                 $image = $request->file('featured_image');
                 $filename = time() . '_featured_' . str_replace(' ', '_', $image->getClientOriginalName());
-                
-                Storage::makeDirectory('public/article-images');
-                $featuredImagePath = $image->storeAs('public/article-images', $filename);
+
+                Storage::disk('public')->makeDirectory('article-images');
+                $featuredImagePath = Storage::disk('public')->putFileAs('article-images', $image, $filename);
             }
 
             $article = Article::create([
@@ -137,9 +144,9 @@
                 
                 $image = $request->file('featured_image');
                 $filename = time() . '_featured_' . str_replace(' ', '_', $image->getClientOriginalName());
-                
-                Storage::makeDirectory('public/article-images');
-                $path = $image->storeAs('public/article-images', $filename);
+
+                Storage::disk('public')->makeDirectory('article-images');
+                $path = Storage::disk('public')->putFileAs('article-images', $image, $filename);
                 
                 $validated['featured_image'] = Storage::url($path);
             }
@@ -266,9 +273,9 @@
                 $image = $request->file('featured_image');
                 $filename = time() . '_featured_' . str_replace(' ', '_', $image->getClientOriginalName());
 
-                Storage::makeDirectory('public/article-images');
+                Storage::disk('public')->makeDirectory('article-images');
 
-                $path = $image->storeAs('public/article-images', $filename);
+                $path = Storage::disk('public')->putFileAs('article-images', $image, $filename);
 
                 if ($path) {
                     return response()->json([

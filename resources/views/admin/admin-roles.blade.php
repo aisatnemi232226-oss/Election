@@ -22,6 +22,10 @@
         .no-wrap {
             white-space: nowrap;
         }
+        .permission-group-selected {
+            border-color: #2563eb; /* blue-600 */
+            background-color: #eff6ff; /* blue-50 */
+        }
     </style>
 
     <!-- Success/Error Messages -->
@@ -57,6 +61,7 @@
                     <table class="min-w-full bg-white">
                         <thead>
                             <tr>
+                                <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold w-12">Select</th>
                                 <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Role Name</th>
                                 <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Description</th>
                                 <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Permissions</th>
@@ -76,14 +81,14 @@
                                     <td class="py-2 px-4 border-b border-gray-300">{{ $role->description }}</td>
                                     <td class="py-2 px-4 border-b border-gray-300">{{ $role->formatted_permissions }}</td>
                                     <td class="py-2 px-4 border-b border-gray-300">
-                                        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 edit-button mr-2" 
+                                        <button type="button" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 edit-button mr-2" 
                                                 data-role-id="{{ $role->id }}"
                                                 data-role-name="{{ $role->name }}"
                                                 data-role-description="{{ $role->description }}"
                                                 data-role-permissions="{{ json_encode($role->permissions) }}">
                                             Edit
                                         </button>
-                                        <button class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 delete-button" 
+                                        <button type="button" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 delete-button" 
                                                 data-role-id="{{ $role->id }}"
                                                 data-role-name="{{ $role->name }}">
                                             Delete
@@ -137,12 +142,13 @@
                     <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
                               id="edit-role-description" 
                               name="description" 
+                              data-quill="1"
                               placeholder="Role Description" 
                               rows="3"></textarea>
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Permissions</label>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         @php
                             $permissionGroups = [
                                 'Manage Elections' => ['manage-elections-view', 'manage-elections-add', 'manage-elections-edit', 'manage-elections-delete'],
@@ -160,18 +166,20 @@
                         @endphp
 
                         @foreach($permissionGroups as $groupName => $permissions)
-                            <div>
-                                <h4 class="font-bold">{{ $groupName }}</h4>
-                                @foreach($permissions as $permission)
-                                    <label class="block">
-                                        <input type="checkbox" 
-                                               class="mr-2 edit-permission-checkbox" 
-                                               name="permissions[]" 
-                                               value="{{ $permission }}">
-                                        {{ ucfirst(str_replace('-', ' ', explode('-', $permission)[count(explode('-', $permission))-1])) }}
-                                    </label>
-                                @endforeach
-                            </div>
+                            <details class="border rounded-md p-2 bg-gray-50 permission-group">
+                                <summary class="font-bold cursor-pointer select-none">{{ $groupName }}</summary>
+                                <div class="mt-2 space-y-1">
+                                    @foreach($permissions as $permission)
+                                        <label class="block text-sm">
+                                            <input type="checkbox" 
+                                                   class="mr-2 edit-permission-checkbox" 
+                                                   name="permissions[]" 
+                                                   value="{{ $permission }}">
+                                            {{ ucfirst(str_replace('-', ' ', explode('-', $permission)[count(explode('-', $permission))-1])) }}
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </details>
                         @endforeach
                     </div>
                 </div>
@@ -203,25 +211,28 @@
                     <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
                               id="new-role-description" 
                               name="description" 
+                              data-quill="1"
                               placeholder="Role Description" 
                               rows="3"></textarea>
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Permissions</label>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         @foreach($permissionGroups as $groupName => $permissions)
-                            <div>
-                                <h4 class="font-bold">{{ $groupName }}</h4>
-                                @foreach($permissions as $permission)
-                                    <label class="block">
-                                        <input type="checkbox" 
-                                               class="mr-2" 
-                                               name="permissions[]" 
-                                               value="{{ $permission }}">
-                                        {{ ucfirst(str_replace('-', ' ', explode('-', $permission)[count(explode('-', $permission))-1])) }}
-                                    </label>
-                                @endforeach
-                            </div>
+                            <details class="border rounded-md p-2 bg-gray-50 permission-group">
+                                <summary class="font-bold cursor-pointer select-none">{{ $groupName }}</summary>
+                                <div class="mt-2 space-y-1">
+                                    @foreach($permissions as $permission)
+                                        <label class="block text-sm">
+                                            <input type="checkbox" 
+                                                   class="mr-2" 
+                                                   name="permissions[]" 
+                                                   value="{{ $permission }}">
+                                            {{ ucfirst(str_replace('-', ' ', explode('-', $permission)[count(explode('-', $permission))-1])) }}
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </details>
                         @endforeach
                     </div>
                 </div>
@@ -266,6 +277,31 @@
                 });
             }
 
+            // Highlight permission groups when any checkbox inside is selected
+            function setupPermissionHighlights() {
+                const groups = document.querySelectorAll('details.permission-group');
+
+                groups.forEach(group => {
+                    const checkboxes = group.querySelectorAll('input[type="checkbox"]');
+
+                    function refreshHighlight() {
+                        const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+                        if (anyChecked) {
+                            group.classList.add('permission-group-selected');
+                        } else {
+                            group.classList.remove('permission-group-selected');
+                        }
+                    }
+
+                    checkboxes.forEach(cb => {
+                        cb.addEventListener('change', refreshHighlight);
+                    });
+
+                    // Initial state
+                    refreshHighlight();
+                });
+            }
+
             // Modal functions
             function openModal(modalId) {
                 document.getElementById(modalId).classList.remove('hidden');
@@ -275,13 +311,16 @@
                 document.getElementById(modalId).classList.add('hidden');
             }
 
-            // Select all functionality
-            document.getElementById('select-all').addEventListener('change', function() {
-                const checkboxes = document.querySelectorAll('.role-checkbox');
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = this.checked;
+            // Select all functionality (guard if checkbox is present)
+            const selectAllCheckbox = document.getElementById('select-all');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    const checkboxes = document.querySelectorAll('.role-checkbox');
+                    checkboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
                 });
-            });
+            }
 
             // New role button
             document.getElementById('new-role-button').addEventListener('click', function() {
@@ -295,15 +334,31 @@
 
             // Edit button functionality
             document.querySelectorAll('.edit-button').forEach(button => {
-                button.addEventListener('click', function() {
+                button.addEventListener('click', function(event) {
+                    event.preventDefault();
+
                     const roleId = this.dataset.roleId;
                     const roleName = this.dataset.roleName;
                     const roleDescription = this.dataset.roleDescription;
-                    const rolePermissions = JSON.parse(this.dataset.rolePermissions);
+
+                    let rolePermissions = [];
+                    try {
+                        const raw = this.dataset.rolePermissions;
+                        if (raw) {
+                            const parsed = JSON.parse(raw);
+                            if (Array.isArray(parsed)) {
+                                rolePermissions = parsed;
+                            } else if (typeof parsed === 'string') {
+                                rolePermissions = parsed.split(',').map(p => p.trim()).filter(Boolean);
+                            }
+                        }
+                    } catch (e) {
+                        rolePermissions = [];
+                    }
 
                     document.getElementById('edit-role-name').value = roleName;
                     document.getElementById('edit-role-description').value = roleDescription;
-                    document.getElementById('edit-role-form').action = `/admin/roles/${roleId}`;
+                    document.getElementById('edit-role-form').action = `/admin/admin-roles/${roleId}`;
 
                     // Clear all checkboxes first
                     document.querySelectorAll('.edit-permission-checkbox').forEach(checkbox => {
@@ -350,7 +405,7 @@
                     // Create a form to submit the delete request
                     const form = document.createElement('form');
                     form.method = 'POST';
-                    form.action = `/admin/roles/${roleToDelete.id}`;
+                    form.action = `/admin/admin-roles/${roleToDelete.id}`;
                     
                     const csrfToken = document.createElement('input');
                     csrfToken.type = 'hidden';
@@ -383,6 +438,7 @@
             // Initialize when the document is ready
             document.addEventListener('DOMContentLoaded', () => {
                 setupAlerts();
+                setupPermissionHighlights();
             });
         </script>
     @endpush
