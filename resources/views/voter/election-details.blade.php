@@ -869,12 +869,12 @@
             const container = document.getElementById('candidates-container');
             if (!form || !container) return;
 
-            form.addEventListener('submit', function(e){
-                e.preventDefault();
+            function refreshCandidates() {
                 const formData = new FormData(form);
                 const params = new URLSearchParams();
                 for (const [k,v] of formData.entries()) {
-                    if (v !== null && String(v).trim() !== '') params.append(k, v);
+                    const value = String(v).trim();
+                    if (value !== '') params.append(k, value);
                 }
                 const url = form.action + (params.toString() ? ('?' + params.toString()) : '');
 
@@ -888,21 +888,41 @@
                             if (newContainer) {
                                 container.innerHTML = newContainer.innerHTML;
                             } else {
-                                // fallback: replace with whole response
                                 container.innerHTML = html;
                             }
 
-                            // Re-bind profile buttons in the updated content
                             document.querySelectorAll('.view-profile-btn').forEach(btn => {
                                 btn.addEventListener('click', function(ev){ ev.preventDefault(); openCandidateModal(this); });
                             });
 
-                            history.replaceState({}, '', url);
                         } catch (ex) {
                             console.error('Failed to parse filter response', ex);
                         }
                     })
                     .catch(err => console.error('Filter fetch failed', err));
+            }
+
+            form.addEventListener('submit', function(e){
+                e.preventDefault();
+                refreshCandidates();
+            });
+
+            const searchInput = form.querySelector('input[name="q"]');
+            let debounceTimer = null;
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function () {
+                    window.clearTimeout(debounceTimer);
+                    debounceTimer = window.setTimeout(function () {
+                        refreshCandidates();
+                    }, 200);
+                });
+            }
+
+            form.querySelectorAll('select[name]').forEach(function (select) {
+                select.addEventListener('change', function () {
+                    refreshCandidates();
+                });
             });
         })();
   </script>

@@ -163,7 +163,7 @@
   <main class="relative z-10 container mx-auto p-4">
    <section class="text-center my-8">
     <h2 class="text-4xl font-bold text-gray-800 mb-4">
-     Welcome{{ auth()->check() ? ', ' . auth()->user()->name : '' }} to Philippine Christian University Online Election System
+     Welcome{{ auth()->check() ? ', ' . (auth()->user()->first_name ?: \Illuminate\Support\Str::before((string) auth()->user()->name, ' ')) : '' }} to Philippine Christian University Online Election System
     </h2>
     <p class="text-gray-600 text-lg">
      Participate in the democratic process and vote for your student representatives.

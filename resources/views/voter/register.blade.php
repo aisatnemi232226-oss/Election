@@ -73,14 +73,27 @@
                 <input type="hidden" name="redirect_to" value="{{ $redirectTo }}">
             @endif
             @if ($errors->any())
-                <div class="mb-4 text-red-600 text-sm text-left">
-                    <ul class="list-disc list-inside">
-
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
+                <div id="register-error-notification" class="fixed top-4 right-4 z-50 w-[calc(100%-2rem)] max-w-md rounded-lg border border-red-200 bg-white p-4 text-left text-red-700 shadow-xl" role="alert" aria-live="assertive">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-exclamation-circle mt-0.5 text-red-500" aria-hidden="true"></i>
+                        <ul class="flex-1 space-y-1 text-sm">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                        <button type="button" class="text-red-400 hover:text-red-700" aria-label="Dismiss notification" onclick="document.getElementById('register-error-notification').remove()">
+                            <i class="fas fa-times" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
+                <script>
+                    setTimeout(function () {
+                        const notification = document.getElementById('register-error-notification');
+                        if (notification) {
+                            notification.remove();
+                        }
+                    }, 6000);
+                </script>
             @endif
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="idnumber">Student Number</label>
@@ -92,8 +105,12 @@
                 </div>
             </div>
             <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="fullname">Full Name</label>
-                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="fullname" name="name" type="text" placeholder="Full Name" value="{{ old('name', $prefillName ?? '') }}" required>
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="first_name">First Name</label>
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="first_name" name="first_name" type="text" placeholder="First Name" value="{{ old('first_name', !empty($prefillFirstName ?? '') ? $prefillFirstName : ($prefillNameFirstPart ?? '')) }}" required>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="last_name">Last Name</label>
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="last_name" name="last_name" type="text" placeholder="Last Name" value="{{ old('last_name', !empty($prefillLastName ?? '') ? $prefillLastName : ($prefillNameLastPart ?? '')) }}" required>
             </div>
 
             <div class="mb-4">
@@ -233,7 +250,7 @@
 
             if (key === 'idnumber' || key === 'studentnumber' || key === 'studentno' || key === 'studentno' || key === 'id') {
                 out.idnumber = val;
-            } else if (key === 'fullname' || key === 'fullname' || key === 'name') {
+            } else if (key === 'fullname' || key === 'name') {
                 out.name = val;
             } else if (key === 'email') {
                 out.email = val;
@@ -315,12 +332,14 @@
                 const parsed = parseQrPayload(raw);
 
                 const idValue = parsed && parsed.idnumber ? String(parsed.idnumber) : raw;
-                const nameValue = parsed && parsed.name ? String(parsed.name) : '';
+                const nameValue = parsed && (parsed.name || parsed.full_name) ? String(parsed.name || parsed.full_name) : '';
                 const emailValue = parsed && parsed.email ? String(parsed.email) : '';
 
                 document.getElementById('idnumber').value = (idValue || '').replace(/[^0-9]/g, '');
                 if (nameValue) {
-                    document.getElementById('fullname').value = nameValue;
+                    const nameParts = nameValue.trim().split(/\s+/, 2);
+                    document.getElementById('first_name').value = nameParts[0] || '';
+                    document.getElementById('last_name').value = nameParts[1] || '';
                 }
                 if (emailValue) {
                     document.getElementById('email').value = emailValue;

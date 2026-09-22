@@ -12,10 +12,17 @@ class RegisterController extends Controller
 {
     public function showRegistrationForm()
     {
+        $prefillName = trim((string) request()->query('name', ''));
+        $nameParts = preg_split('/\s+/', $prefillName, 2);
+
         return view('voter.register', [
             'prefillIdNumber' => request()->query('idnumber', ''),
             'prefillEmail' => request()->query('email', ''),
-            'prefillName' => request()->query('name', ''),
+            'prefillFirstName' => request()->query('first_name', ''),
+            'prefillLastName' => request()->query('last_name', ''),
+            'prefillName' => $prefillName,
+            'prefillNameFirstPart' => $nameParts[0] ?? '',
+            'prefillNameLastPart' => $nameParts[1] ?? '',
             'redirectTo' => request()->query('redirect_to', ''),
         ]);
     }
@@ -24,14 +31,20 @@ class RegisterController extends Controller
     {
         $request->validate([
             'idnumber' => 'required|regex:/^\d+$/|unique:users,idnumber',
-            'name' => 'required',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
             'password' => 'required',
         ]);
 
+        $firstName = trim($request->input('first_name'));
+        $lastName = trim($request->input('last_name'));
+
         $user = User::create([
             'idnumber' => $request->idnumber,
-            'name' => $request->name,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'name' => trim($firstName . ' ' . $lastName),
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);

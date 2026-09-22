@@ -64,24 +64,44 @@
     <div class="pointer-events-none fixed inset-0 flex items-center justify-center opacity-30 z-0" aria-hidden="true">
         <img src="{{ asset('images/pculogo.png') }}" alt="" class="w-[62vw] max-w-[820px] h-auto" />
     </div>
+    <a href="{{ route('home') }}"
+        class="fixed top-4 left-4 z-20 inline-flex items-center gap-2 rounded-lg bg-white/95 px-4 py-2 text-sm font-bold text-blue-700 shadow-md transition hover:bg-white hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-900"
+        aria-label="Back to home">
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+        <i class="fas fa-home" aria-hidden="true"></i>
+        <span>Home</span>
+    </a>
     <div class="relative z-10 bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
         <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Philippine Christian University Online Election System</h2>
         <form action="{{route('login')}}" method="POST">
             @csrf
             @if ($errors->any())
-                <div class="mb-4 text-red-600 text-sm text-left">
-                    <ul class="list-disc list-inside">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
+                <div id="login-error-notification" class="fixed top-4 right-4 z-50 w-[calc(100%-2rem)] max-w-md rounded-lg border border-red-200 bg-white p-4 text-left text-red-700 shadow-xl" role="alert" aria-live="assertive">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-exclamation-circle mt-0.5 text-red-500" aria-hidden="true"></i>
+                        <ul class="flex-1 space-y-1 text-sm">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                        <button type="button" class="text-red-400 hover:text-red-700" aria-label="Dismiss notification" onclick="document.getElementById('login-error-notification').remove()">
+                            <i class="fas fa-times" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
-            @endif
-            <div class="mb-4 flex items-center">
+                <script>
+                    setTimeout(function () {
+                        const notification = document.getElementById('login-error-notification');
+                        if (notification) {
+                            notification.remove();
+                        }
+                    }, 6000);
+                </script>
+            @endif<div class="mb-4 flex items-center">
                 <div class="flex-grow">
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="username">Username</label>
                     <div class="relative">
-                        <input class="shadow appearance-none border rounded w-full py-2 px-3 pr-12 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="username" name="email" type="text" placeholder="Username" value="{{ old('email') }}">
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 pr-12 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="username" name="email" type="text" placeholder="Username" value="{{ old('email') }}" required>
                         <button class="absolute inset-y-0 right-0 z-10 flex items-center bg-green-600 text-white p-2 rounded-r-lg hover:bg-green-700" type="button" id="scan-qr-button">
                             <i class="fas fa-qrcode"></i>
                         </button>
@@ -90,7 +110,7 @@
             </div>
             <div class="mb-6">
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="password">Password</label>
-                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="password" name="password" type="password" placeholder="Password">
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="password" name="password" type="password" placeholder="Password" required>
             </div>
             <div class="flex items-center justify-between mb-4">
                 <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700" type="submit">Login</button>
