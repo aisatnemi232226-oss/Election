@@ -249,7 +249,7 @@ class VerifiedVoterController extends Controller
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
-            'acadyr_id' => 'required|exists:acadyrs,id',
+            'acadyr_id' => 'required|exists:acadyr,id',
             'sem_id' => 'required|exists:semesters,id',
         ]);
 

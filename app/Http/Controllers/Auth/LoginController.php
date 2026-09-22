@@ -63,10 +63,10 @@ class LoginController extends Controller
         return back()->withErrors(['email' => 'Invalid credentials']);
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
         $user = Auth::user();
-        $request = request();
+
         if ($user && $user->is_admin) {
             AuditLogger::log(
                 $request,
@@ -79,7 +79,11 @@ class LoginController extends Controller
                 $user->id
             );
         }
+
         Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
         return redirect()->route('home');
     }
 

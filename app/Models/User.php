@@ -69,6 +69,11 @@ class User extends Authenticatable
         return $this->hasOne(VerifiedVoter::class, 'users_id');
     }
 
+    public function isVerifiedVoter(): bool
+    {
+        return $this->verifiedVoter()->exists();
+    }
+
     public function candidate()
     {
         return $this->hasOne(Candidate::class, 'users_id');

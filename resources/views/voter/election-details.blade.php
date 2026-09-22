@@ -5,6 +5,7 @@
   </title>
   <script src="https://cdn.tailwindcss.com">
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&amp;display=swap" rel="stylesheet"/>
   <link rel="icon" href="{{ URL::to('/images/pculogo.png') }}">
@@ -184,6 +185,29 @@
    </nav>
   </header>
   <main class="relative z-10 container mx-auto p-4">
+   @if(session('error'))
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Unable to complete your vote',
+                text: @json(session('error')),
+                confirmButtonColor: '#2563eb'
+            });
+        });
+    </script>
+   @elseif(session('success'))
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            Swal.fire({
+                icon: 'success',
+                title: 'Vote recorded successfully',
+                text: @json(session('success')),
+                confirmButtonColor: '#2563eb'
+            });
+        });
+    </script>
+   @endif
    <section class="my-6">
     <div class="flex items-center justify-between">
      <h2 class="text-3xl font-bold text-gray-800">Election Details</h2>
@@ -390,9 +414,16 @@
               View Profile
              </button>
              @auth
+              @php
+                  $isVerifiedStudent = !auth()->user()->is_admin && auth()->user()->verifiedVoter()->exists();
+              @endphp
               @if(!$positionId)
                <button type="button" class="bg-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm font-semibold cursor-not-allowed" disabled>
                 Vote Now
+               </button>
+              @elseif(!$isVerifiedStudent)
+               <button type="button" class="bg-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm font-semibold cursor-not-allowed" disabled title="Only verified students can vote">
+                Verification Required
                </button>
               @elseif($isUserVotedCandidate)
                <button type="button" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold cursor-not-allowed" disabled>
@@ -403,7 +434,7 @@
                 Voted
                </button>
               @else
-               <form method="POST" action="{{ route('vote.cast') }}" data-no-flip>
+               <form method="POST" action="{{ route('vote.cast') }}" data-no-flip data-confirm-vote data-candidate-name="{{ $c->name }}">
                 @csrf
                 <input type="hidden" name="candidate_id" value="{{ $c->id }}">
                 <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700" data-no-flip>
@@ -535,9 +566,16 @@
               View Profile
              </button>
              @auth
+              @php
+                  $isVerifiedStudent = !auth()->user()->is_admin && auth()->user()->verifiedVoter()->exists();
+              @endphp
               @if(!$positionId)
                <button type="button" class="bg-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm font-semibold cursor-not-allowed" disabled>
                 Vote Now
+               </button>
+              @elseif(!$isVerifiedStudent)
+               <button type="button" class="bg-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm font-semibold cursor-not-allowed" disabled title="Only verified students can vote">
+                Verification Required
                </button>
               @elseif($isUserVotedCandidate)
                <button type="button" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold cursor-not-allowed" disabled>
@@ -548,7 +586,7 @@
                 Voted
                </button>
               @else
-               <form method="POST" action="{{ route('vote.cast') }}" data-no-flip>
+               <form method="POST" action="{{ route('vote.cast') }}" data-no-flip data-confirm-vote data-candidate-name="{{ $c->name }}">
                 @csrf
                 <input type="hidden" name="candidate_id" value="{{ $c->id }}">
                 <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700" data-no-flip>
@@ -657,6 +695,32 @@
   </div>
 
   <script>
+        document.addEventListener('submit', (event) => {
+            const form = event.target.closest('form[data-confirm-vote]');
+            if (!form || form.dataset.confirmed === 'true') return;
+
+            event.preventDefault();
+
+            const candidateName = form.dataset.candidateName || 'this candidate';
+
+            Swal.fire({
+                icon: 'question',
+                title: 'Confirm your vote',
+                text: `Are you sure you want to vote for ${candidateName}?`,
+                showCancelButton: true,
+                confirmButtonText: 'Yes, cast my vote',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#2563eb',
+                cancelButtonColor: '#6b7280',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.dataset.confirmed = 'true';
+                    form.submit();
+                }
+            });
+        });
+
         const profileToggle = document.getElementById('profile-toggle');
         const profileMenu = document.getElementById('profile-menu');
 

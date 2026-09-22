@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Candidate;
 use App\Models\PositionVote;
+use App\Models\VerifiedVoter;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
@@ -11,6 +12,20 @@ class VoteController extends Controller
 {
     public function cast(Request $request)
     {
+        $user = $request->user();
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Please log in to vote.');
+        }
+
+        if ($user->is_admin) {
+            return back()->with('error', 'Admins are not allowed to vote in student elections.');
+        }
+
+        if (!$user->isVerifiedVoter()) {
+            return back()->with('error', 'You are not a verified voter yet. Please contact an administrator to complete your verification before voting.');
+        }
+
         $request->validate([
             'candidate_id' => ['required', 'integer'],
         ]);
@@ -21,7 +36,7 @@ class VoteController extends Controller
             return back()->with('error', 'Invalid candidate position.');
         }
 
-        $userId = $request->user()->id;
+        $userId = $user->id;
 
         $alreadyVoted = PositionVote::query()
             ->where('user_id', $userId)

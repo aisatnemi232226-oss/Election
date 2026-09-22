@@ -5,6 +5,7 @@
   </title>
   <script src="https://cdn.tailwindcss.com">
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&amp;display=swap" rel="stylesheet"/>
   <style>
@@ -31,7 +32,7 @@
   <div class="pointer-events-none fixed inset-0 flex items-center justify-center opacity-30 z-0" aria-hidden="true">
    <img src="{{ asset('images/pculogo.png') }}" alt="" class="w-[62vw] max-w-[820px] h-auto" />
   </div>
-  <header class="relative z-10 bg-blue-600 text-white p-4">
+  <header class="relative z-[100] isolate bg-blue-600 text-white p-4">
    <div class="container mx-auto flex flex-col items-center md:flex-row md:justify-between">
     <a href="{{ url('/') }}" class="flex items-center gap-3 mb-4 md:mb-0">
         <img src="{{ asset('images/pculogo.png') }}" alt="School Logo" class="w-16 h-16 md:w-24 md:h-24 -my-4 object-contain flex-shrink-0" onerror="this.onerror=null;this.style.display='none';">
@@ -78,21 +79,21 @@
       </li>
       @endguest
       @auth
-      <li class="relative">
+      <li class="relative z-[110]">
        <button type="button" class="flex items-center space-x-2 focus:outline-none" data-profile-toggle>
         <span class="inline-flex items-center justify-center w-8 h-8 bg-white text-blue-600 rounded-full">
          <i class="fas fa-user"></i>
         </span>
         <span class="hidden md:inline text-sm">{{ auth()->user()->name ?? 'Profile' }}</span>
        </button>
-       <div class="hidden absolute right-0 mt-2 w-56 bg-white text-gray-800 rounded-md shadow-lg z-50 pointer-events-auto" data-profile-menu>
+       <div class="hidden absolute right-0 mt-2 w-56 bg-white text-gray-800 rounded-md shadow-lg z-[9999] pointer-events-auto" data-profile-menu>
         <div class="px-4 py-2 border-b">
          <p class="font-semibold text-sm truncate">{{ auth()->user()->name }}</p>
          <p class="text-xs text-gray-500 truncate">{{ auth()->user()->email }}</p>
         </div>
         <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('logout') ? route('logout') : url('/logout') }}" class="border-t">
          @csrf
-         <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Log out</button>
+         <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 cursor-pointer">Log out</button>
         </form>
        </div>
       </li>
@@ -101,7 +102,30 @@
     </nav>
    </div>
   </header>
-  <main class="relative z-10 container mx-auto p-4">
+  <main class="relative z-0 container mx-auto p-4">
+   @if(session('error'))
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Unable to complete your vote',
+                text: @json(session('error')),
+                confirmButtonColor: '#2563eb'
+            });
+        });
+    </script>
+   @elseif(session('success'))
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            Swal.fire({
+                icon: 'success',
+                title: 'Vote recorded successfully',
+                text: @json(session('success')),
+                confirmButtonColor: '#2563eb'
+            });
+        });
+    </script>
+   @endif
    <section class="text-center my-8">
     <h2 class="text-4xl font-bold text-gray-800 mb-4">
      Choose an Election Event to Vote
@@ -134,7 +158,7 @@
             ? route('storage.image', ['folder' => 'upload', 'filename' => $customTileRelative])
             : $defaultTileImage;
       @endphp
-      <a href="{{ route('election.details', ['position' => $p->id]) }}" class="bg-white p-6 rounded-lg shadow-lg text-center tile block hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <a href="{{ route('election.details') }}" class="bg-white p-6 rounded-lg shadow-lg text-center tile block hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-blue-500">
        <div class="w-full h-52 rounded-lg bg-gray-100 mb-4 overflow-hidden">
         <img alt="{{ $p->name }}" class="w-full h-full object-cover" height="200" src="{{ $tileImage }}" width="300"/>
        </div>
@@ -393,17 +417,20 @@
             profileMenu.addEventListener('click', (e) => {
                 e.stopPropagation();
             });
-            document.addEventListener('click', () => {
-                profileMenu.classList.add('hidden');
+            document.addEventListener('click', (event) => {
+                if (!profileMenu.contains(event.target) && !profileToggle.contains(event.target)) {
+                    profileMenu.classList.add('hidden');
+                }
             });
         }
 
         const menuToggle = document.getElementById('menu-toggle');
         const menu = document.getElementById('menu');
-
-        menuToggle.addEventListener('click', () => {
-            menu.classList.toggle('hidden');
-        });
+        if (menuToggle && menu) {
+            menuToggle.addEventListener('click', () => {
+                menu.classList.toggle('hidden');
+            });
+        }
   </script>
  </body>
 </html>
