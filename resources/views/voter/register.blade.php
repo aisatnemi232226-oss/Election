@@ -1,7 +1,7 @@
 <html>
 <head>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Philippine Christian University Online Election System - Registration</title>
+    <title>Voter Registration - Philippine Christian University Online Election System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
@@ -66,7 +66,8 @@
         <img src="{{ asset('images/pculogo.png') }}" alt="" class="w-[62vw] max-w-[820px] h-auto" />
     </div>
     <div class="relative z-10 bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Philippine Christian University Online Election System - Registration</h2>
+        <h2 class="text-3xl font-bold text-gray-800 mb-3 text-center">Voter Registration</h2>
+        <p class="mb-6 text-center text-sm text-gray-600">Create your account with your student details. An administrator must verify your voter eligibility before you can vote.</p>
         <form action="{{route('register')}}" method="POST">
             @csrf
             @if (!empty($redirectTo ?? ''))
@@ -107,6 +108,11 @@
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="first_name">First Name</label>
                 <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="first_name" name="first_name" type="text" placeholder="First Name" value="{{ old('first_name', !empty($prefillFirstName ?? '') ? $prefillFirstName : ($prefillNameFirstPart ?? '')) }}" required>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="middle_initial">Middle Initial</label>
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="middle_initial" name="middle_initial" type="text" maxlength="2" pattern="[A-Za-z]\.?" placeholder="M.I. (optional)" value="{{ old('middle_initial', !empty($prefillMiddleInitial ?? '') ? $prefillMiddleInitial : ($prefillNameMiddleInitial ?? '')) }}">
+                <p class="mt-1 text-left text-xs text-gray-500">Enter one letter, with or without a period.</p>
             </div>
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="last_name">Last Name</label>
@@ -337,9 +343,14 @@
 
                 document.getElementById('idnumber').value = (idValue || '').replace(/[^0-9]/g, '');
                 if (nameValue) {
-                    const nameParts = nameValue.trim().split(/\s+/, 2);
+                    const nameParts = nameValue.trim().split(/\s+/);
                     document.getElementById('first_name').value = nameParts[0] || '';
-                    document.getElementById('last_name').value = nameParts[1] || '';
+                    document.getElementById('middle_initial').value = nameParts.length > 2
+                        ? (nameParts.slice(1, -1).join(' ').replace(/\.$/, '').charAt(0) + '.')
+                        : '';
+                    document.getElementById('last_name').value = nameParts.length > 1
+                        ? nameParts[nameParts.length - 1]
+                        : '';
                 }
                 if (emailValue) {
                     document.getElementById('email').value = emailValue;

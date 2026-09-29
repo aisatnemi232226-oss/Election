@@ -58,7 +58,7 @@
        </a>
       </li>
       <li>
-       <a class="hover:underline" href="{{ url('/vote') }}">
+       <a class="hover:underline" href="{{ route('election.details') }}">
         Vote
        </a>
       </li>
@@ -97,6 +97,7 @@
         </div>
         <div class="border-t">
          <a href="{{ url('/tickets') }}" class="block px-4 py-2 text-sm hover:bg-gray-100">Tickets</a>
+         <a href="{{ route('account.qr-codes') }}" class="block px-4 py-2 text-sm hover:bg-gray-100">Account QR codes</a>
         </div>
         <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('logout') ? route('logout') : url('/logout') }}" class="border-t">
          @csrf
@@ -121,7 +122,7 @@
       </a>
      </li>
      <li>
-      <a class="hover:underline block text-center" href="{{ url('/vote') }}">
+      <a class="hover:underline block text-center" href="{{ route('election.details') }}">
        Vote
       </a>
      </li>
@@ -150,6 +151,7 @@
        </span>
        <span class="text-sm font-semibold">{{ Auth::user()->name }}</span>
        <span class="text-xs text-gray-200">{{ Auth::user()->email }}</span>
+        <a href="{{ route('account.qr-codes') }}" class="text-sm text-white underline">Account QR codes</a>
         <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('logout') ? route('logout') : url('/logout') }}" class="w-full mt-1">
          @csrf
          <button type="submit" class="w-full text-center text-sm text-red-200 hover:text-white">Log out</button>
@@ -180,14 +182,14 @@
       <i class="fas fa-user-graduate text-blue-600 text-4xl mb-4">
       </i>
       <h4 class="text-2xl font-bold text-gray-800 mb-2">
-       Register
+       Candidate Registration
       </h4>
       <p class="text-gray-600">
-       Sign up with your student credentials to participate in the election.
+       Sign up with your student credentials to apply as a candidate.
       </p>
      </div>
     </a>
-    <a href="{{ url('/vote') }}" class="block h-full">
+    <a href="{{ route('election.details') }}" class="block h-full">
      <div class="bg-white p-6 rounded-lg shadow-lg text-center transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl h-full flex flex-col justify-center">
       <i class="fas fa-vote-yea text-blue-600 text-4xl mb-4">
       </i>

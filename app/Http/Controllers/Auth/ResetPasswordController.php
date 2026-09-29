@@ -3,32 +3,64 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class ResetPasswordController extends Controller
 {
-    public function showResetForm(Request $request, $token = null)
+    public function showResetForm(Request $request)
     {
-        return view('auth.passwords.reset')->with(['token' => $token, 'email' => $request->email]);
+        if (! $this->hasValidResetGrant($request)) {
+            return redirect()->route('password.request')->withErrors([
+                'email' => 'Your password reset session has expired. Request a new code.',
+            ]);
+        }
+
+        return view('auth.passwords.reset-otp');
     }
 
     public function reset(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|confirmed|min:8',
-            'token' => 'required',
+        $validated = $request->validate([
+            'password' => 'required|string|min:8|confirmed',
         ]);
-        
-        $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user, $password) {
-                $user->forceFill(['password' => Hash::make($password)])->save();
-            }
-        );
 
-        return $status === Password::PASSWORD_RESET
-            ? redirect()->route('login')->with('status', __($status))
-            : back()->withErrors(['email' => [__($status)]]);
+        if (! $this->hasValidResetGrant($request)) {
+            return redirect()->route('password.request')->withErrors([
+                'email' => 'Your password reset session has expired. Request a new code.',
+            ]);
+        }
+
+        $email = $request->session()->get('password_otp_email');
+
+        DB::transaction(function () use ($email, $validated): void {
+            $user = User::query()->where('email', $email)->whereNull('deleted_at')->firstOrFail();
+            $user->forceFill(['password' => $validated['password']])->save();
+            DB::table('password_reset_otps')->where('email', $email)->delete();
+        });
+
+        $request->session()->forget(['password_otp_email', 'password_reset_grant']);
+
+        return redirect()->route('login')->with('status', 'Your password has been reset. You can now sign in.');
+    }
+
+    private function hasValidResetGrant(Request $request): bool
+    {
+        $email = $request->session()->get('password_otp_email');
+        $grant = $request->session()->get('password_reset_grant');
+
+        if (! $email || ! $grant) {
+            return false;
+        }
+
+        $record = DB::table('password_reset_otps')->where('email', $email)->first();
+
+        return $record
+            && $record->verified_at !== null
+            && now()->lessThanOrEqualTo($record->expires_at)
+            && $record->reset_token_hash
+            && Hash::check($grant, $record->reset_token_hash);
     }
 }

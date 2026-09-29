@@ -27,6 +27,9 @@ class CandidateRegistrationController extends Controller
         if (!$idNumber && Auth::check()) {
             $idNumber = preg_replace('/[^0-9]/', '', (string) (Auth::user()->idnumber ?? ''));
         }
+        $credentialValue = Auth::check()
+            ? ((string) (Auth::user()->idnumber ?: Auth::user()->email))
+            : ($prefillIdNumberRaw ?: $prefillEmail);
 
         $hasExistingApplication = false;
         $existingApplicationStatus = null;
@@ -48,13 +51,21 @@ class CandidateRegistrationController extends Controller
         }
 
         return view('voter.candidate-register', [
-            'courses' => Course::all(),
-            'parties' => ElectionParty::all(),
-            'positions' => Position::all(),
+            'courses' => Course::query()
+                ->orderBy('name')
+                ->orderBy('id')
+                ->get()
+                ->unique(function (Course $course) {
+                    return mb_strtolower(trim((string) $course->name));
+                })
+                ->values(),
+            'parties' => ElectionParty::query()->orderBy('name')->get(),
+            'positions' => Position::query()->orderBy('name')->get(),
             'prefillIdNumber' => $prefillIdNumberRaw,
             'prefillEmail' => $prefillEmail,
             'prefillName' => $prefillName,
             'prefillPositionId' => $prefillPositionId,
+            'credentialValue' => $credentialValue,
             'hasExistingApplication' => $hasExistingApplication,
             'existingApplicationStatus' => $existingApplicationStatus,
         ]);

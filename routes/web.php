@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use App\Http\Controllers\Auth\{LoginController, RegisterController, ForgotPasswordController, ResetPasswordController};
+use App\Http\Controllers\Auth\RecoveryQrController;
 use App\Http\Controllers\{DashboardController, ElectionsController, CandidateController, PositionController, VoterController, 
     UserController, AdminController, RoleController, ViewElectionController, VerifiedVoterController, ElectionArticleController, 
     ArticleController, SearchController, ResultsController, ReportsController, AdminRoleController, ProfileSettingsController, 
@@ -23,7 +24,7 @@ Route::get('/img/storage/{folder}/{filename}', [\App\Http\Controllers\ImageContr
 Route::controller(LoginController::class)->group(function (): void {
     Route::get('/login', 'showLoginForm')->name('login');
     Route::post('/login', 'login');
-    Route::post('/login/qr', 'loginWithQr')->name('login.qr');
+    Route::post('/login/qr', 'loginWithQr')->middleware('throttle:10,1')->name('login.qr');
     Route::post('/logout', 'logout')->name('logout');
 });
 
@@ -42,12 +43,23 @@ Route::controller(CandidateRegistrationController::class)->group(function () {
 // ============================
 Route::controller(ForgotPasswordController::class)->group(function () {
     Route::get('/forgot-password', 'showLinkRequestForm')->name('password.request');
-    Route::post('/forgot-password', 'sendResetLinkEmail')->name('password.email');
+    Route::post('/forgot-password', 'sendResetLinkEmail')->middleware('throttle:5,1')->name('password.email');
+    Route::get('/forgot-password/qr', 'showRecoveryQrForm')->name('password.recovery-qr');
+    Route::post('/forgot-password/qr', 'verifyRecoveryQr')->middleware('throttle:10,1')->name('password.recovery-qr.verify');
+    Route::get('/forgot-password/verify', 'showOtpForm')->name('password.otp.form');
+    Route::post('/forgot-password/verify', 'verifyOtp')->middleware('throttle:10,1')->name('password.otp.verify');
 });
 
 Route::controller(ResetPasswordController::class)->group(function () {
-    Route::get('/reset-password/{token}', 'showResetForm')->name('password.reset');
-    Route::post('/reset-password', 'reset')->name('password.update');
+    Route::get('/reset-password', 'showResetForm')->name('password.reset');
+    Route::post('/reset-password', 'reset')->middleware('throttle:5,1')->name('password.update');
+});
+
+Route::middleware('auth')->controller(RecoveryQrController::class)->group(function () {
+    Route::get('/account/qr-codes', 'show')->name('account.qr-codes');
+    Route::get('/account/recovery-qr', 'show')->name('account.recovery-qr');
+    Route::post('/account/recovery-qr', 'generate')->middleware('throttle:5,1')->name('account.recovery-qr.generate');
+    Route::post('/account/login-qr', 'generateLogin')->middleware('throttle:5,1')->name('account.login-qr.generate');
 });
 
 // =======================
@@ -447,37 +459,7 @@ Route::get('/party/{party}/roster', function (\App\Models\ElectionParty $party) 
     return view('voter.party-roster', compact('party', 'positions', 'candidatesByPositionId'));
 })->name('party.roster');
 
-Route::get('/vote', function () {
-    $positionOrder = [
-        'President',
-        'Presidential',
-        'Vice President',
-        'Vice-President',
-        'Vice',
-        'Secretary',
-        'Treasurer',
-        'Auditor',
-        'Sgt. Arms',
-        'Sergeant at Arms',
-        'B-O-D',
-        'BOD',
-    ];
-
-    $positions = \App\Models\Position::query()
-        ->orderByRaw(
-            'CASE ' . implode(' ', array_map(fn ($i) => 'WHEN name = ? THEN ' . ($i + 1), array_keys($positionOrder))) . ' ELSE 999 END',
-            $positionOrder
-        )
-        ->orderBy('name')
-        ->get();
-
-    $parties = \App\Models\ElectionParty::query()
-        ->where('status', 'Active')
-        ->orderBy('name')
-        ->get();
-
-    return view('voter.vote', compact('positions', 'parties'));
-})->name('vote');
+Route::get('/vote', fn () => redirect()->route('election.details'))->name('vote');
 Route::get('/result', function () {
     $positionOrder = [
         'President',

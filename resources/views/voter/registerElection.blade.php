@@ -62,7 +62,7 @@
        </a>
       </li>
       <li>
-       <a class="hover:underline" href="{{ url('/vote') }}">
+       <a class="hover:underline" href="{{ route('election.details') }}">
         Vote
        </a>
       </li>
@@ -119,7 +119,7 @@
       </a>
      </li>
      <li>
-      <a class="hover:underline block text-center" href="{{ url('/vote') }}">
+      <a class="hover:underline block text-center" href="{{ route('election.details') }}">
        Vote
       </a>
      </li>

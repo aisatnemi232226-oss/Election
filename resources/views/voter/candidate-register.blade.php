@@ -44,7 +44,7 @@
                 <ul class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4">
                     <li><a class="hover:underline" href="{{ url('/') }}">Home</a></li>
                     <li><a class="hover:underline" href="{{ url('/election') }}">Election</a></li>
-                    <li><a class="hover:underline" href="{{ url('/vote') }}">Vote</a></li>
+                    <li><a class="hover:underline" href="{{ route('election.details') }}">Vote</a></li>
                     <li><a class="hover:underline" href="{{ url('/result') }}">Results</a></li>
                     <li><a class="hover:underline" href="{{ url('/contact') }}">Contact</a></li>
                     @guest
@@ -123,14 +123,15 @@
 
                             <div>
                                 <label class="block text-gray-700 font-bold mb-2" for="course_id">Course</label>
-                                <select class="w-full p-3 border border-gray-300 rounded-lg" id="course_id" name="course_id" required>
+                                <select class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200" id="course_id" name="course_id" required>
                                     <option value="">Select Course</option>
                                     @foreach($courses as $course)
                                         <option value="{{ $course->id }}" {{ (string) old('course_id') === (string) $course->id ? 'selected' : '' }}>
-                                            {{ $course->name }}
+                                            {{ $course->name }}{{ $course->coursecode ? ' (' . $course->coursecode . ')' : '' }}
                                         </option>
                                     @endforeach
                                 </select>
+                                <p class="mt-1 text-xs text-gray-500">Select the course shown on your official student record.</p>
                             </div>
 
                             <div>
@@ -149,7 +150,7 @@
                         <div class="mt-5">
                             <label class="block text-gray-700 font-bold mb-2" for="credential">Student QR / Credential</label>
                             <div class="relative">
-                                <input class="w-full p-3 border border-gray-300 rounded-lg pr-12" id="credential" type="text" placeholder="Scan QR or type student number/email" value="{{ old('idnumber', $prefillIdNumber ?? '') ?: old('email', $prefillEmail ?? '') }}" {{ auth()->check() ? 'readonly' : '' }}>
+                                <input class="w-full p-3 border border-gray-300 rounded-lg pr-12" id="credential" type="text" placeholder="Scan QR or type student number/email" value="{{ $credentialValue }}" {{ auth()->check() ? 'readonly' : '' }}>
                                 <button class="absolute inset-y-0 right-0 z-10 flex items-center bg-green-600 text-white px-3 rounded-r-lg hover:bg-green-700 {{ auth()->check() ? 'hidden' : '' }}" type="button" id="scan-qr-button" aria-label="Scan QR">
                                     <i class="fas fa-qrcode"></i>
                                 </button>

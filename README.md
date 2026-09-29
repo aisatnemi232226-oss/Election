@@ -139,6 +139,22 @@ php artisan migrate --seed
 
 You may also use the supplied SQL dump at `db_electionsystem.sql` as a base for a local database import.
 
+### Password reset email (OTP)
+
+The forgot-password flow sends a six-digit code through the configured Laravel mailer. For Brevo SMTP, set these values in your local `.env` using the SMTP login and SMTP key from Brevo (not the API key), and use a sender address verified in Brevo:
+
+```dotenv
+MAIL_MAILER=smtp
+MAIL_HOST=smtp-relay.brevo.com
+MAIL_PORT=587
+MAIL_USERNAME=your-brevo-smtp-login
+MAIL_PASSWORD=your-brevo-smtp-key
+MAIL_FROM_ADDRESS=your-verified-sender@example.com
+MAIL_FROM_NAME="${APP_NAME}"
+```
+
+After changing mail settings, run `php artisan config:clear` and request another code. Never commit real mail credentials to the repository. If delivery fails, the OTP page reports that the email could not be sent; check `storage/logs/laravel.log` for the transport error.
+
 ### 5. Build frontend assets
 
 ```bash

@@ -73,6 +73,9 @@
     </a>
     <div class="relative z-10 bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
         <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Philippine Christian University Online Election System</h2>
+        @if (session('status'))
+            <div class="mb-4 rounded border border-green-200 bg-green-50 p-3 text-sm text-green-800" role="status">{{ session('status') }}</div>
+        @endif
         <form action="{{route('login')}}" method="POST">
             @csrf
             @if ($errors->any())

@@ -35,7 +35,7 @@
                 <ul id="menu" class="hidden md:flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 text-center md:text-left">
                     <li><a class="hover:underline" href="{{ url('/') }}">Home</a></li>
                     <li><a class="hover:underline" href="{{ url('/election') }}">Election</a></li>
-                    <li><a class="hover:underline" href="{{ url('/vote') }}">Vote</a></li>
+                    <li><a class="hover:underline" href="{{ route('election.details') }}">Vote</a></li>
                     <li><a class="hover:underline" href="{{ url('/result') }}">Results</a></li>
                     <li><a class="hover:underline" href="{{ url('/contact') }}">Contact</a></li>
                     @guest

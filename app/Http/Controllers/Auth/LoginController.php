@@ -7,6 +7,7 @@ use App\Support\AuditLogger;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class LoginController extends Controller
 {
@@ -94,6 +95,50 @@ class LoginController extends Controller
         ]);
 
         $qr = trim($validated['qr']);
+
+        if (str_starts_with($qr, '{')) {
+            $payload = json_decode($qr, true);
+
+            if (is_array($payload) && ($payload['purpose'] ?? null) === 'login') {
+                $user = null;
+                if (isset($payload['user_id'], $payload['secret'])
+                    && is_numeric($payload['user_id'])
+                    && is_string($payload['secret'])) {
+                    $user = User::query()
+                        ->whereKey($payload['user_id'])
+                        ->whereNull('deleted_at')
+                        ->first();
+                }
+
+                if (! $user || ! $user->login_qr_hash || ! Hash::check($payload['secret'], $user->login_qr_hash)) {
+                    return response()->json([
+                        'ok' => false,
+                        'message' => 'Invalid login QR. Generate a replacement while signed in.',
+                    ], 422);
+                }
+
+                Auth::login($user);
+                $request->session()->regenerate();
+
+                if ($user->is_admin) {
+                    AuditLogger::log(
+                        $request,
+                        $user->id,
+                        'SECURITY',
+                        'LOGIN',
+                        'Admin Login (QR)',
+                        'Admin logged in via account QR.',
+                        'users',
+                        $user->id
+                    );
+                }
+
+                return response()->json([
+                    'ok' => true,
+                    'redirect' => $user->is_admin ? route('admin.dashboard') : route('home'),
+                ]);
+            }
+        }
 
         $idOrEmail = null;
         $idnumber = null;
