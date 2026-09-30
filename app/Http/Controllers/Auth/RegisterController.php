@@ -3,17 +3,76 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class RegisterController extends Controller
 {
-    public function showRegistrationForm()
+    public function showRegistrationForm(Request $request)
     {
-        $prefillName = trim((string) request()->query('name', ''));
+        $qrName = $request->query('name');
+        $qrIdNumber = $request->query('idnumber');
+        $qrEmail = $request->query('email');
+        $nameParts = preg_split('/\s+/', trim(is_string($qrName) ? $qrName : ''), -1, PREG_SPLIT_NO_EMPTY);
+
+        return view('voter.account-register', [
+            'prefillIdNumber' => is_string($qrIdNumber) ? $qrIdNumber : '',
+            'prefillEmail' => is_string($qrEmail) ? $qrEmail : '',
+            'prefillFirstName' => $nameParts[0] ?? '',
+            'prefillMiddleInitial' => count($nameParts) > 2
+                ? strtoupper(substr((string) $nameParts[1], 0, 1)) . '.'
+                : '',
+            'prefillLastName' => count($nameParts) > 1 ? $nameParts[count($nameParts) - 1] : '',
+        ]);
+    }
+
+    public function createAccount(Request $request)
+    {
+        $validated = $request->validate([
+            'idnumber' => ['required', 'string', 'max:32', 'unique:users,idnumber'],
+            'first_name' => ['required', 'string', 'max:255'],
+            'middle_initial' => ['nullable', 'string', 'max:10', 'regex:/^[\pL]\.?$/u'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'regex:/^[^@\s]+@pcu\.edu\.ph$/i',
+                'max:255',
+                'unique:users,email',
+            ],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $name = trim(implode(' ', array_filter([
+            $validated['first_name'],
+            $validated['middle_initial'] ?? null,
+            $validated['last_name'],
+        ])));
+
+        User::create([
+            'idnumber' => $validated['idnumber'],
+            'first_name' => $validated['first_name'],
+            'middle_initial' => $validated['middle_initial'] ?? null,
+            'last_name' => $validated['last_name'],
+            'name' => $name,
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'is_admin' => false,
+        ]);
+
+        return redirect()->route('register')->with(
+            'status',
+            'Your account has been created. Sign in to apply separately for voter verification.'
+        );
+    }
+
+    public function showVoterVerificationForm()
+    {
+        $user = request()->user();
+
+        $prefillName = trim((string) $user->name);
         $nameParts = preg_split('/\s+/', $prefillName);
         $derivedFirstName = $nameParts[0] ?? '';
         $derivedLastName = count($nameParts) > 1 ? $nameParts[count($nameParts) - 1] : '';
@@ -21,66 +80,43 @@ class RegisterController extends Controller
             ? strtoupper(substr((string) ($nameParts[1] ?? ''), 0, 1)) . '.'
             : '';
 
+        $firstName = (string) ($user?->first_name ?: $derivedFirstName);
+        $middleInitial = (string) ($user?->middle_initial ?: $derivedMiddleInitial);
+        $lastName = (string) ($user?->last_name ?: $derivedLastName);
+
         return view('voter.register', [
-            'prefillIdNumber' => request()->query('idnumber', ''),
-            'prefillEmail' => request()->query('email', ''),
-            'prefillFirstName' => request()->query('first_name', ''),
-            'prefillMiddleInitial' => request()->query('middle_initial', ''),
-            'prefillLastName' => request()->query('last_name', ''),
-            'prefillName' => $prefillName,
-            'prefillNameFirstPart' => $derivedFirstName,
-            'prefillNameMiddleInitial' => $derivedMiddleInitial,
-            'prefillNameLastPart' => $derivedLastName,
-            'redirectTo' => request()->query('redirect_to', ''),
+            'prefillIdNumber' => $user->idnumber,
+            'prefillEmail' => $user->email,
+            'prefillFirstName' => $firstName,
+            'prefillMiddleInitial' => $middleInitial,
+            'prefillLastName' => $lastName,
+            'alreadyVerified' => $user->isVerifiedVoter(),
+            'verificationPending' => $user->voter_verification_submitted_at !== null,
         ]);
     }
 
-    public function register(Request $request)
+    public function submitVoterVerification(Request $request)
     {
+        $user = $request->user();
+
+        if ($user->isVerifiedVoter()) {
+            return redirect()->route('register.verify');
+        }
+
+        if ($user->voter_verification_submitted_at !== null) {
+            return redirect()->route('register.verify');
+        }
+
         $request->validate([
-            'idnumber' => 'required|regex:/^\d+$/|unique:users,idnumber',
-            'first_name' => 'required|string|max:255',
-            'middle_initial' => 'nullable|string|max:10|regex:/^[A-Za-z](?:\.)?$/',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
-            'password' => 'required',
+            'current_password' => 'required|string|current_password',
         ]);
 
-        $firstName = trim($request->input('first_name'));
-        $middleInitial = trim((string) $request->input('middle_initial', ''));
-        if ($middleInitial !== '') {
-            $middleInitial = strtoupper(rtrim($middleInitial, '.')) . '.';
-        }
-        $lastName = trim($request->input('last_name'));
+        $user->voter_verification_submitted_at = now();
+        $user->save();
 
-        $loginQrSecret = Str::random(64);
-        $recoveryQrSecret = Str::random(64);
-        $user = User::create([
-            'idnumber' => $request->idnumber,
-            'first_name' => $firstName,
-            'middle_initial' => $middleInitial ?: null,
-            'last_name' => $lastName,
-            'name' => trim(implode(' ', array_filter([$firstName, $middleInitial, $lastName]))),
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-        $user->forceFill([
-            'login_qr_hash' => Hash::make($loginQrSecret),
-            'password_recovery_qr_hash' => Hash::make($recoveryQrSecret),
-        ])->save();
-
-        $request->session()->flash('login_qr_secret', $loginQrSecret);
-        $request->session()->flash('recovery_qr_secret', $recoveryQrSecret);
-        $redirectTo = (string) $request->input('redirect_to', '');
-        if ($redirectTo !== '' && str_starts_with($redirectTo, '/') && ! str_contains($redirectTo, '//')) {
-            $request->session()->flash('recovery_qr_continue_to', $redirectTo);
-        }
-        Auth::login($user);
-        $request->session()->regenerate();
-
-        return redirect()->route('account.qr-codes')->with(
+        return redirect()->route('register.verify')->with(
             'status',
-            'Your voter account has been created and is awaiting administrator verification. You can vote after an administrator verifies your student details.'
+            'Your existing account has been submitted for administrator verification. You can vote after an administrator verifies your student details.'
         );
     }
 }

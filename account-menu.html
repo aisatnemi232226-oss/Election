@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Account menu</title>
+<style>
+  :root {
+    --brand: #2563eb; --brand-dark: #1d4ed8;
+    --ink: #0f172a; --muted: #64748b; --line: #e2e8f0; --hover: #f1f5f9;
+    --ok-bg: #dcfce7; --ok-fg: #166534; --ok: #16a34a;
+    --bad-bg: #fee2e2; --bad-fg: #991b1b; --bad: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: #f8fafc; font-family: "Segoe UI", Roboto, Arial, sans-serif; color: var(--ink); }
+
+  .topbar { background: var(--brand); display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding: 12px 16px; }
+
+  .icon-btn { width: 40px; height: 40px; border: 0; border-radius: 50%; background: transparent; color: #fff; display: grid; place-items: center; cursor: pointer; }
+  .icon-btn:hover { background: rgba(255,255,255,.15); }
+  .icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
+
+  .account { position: relative; }
+  .trigger {
+    display: flex; align-items: center; gap: 10px; height: 48px; max-width: 100%;
+    padding: 4px 12px 4px 4px; border: 1px solid rgba(255,255,255,.28); border-radius: 999px;
+    background: rgba(255,255,255,.14); color: #fff; font: inherit; cursor: pointer;
+  }
+  .trigger:hover { background: rgba(255,255,255,.22); }
+  .trigger:focus-visible, .icon-btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+  .avatar { position: relative; width: 38px; height: 38px; border-radius: 50%; background: #fff; color: var(--brand); display: grid; place-items: center; flex: none; }
+  .avatar svg { width: 20px; height: 20px; fill: currentColor; }
+  .avatar .dot { position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--brand); background: var(--bad); display: none; }
+  .is-verified .avatar .dot { background: var(--ok); }
+
+  .name { font-weight: 600; font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+  .chev { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform .18s; flex: none; }
+  .trigger[aria-expanded="true"] .chev { transform: rotate(180deg); }
+
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px 2px 7px; border-radius: 999px; font-size: .75rem; font-weight: 600; white-space: nowrap; background: var(--bad-bg); color: var(--bad-fg); }
+  .badge svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .is-verified .badge { background: var(--ok-bg); color: var(--ok-fg); }
+
+  /* Dropdown */
+  .menu {
+    position: absolute; right: 0; top: calc(100% + 10px); width: 300px; max-width: calc(100vw - 24px);
+    background: #fff; border-radius: 16px; box-shadow: 0 12px 32px rgba(15,23,42,.18), 0 2px 6px rgba(15,23,42,.08);
+    overflow: hidden; opacity: 0; transform: translateY(-6px); pointer-events: none; visibility: hidden;
+    transition: opacity .16s, transform .16s, visibility .16s; z-index: 10;
+  }
+  .menu.open { opacity: 1; transform: none; pointer-events: auto; visibility: visible; }
+
+  .head { padding: 18px 20px 14px; }
+  .head-top { display: flex; align-items: center; gap: 12px; }
+  .head .avatar { width: 44px; height: 44px; background: #dbeafe; }
+  .head .avatar svg { width: 24px; height: 24px; }
+  .head strong { display: block; font-size: 1.05rem; }
+  .head small { color: var(--muted); font-size: .85rem; word-break: break-all; }
+  .meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 14px; font-size: .85rem; color: var(--muted); }
+  .meta b { color: var(--ink); font-weight: 600; }
+
+  .notice { display: none; margin: 0 12px 12px; padding: 12px; border-radius: 12px; background: #fef2f2; border: 1px solid #fecaca; font-size: .85rem; color: var(--bad-fg); }
+  .notice p { margin: 0 0 8px; }
+  .notice a { display: inline-block; padding: 7px 14px; border-radius: 8px; background: var(--bad); color: #fff; font-weight: 600; text-decoration: none; }
+  .notice a:hover { background: #b91c1c; }
+  .is-unverified .notice { display: block; }
+
+  .list { border-top: 1px solid var(--line); padding: 6px; }
+  .item { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 10px; color: var(--ink); text-decoration: none; font-size: 1rem; }
+  .item:hover, .item:focus-visible { background: var(--hover); outline: none; }
+  .item svg { width: 20px; height: 20px; fill: none; stroke: var(--muted); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .item.danger { color: #dc2626; }
+  .item.danger svg { stroke: #dc2626; }
+  .item.danger:hover { background: #fef2f2; }
+  .list + .list { border-top: 1px solid var(--line); }
+
+  /* Compact trigger on small screens: badge collapses into a status dot on the avatar */
+  @media (max-width: 640px) {
+    .trigger .badge { display: none; }
+    .avatar .dot { display: block; }
+    .name { max-width: 90px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .menu, .chev { transition: none; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <button class="icon-btn" aria-label="Notifications">
+    <svg viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22Zm7-6v-5a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/></svg>
+  </button>
+
+  <div class="account is-unverified" id="account">
+    <button class="trigger" id="trigger" aria-haspopup="menu" aria-expanded="false" aria-controls="menu">
+      <span class="avatar">
+        <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z"/></svg>
+        <span class="dot"></span>
+      </span>
+      <span class="name">Nemz Kie</span>
+      <span class="badge"><svg viewBox="0 0 24 24" class="b-icon"></svg><span class="b-text"></span></span>
+      <svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+
+    <div class="menu" id="menu" role="menu">
+      <div class="head">
+        <div class="head-top">
+          <span class="avatar"><svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z"/></svg></span>
+          <div><strong>Nemz Kie</strong><small>jclnemi@pcu.edu.ph</small></div>
+        </div>
+        <div class="meta">
+          <span>Student No: <b>232800</b></span>
+          <span class="badge"><svg viewBox="0 0 24 24" class="b-icon"></svg><span class="b-text"></span></span>
+        </div>
+      </div>
+
+      <div class="notice">
+        <p>Verify your account to vote in elections.</p>
+        <a href="#verify">Verify now</a>
+      </div>
+
+      <div class="list">
+        <a class="item" role="menuitem" href="#tickets">
+          <svg viewBox="0 0 24 24"><path d="M3 9V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v3a3 3 0 0 0 0 6v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a3 3 0 0 0 0-6Z"/><path d="M14 5v14" stroke-dasharray="2 3"/></svg>
+          Tickets
+        </a>
+        <a class="item" role="menuitem" href="#qr">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v0M14 20h3M20 17v4"/></svg>
+          Account QR codes
+        </a>
+      </div>
+      <div class="list">
+        <a class="item danger" role="menuitem" href="#logout">
+          <svg viewBox="0 0 24 24"><path d="M9 21H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h4M16 17l5-5-5-5M21 12H9"/></svg>
+          Log out
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+  const account = document.getElementById('account');
+  const trigger = document.getElementById('trigger');
+  const menu = document.getElementById('menu');
+
+  // Call with true / false from your backend data
+  function setVerified(v) {
+    account.classList.toggle('is-verified', v);
+    account.classList.toggle('is-unverified', !v);
+    account.querySelectorAll('.b-text').forEach(t => t.textContent = v ? 'Verified' : 'Not verified');
+    account.querySelectorAll('.b-icon').forEach(i => i.innerHTML = v ? '<path d="M5 12.5l4.5 4.5L19 7.5"/>' : '<path d="M6 6l12 12M18 6L6 18"/>');
+  }
+
+  function toggle(open) {
+    menu.classList.toggle('open', open);
+    trigger.setAttribute('aria-expanded', open);
+  }
+
+  trigger.addEventListener('click', () => toggle(!menu.classList.contains('open')));
+  document.addEventListener('click', e => { if (!account.contains(e.target)) toggle(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { toggle(false); trigger.focus(); } });
+
+  setVerified(false); // try true to preview the verified state
+</script>
+</body>
+</html>

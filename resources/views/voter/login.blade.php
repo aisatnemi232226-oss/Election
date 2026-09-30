@@ -60,7 +60,10 @@
         }
     </style>
 </head>
-<body class="relative bg-[url('{{ asset('images/background1.jpg') }}')] bg-bottom bg-cover text-center text-white flex items-center justify-center h-screen">
+<body class="relative bg-blue-900 text-center text-white flex items-center justify-center h-screen">
+    <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+        <img src="{{ asset('images/background1.jpg') }}" alt="" class="h-full w-full object-cover object-bottom">
+    </div>
     <div class="pointer-events-none fixed inset-0 flex items-center justify-center opacity-30 z-0" aria-hidden="true">
         <img src="{{ asset('images/pculogo.png') }}" alt="" class="w-[62vw] max-w-[820px] h-auto" />
     </div>
@@ -120,7 +123,7 @@
                 <a class="inline-block align-baseline font-bold text-sm text-blue-600 hover:text-blue-800" href="{{route('password.request') }}">Forgot Password?</a>
             </div>
             <div class="text-center">
-                <a class="inline-block align-baseline font-bold text-sm text-blue-600 hover:text-blue-800" href="{{url('/register') }}">Create Account</a>
+                <a class="inline-block align-baseline font-bold text-sm text-blue-600 hover:text-blue-800" href="{{ route('register') }}">Create Account</a>
             </div>
         </form>
     </div>

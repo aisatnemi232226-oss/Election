@@ -31,6 +31,17 @@
             font-family: 'Roboto', sans-serif;
         }
 
+        @keyframes verification-success-enter {
+            from { opacity: 0; transform: translateY(0.75rem) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            #verification-success-modal:not(.hidden) .verification-success-card {
+                animation: verification-success-enter 0.24s ease-out both;
+            }
+        }
+
         @keyframes qrScanLine {
             0% { transform: translateY(0%); opacity: 0.9; }
             50% { opacity: 1; }
@@ -61,18 +72,73 @@
         }
     </style>
 </head>
-<body class="relative bg-[url('{{ asset('images/background1.jpg') }}')] bg-bottom bg-cover text-center text-white flex items-center justify-center h-screen">
+<body class="relative min-h-screen bg-gray-100">
     <div class="pointer-events-none fixed inset-0 flex items-center justify-center opacity-30 z-0" aria-hidden="true">
         <img src="{{ asset('images/pculogo.png') }}" alt="" class="w-[62vw] max-w-[820px] h-auto" />
     </div>
-    <div class="relative z-10 bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h2 class="text-3xl font-bold text-gray-800 mb-3 text-center">Voter Registration</h2>
-        <p class="mb-6 text-center text-sm text-gray-600">Create your account with your student details. An administrator must verify your voter eligibility before you can vote.</p>
-        <form action="{{route('register')}}" method="POST">
+    <header class="relative z-50 bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+            <a href="{{ url('/') }}" class="flex items-center gap-3 mb-4 md:mb-0">
+                <img src="{{ asset('images/pculogo.png') }}" alt="School Logo" class="w-16 h-16 md:w-24 md:h-24 -my-4 object-contain flex-shrink-0" onerror="this.onerror=null;this.style.display='none';">
+                <h1 class="text-3xl font-bold">Philippine Christian University Online Election System</h1>
+            </a>
+            <nav class="hidden md:block" id="menu">
+                <ul class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4">
+                    <li><a class="hover:underline" href="{{ url('/') }}">Home</a></li>
+                    <li><a class="hover:underline" href="{{ url('/election') }}">Election</a></li>
+                    <li><a class="hover:underline" href="{{ route('election.details') }}">Vote</a></li>
+                    <li><a class="hover:underline" href="{{ url('/result') }}">Results</a></li>
+                    <li><a class="hover:underline" href="{{ url('/contact') }}">Contact</a></li>
+                    @guest
+                        <li><a class="hover:underline" href="{{ route('login') }}">Log In</a></li>
+                    @endguest
+                    @auth
+                        <li class="border-t md:border-t-0 md:pt-0 pt-2">
+                            <span class="text-sm font-semibold">{{ auth()->user()->name }}</span>
+                        </li>
+                    @endauth
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="relative z-10 container mx-auto p-4">
+        <a href="{{ url('/') }}"
+            class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-bold text-blue-700 shadow-md transition hover:bg-blue-50 hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            aria-label="Back to home">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            <i class="fas fa-home" aria-hidden="true"></i>
+            <span>Home</span>
+        </a>
+        <section class="text-center my-8">
+            <h2 class="text-4xl font-bold text-gray-800 mb-2">Voter Registration</h2>
+            <p class="text-gray-600 text-lg">Submit your existing account for administrator verification so you can vote.</p>
+        </section>
+
+        <section class="my-8">
+            <div class="bg-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
+                @if (!$alreadyVerified && !$verificationPending)
+                    <div class="mb-4 rounded-lg bg-blue-50 px-4 py-3 text-blue-900 border border-blue-200">
+                        Your account details below come from your signed-in account. An administrator will review them; this will not create a new account.
+                    </div>
+                @endif
+                @if ($alreadyVerified)
+                    <div class="rounded-lg bg-green-50 px-4 py-3 text-green-800" role="status">
+                        Your account is already verified to vote.
+                    </div>
+                @elseif ($verificationPending)
+                    <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-amber-900" role="status">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-clock mt-1 text-amber-600" aria-hidden="true"></i>
+                            <div>
+                                <h3 class="font-bold">Pending Voter Application</h3>
+                                <p class="mt-1 text-sm">Your verification request has been submitted and is awaiting administrator review. You can vote after your account is verified.</p>
+                            </div>
+                        </div>
+                    </div>
+                @else
+                <form action="{{ route('register.verify.store') }}" method="POST">
             @csrf
-            @if (!empty($redirectTo ?? ''))
-                <input type="hidden" name="redirect_to" value="{{ $redirectTo }}">
-            @endif
             @if ($errors->any())
                 <div id="register-error-notification" class="fixed top-4 right-4 z-50 w-[calc(100%-2rem)] max-w-md rounded-lg border border-red-200 bg-white p-4 text-left text-red-700 shadow-xl" role="alert" aria-live="assertive">
                     <div class="flex items-start gap-3">
@@ -97,45 +163,58 @@
                 </script>
             @endif
             <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="idnumber">Student Number</label>
+                <label class="block text-gray-700 font-bold mb-2" for="idnumber">Student Number</label>
                 <div class="relative">
-                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline pr-12" id="idnumber" name="idnumber" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Student Number" value="{{ old('idnumber', $prefillIdNumber ?? '') }}" oninput="this.value=this.value.replace(/[^0-9]/g,'')" required>
-                    <button class="absolute inset-y-0 right-0 z-10 flex items-center bg-green-600 text-white p-2 rounded-r-lg hover:bg-green-700" type="button" id="scan-qr-button">
+                    <input class="w-full p-3 border border-gray-300 rounded-lg pr-12 focus:border-blue-500 focus:ring-2 focus:ring-blue-200" id="idnumber" name="idnumber" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Student Number" value="{{ $prefillIdNumber }}" readonly required>
+                    <button class="absolute inset-y-0 right-0 z-10 hidden items-center bg-green-600 text-white px-3 rounded-r-lg hover:bg-green-700" type="button" id="scan-qr-button" aria-label="Scan student QR code">
                         <i class="fas fa-qrcode"></i>
                     </button>
                 </div>
             </div>
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="first_name">First Name</label>
-                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="first_name" name="first_name" type="text" placeholder="First Name" value="{{ old('first_name', !empty($prefillFirstName ?? '') ? $prefillFirstName : ($prefillNameFirstPart ?? '')) }}" required>
-            </div>
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="middle_initial">Middle Initial</label>
-                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="middle_initial" name="middle_initial" type="text" maxlength="2" pattern="[A-Za-z]\.?" placeholder="M.I. (optional)" value="{{ old('middle_initial', !empty($prefillMiddleInitial ?? '') ? $prefillMiddleInitial : ($prefillNameMiddleInitial ?? '')) }}">
-                <p class="mt-1 text-left text-xs text-gray-500">Enter one letter, with or without a period.</p>
-            </div>
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="last_name">Last Name</label>
-                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="last_name" name="last_name" type="text" placeholder="Last Name" value="{{ old('last_name', !empty($prefillLastName ?? '') ? $prefillLastName : ($prefillNameLastPart ?? '')) }}" required>
-            </div>
-
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="email">Email</label>
-                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="email" name="email" type="email" placeholder="Email" value="{{ old('email', $prefillEmail ?? '') }}" required>
-            </div>
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="password">Password</label>
-                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="password" name="password" type="password" placeholder="Password" required>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-bold mb-2" for="first_name">First Name</label>
+                    <input class="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" id="first_name" name="first_name" type="text" placeholder="First Name" value="{{ $prefillFirstName }}" readonly required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-bold mb-2" for="middle_initial">Middle Initial</label>
+                    <input class="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" id="middle_initial" name="middle_initial" type="text" maxlength="2" pattern="[A-Za-z]\.?" placeholder="M.I. (optional)" value="{{ $prefillMiddleInitial }}" readonly>
+                    <p class="mt-1 text-xs text-gray-500">Enter one letter, with or without a period.</p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-bold mb-2" for="last_name">Last Name</label>
+                    <input class="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" id="last_name" name="last_name" type="text" placeholder="Last Name" value="{{ $prefillLastName }}" readonly required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-bold mb-2" for="email">Email</label>
+                    <input class="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" id="email" name="email" type="email" placeholder="Email" value="{{ $prefillEmail }}" readonly required>
+                </div>
             </div>
 
-            <div class="flex items-center justify-between mb-4">
-                <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 w-full" type="submit">Register</button>
+            <div class="mb-4">
+                @auth
+                    <label class="block text-gray-700 font-bold mb-2" for="current_password">Re-enter Your Account Password</label>
+                    <div class="relative">
+                        <input class="w-full p-3 pr-20 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" id="current_password" name="current_password" type="password" autocomplete="current-password" placeholder="Enter your current password" required>
+                        <button class="absolute inset-y-0 right-2 my-auto h-9 rounded px-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500" type="button" id="toggle-current-password" aria-label="Show password" aria-controls="current_password" aria-pressed="false">
+                            Show
+                        </button>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">Confirm your identity so your existing account can be reviewed for voter eligibility.</p>
+                @else
+                    <label class="block text-gray-700 font-bold mb-2" for="password">Password</label>
+                    <input class="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" id="password" name="password" type="password" autocomplete="new-password" placeholder="Password" required>
+                @endauth
             </div>
-            <div class="text-center">
-                <p class="text-gray-700 text-sm">Already have an account? <a class="font-bold text-blue-600 hover:text-blue-800" href="{{ url('/login') }}">Login</a></p>
+
+            <div class="mt-6 text-center">
+                <button class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700" type="submit">Submit for Verification</button>
             </div>
         </form>
-    </div>
+                @endif
+            </div>
+        </section>
+    </main>
 
     <div id="qr-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
         <div id="qr-modal-backdrop" class="absolute inset-0 bg-gray-900/70"></div>
@@ -159,9 +238,86 @@
             </div>
         </div>
     </div>
-</body>
+@if (session('status'))
+    <div id="verification-success-modal" class="fixed inset-0 z-[9999] hidden" role="dialog" aria-modal="true" aria-labelledby="verification-success-title" aria-describedby="verification-success-description">
+        <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity" id="verification-success-backdrop"></div>
+        <div class="relative flex min-h-full items-center justify-center p-4 sm:p-6">
+            <section class="verification-success-card relative w-full max-w-md overflow-hidden rounded-3xl border border-white/70 bg-white shadow-2xl shadow-slate-950/25">
+                <div class="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-emerald-400 via-teal-500 to-blue-600"></div>
+                <button type="button" id="close-verification-success" class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" aria-label="Close confirmation">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
 
+                <div class="px-7 pb-7 pt-10 text-center sm:px-9 sm:pb-9">
+                    <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-8 ring-emerald-50/60">
+                        <i class="fas fa-check text-2xl" aria-hidden="true"></i>
+                    </div>
+                    <p class="mt-6 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Submission received</p>
+                    <h2 id="verification-success-title" class="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Verification submitted</h2>
+                    <p id="verification-success-description" class="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-600 sm:text-base">
+                        {{ session('status') }}
+                    </p>
+                    <div class="mt-6 flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50/80 p-4 text-left">
+                        <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm">
+                            <i class="fas fa-clock" aria-hidden="true"></i>
+                        </span>
+                        <p class="text-sm leading-5 text-blue-950">
+                            <span class="font-semibold">What happens next?</span><br>
+                            An administrator will review your account. You can vote once your student details are verified.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-100 bg-slate-50/80 px-7 py-5 sm:px-9">
+                    <button type="button" id="ok-verification-success" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-900/15 transition hover:-translate-y-0.5 hover:bg-blue-800 hover:shadow-blue-900/25 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        <span>Got it</span>
+                        <i class="fas fa-arrow-right text-xs" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </section>
+        </div>
+    </div>
+@endif
 <script>
+    (function () {
+        const modal = document.getElementById('verification-success-modal');
+        if (!modal) return;
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+            document.removeEventListener('keydown', handleEscape);
+        }
+
+        function handleEscape(event) {
+            if (event.key === 'Escape') closeModal();
+        }
+
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        document.getElementById('ok-verification-success')?.focus();
+        document.getElementById('close-verification-success')?.addEventListener('click', closeModal);
+        document.getElementById('ok-verification-success')?.addEventListener('click', closeModal);
+        document.getElementById('verification-success-backdrop')?.addEventListener('click', closeModal);
+        document.addEventListener('keydown', handleEscape);
+    })();
+
+    const currentPasswordInput = document.getElementById('current_password');
+    const toggleCurrentPasswordButton = document.getElementById('toggle-current-password');
+
+    if (currentPasswordInput && toggleCurrentPasswordButton) {
+        toggleCurrentPasswordButton.addEventListener('click', function () {
+            const shouldShowPassword = currentPasswordInput.type === 'password';
+            currentPasswordInput.type = shouldShowPassword ? 'text' : 'password';
+            toggleCurrentPasswordButton.textContent = shouldShowPassword ? 'Hide' : 'Show';
+            toggleCurrentPasswordButton.setAttribute('aria-pressed', String(shouldShowPassword));
+            toggleCurrentPasswordButton.setAttribute(
+                'aria-label',
+                shouldShowPassword ? 'Hide password' : 'Show password'
+            );
+        });
+    }
+
     let html5QrCode = null;
     let isScanning = false;
 
@@ -366,4 +522,5 @@
     });
 </script>
 
+</body>
 </html>

@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -68,6 +69,9 @@ class CandidateRegistrationController extends Controller
             'credentialValue' => $credentialValue,
             'hasExistingApplication' => $hasExistingApplication,
             'existingApplicationStatus' => $existingApplicationStatus,
+            'voterVerificationPending' => Auth::check()
+                && Auth::user()->voter_verification_submitted_at !== null
+                && !Auth::user()->isVerifiedVoter(),
         ]);
     }
 
@@ -82,8 +86,8 @@ class CandidateRegistrationController extends Controller
             'party_id' => 'nullable|exists:electionparty,id',
             'description' => 'required|string',
             'platforms' => 'required|string',
-            'profile_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'banner_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'profile_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:10240',
+            'banner_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:10240',
         ]);
 
         $idNumber = preg_replace('/[^0-9]/', '', (string) $validated['idnumber']);
@@ -131,6 +135,9 @@ class CandidateRegistrationController extends Controller
             }
         }
 
+        $storedFiles = [];
+        $submissionSaved = false;
+
         try {
             $candidate = $existingCandidate ?: new Candidate();
             if (Schema::hasColumn('candidate', 'users_id')) {
@@ -144,26 +151,40 @@ class CandidateRegistrationController extends Controller
             $candidate->platforms = $validated['platforms'];
             $candidate->description = $validated['description'];
             $candidate->status = 'Pending';
-
             if ($candidate->trashed()) {
-                $candidate->restore();
+                $candidate->deleted_at = null;
             }
 
             if ($request->hasFile('profile_img')) {
                 $profileFile = $request->file('profile_img');
                 $profileFilename = time() . '_' . Str::random(10) . '_profile.' . $profileFile->getClientOriginalExtension();
-                $profileFile->storeAs('upload/profile-picture', $profileFilename, 'public');
+                $storedPath = $profileFile->storeAs('upload/profile-picture', $profileFilename, 'public');
+                if (!is_string($storedPath)) {
+                    return back()->withErrors([
+                        'profile_img' => 'The profile image could not be saved. Please try again.',
+                    ])->withInput();
+                }
+                $storedFiles[] = $storedPath;
                 $candidate->profile_img = $profileFilename;
             }
 
             if ($request->hasFile('banner_img')) {
                 $bannerFile = $request->file('banner_img');
                 $bannerFilename = time() . '_' . Str::random(10) . '_banner.' . $bannerFile->getClientOriginalExtension();
-                $bannerFile->storeAs('upload/banner', $bannerFilename, 'public');
+                $storedPath = $bannerFile->storeAs('upload/banner', $bannerFilename, 'public');
+                if (!is_string($storedPath)) {
+                    return back()->withErrors([
+                        'banner_img' => 'The banner image could not be saved. Please try again.',
+                    ])->withInput();
+                }
+                $storedFiles[] = $storedPath;
                 $candidate->banner_img = $bannerFilename;
             }
 
-            $candidate->save();
+            DB::transaction(function () use ($candidate): void {
+                $candidate->save();
+            });
+            $submissionSaved = true;
 
             return redirect()->route('candidate.register')->with('success', 'Application submitted. Please wait for admin approval.');
         } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
@@ -177,6 +198,10 @@ class CandidateRegistrationController extends Controller
                 ]);
             }
             throw $e;
+        } finally {
+            if (!$submissionSaved && $storedFiles !== []) {
+                Storage::disk('public')->delete($storedFiles);
+            }
         }
     }
 }

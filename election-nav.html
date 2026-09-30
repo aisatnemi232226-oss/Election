@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PCU Online Election System – Navbar</title>
+<style>
+  :root {
+    --nav-bg: #2563eb;
+    --nav-text: #ffffff;
+    --ok-bg: #dcfce7;   --ok-fg: #166534;   --ok-dot: #16a34a;
+    --bad-bg: #fee2e2;  --bad-fg: #991b1b;  --bad-dot: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", Roboto, Arial, sans-serif; background: #f3f4f6; }
+
+  .navbar {
+    background: var(--nav-bg);
+    color: var(--nav-text);
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 24px; padding: 12px 6vw; flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 16px; text-decoration: none; color: inherit; }
+  .brand img { width: 60px; height: 60px; border-radius: 50%; background: #fff; object-fit: cover; }
+  .brand span { font-size: 1.6rem; font-weight: 700; line-height: 1.15; max-width: 560px; }
+
+  .nav-right { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
+  .links { display: flex; gap: 20px; }
+  .links a { color: inherit; text-decoration: none; font-size: 1rem; padding: 4px 2px; border-bottom: 2px solid transparent; }
+  .links a:hover, .links a:focus-visible { border-bottom-color: #fff; outline: none; }
+
+  .bell { background: none; border: 0; color: inherit; cursor: pointer; padding: 6px; display: grid; place-items: center; }
+  .bell svg { width: 20px; height: 20px; fill: currentColor; }
+
+  .account { display: flex; align-items: center; gap: 12px; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: #fff; color: var(--nav-bg); display: grid; place-items: center; }
+  .avatar svg { width: 22px; height: 22px; fill: currentColor; }
+  .who { display: flex; flex-direction: column; gap: 4px; font-size: .95rem; line-height: 1.1; }
+
+  /* Verification badge */
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    width: fit-content; padding: 2px 9px 2px 7px;
+    border-radius: 999px; font-size: .75rem; font-weight: 600;
+  }
+  .badge svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .badge.verified   { background: var(--ok-bg);  color: var(--ok-fg); }
+  .badge.unverified { background: var(--bad-bg); color: var(--bad-fg); }
+  .badge.verified svg   { color: var(--ok-dot); }
+  .badge.unverified svg { color: var(--bad-dot); }
+
+  @media (max-width: 720px) {
+    .brand span { font-size: 1.2rem; }
+    .nav-right { width: 100%; justify-content: space-between; gap: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="navbar">
+  <a class="brand" href="#">
+    <!-- Replace src with your PCU seal image -->
+    <img src="pcu-seal.png" alt="PCU seal">
+    <span>Philippine Christian University Online Election System</span>
+  </a>
+
+  <nav class="nav-right" aria-label="Main">
+    <div class="links">
+      <a href="#">Home</a>
+      <a href="#">Election</a>
+      <a href="#">Vote</a>
+      <a href="#">Results</a>
+      <a href="#">Contact</a>
+    </div>
+
+    <button class="bell" aria-label="Notifications">
+      <svg viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22Zm7-6v-5a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/></svg>
+    </button>
+
+    <div class="account">
+      <div class="avatar" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z"/></svg>
+      </div>
+      <div class="who">
+        <span>Demo Student</span>
+        <!-- Toggle class: "verified" or "unverified" -->
+        <span class="badge verified" id="verifyBadge">
+          <svg viewBox="0 0 24 24" id="badgeIcon"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+          <span id="badgeText">Verified</span>
+        </span>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<script>
+  // Call this with true/false based on the student's verification status
+  function setVerified(isVerified) {
+    const badge = document.getElementById('verifyBadge');
+    const text = document.getElementById('badgeText');
+    const icon = document.getElementById('badgeIcon');
+    badge.classList.toggle('verified', isVerified);
+    badge.classList.toggle('unverified', !isVerified);
+    text.textContent = isVerified ? 'Verified' : 'Not verified';
+    icon.innerHTML = isVerified
+      ? '<path d="M5 12.5l4.5 4.5L19 7.5"/>'
+      : '<path d="M6 6l12 12M18 6L6 18"/>';
+  }
+
+  setVerified(true); // change to false to preview "Not verified"
+</script>
+</body>
+</html>

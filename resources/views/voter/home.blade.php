@@ -41,10 +41,34 @@
             Philippine Christian University Online Election System
         </h1>
     </a>
-    <button class="md:hidden text-white" id="menu-toggle">
-     <i class="fas fa-bars text-2xl">
-     </i>
-    </button>
+    <div class="flex items-center gap-2 md:hidden">
+     @auth
+      @php
+       $studentVerificationUnreadCount = auth()->user()
+        ->unreadNotifications()
+        ->where('type', \App\Notifications\StudentVoterVerified::class)
+        ->count();
+      @endphp
+      <button
+       type="button"
+       class="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-white transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white"
+       aria-label="Notifications"
+       aria-haspopup="true"
+       aria-expanded="false"
+       data-student-notification-toggle
+       data-list-url="{{ route('student.notifications.index') }}"
+       data-read-url="{{ route('student.notifications.read') }}"
+      >
+       <i class="fas fa-bell" aria-hidden="true"></i>
+       <span data-student-notification-badge class="{{ $studentVerificationUnreadCount > 0 ? '' : 'hidden' }} absolute -right-1 -top-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold text-white">
+        {{ $studentVerificationUnreadCount > 99 ? '99+' : $studentVerificationUnreadCount }}
+       </span>
+      </button>
+     @endauth
+     <button class="text-white" id="menu-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="menu">
+      <i class="fas fa-bars text-2xl" aria-hidden="true"></i>
+     </button>
+    </div>
     <nav class="hidden md:block" id="menu">
      <ul class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 items-center">
       <li>
@@ -80,28 +104,76 @@
             </li>
             @endguest
       @auth
-      <li class="relative">
-       <button id="profile-toggle" type="button" class="flex items-center space-x-2 focus:outline-none">
-        <span class="inline-flex items-center justify-center w-8 h-8 bg-white text-blue-600 rounded-full">
-         <i class="fas fa-user"></i>
+      @include('voter.partials.verification-notifications')
+      @php
+       $isVerifiedStudent = !Auth::user()->is_admin && Auth::user()->isVerifiedVoter();
+       $verificationPending = Auth::user()->voter_verification_submitted_at !== null;
+      @endphp
+      <li class="relative flex items-center">
+       <button id="profile-toggle" type="button" class="group inline-flex h-12 max-w-full items-center gap-2.5 rounded-full border border-white/30 bg-white/15 py-1 pl-1 pr-3 text-left text-white transition-colors hover:bg-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-600" aria-controls="profile-menu" aria-expanded="false" aria-label="Open profile menu">
+        <span class="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-blue-700 shadow-sm">
+         <i class="fas fa-user" aria-hidden="true"></i>
+         <span class="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-blue-600 {{ Auth::user()->is_admin ? 'bg-blue-300' : ($isVerifiedStudent ? 'bg-green-400' : 'bg-red-400') }}" aria-hidden="true"></span>
         </span>
-        <span class="hidden md:inline text-sm">{{ Auth::user()->name ?? 'Profile' }}</span>
+        <span class="hidden min-w-0 items-center gap-2 md:flex">
+         <span class="max-w-28 truncate text-sm font-semibold">{{ Auth::user()->first_name ?: \Illuminate\Support\Str::before((string) Auth::user()->name, ' ') ?: 'Profile' }}</span>
+         @unless(Auth::user()->is_admin)
+         <span role="status" aria-label="{{ $isVerifiedStudent ? 'Verified' : 'Not verified' }}" class="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold leading-none {{ $isVerifiedStudent ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+          <i class="fas {{ $isVerifiedStudent ? 'fa-check' : 'fa-times' }}" aria-hidden="true"></i>
+          Verified
+         </span>
+         @endunless
+        </span>
+        <i class="fas fa-chevron-down hidden shrink-0 text-[10px] text-blue-100 transition-transform md:block" aria-hidden="true" data-profile-chevron></i>
        </button>
-       <div id="profile-menu" class="hidden absolute right-0 mt-2 w-56 bg-white text-gray-800 rounded-md shadow-lg z-50 pointer-events-auto">
-        <div class="px-4 py-2 border-b">
-         <p class="font-semibold text-sm truncate">{{ Auth::user()->name }}</p>
-         <p class="text-xs text-gray-500 truncate">{{ Auth::user()->email }}</p>
+       <div id="profile-menu" class="pointer-events-auto absolute right-0 top-full z-50 mt-2 hidden w-[300px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl bg-white text-gray-800 shadow-[0_12px_32px_rgba(15,23,42,0.18),0_2px_6px_rgba(15,23,42,0.08)]">
+        <div class="border-b border-gray-100 px-5 pb-4 pt-5">
+         <div class="flex items-center gap-3">
+          <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-100">
+           <i class="fas fa-user" aria-hidden="true"></i>
+          </span>
+          <div class="min-w-0">
+           <p class="truncate text-sm font-semibold text-gray-900">{{ Auth::user()->name }}</p>
+           <p class="mt-0.5 truncate text-xs text-gray-500">{{ Auth::user()->email }}</p>
+          </div>
+         </div>
+         @unless(Auth::user()->is_admin)
+         <div class="mt-4 flex items-center justify-between gap-3 text-xs">
+          <span class="text-gray-500">Student No: <strong class="font-semibold text-gray-700">{{ Auth::user()->idnumber }}</strong></span>
+          <span role="status" class="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold {{ $isVerifiedStudent ? 'bg-green-50 text-green-700 ring-1 ring-green-200' : 'bg-red-50 text-red-700 ring-1 ring-red-200' }}">
+           <i class="fas {{ $isVerifiedStudent ? 'fa-check' : 'fa-times' }}" aria-hidden="true"></i>
+           {{ $isVerifiedStudent ? 'Verified' : 'Not verified' }}
+          </span>
+         </div>
+         @endunless
         </div>
-        <div class="px-4 py-2 text-sm">
-         <p class="mb-2">Student No: {{ Auth::user()->idnumber }}</p>
+        @if(!Auth::user()->is_admin && !$isVerifiedStudent)
+        <div class="mx-3 my-3 rounded-xl border px-3.5 py-3 {{ $verificationPending ? 'border-amber-200 bg-amber-50' : 'border-blue-100 bg-blue-50' }}">
+         <p class="text-xs leading-relaxed {{ $verificationPending ? 'text-amber-900' : 'text-blue-900' }}">
+          {{ $verificationPending ? 'Your voter verification application is awaiting review.' : 'Verify your account to vote in elections.' }}
+         </p>
+         <a href="{{ route('register.verify') }}" class="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold {{ $verificationPending ? 'text-amber-800 hover:text-amber-950' : 'text-blue-700 hover:text-blue-900' }} focus:outline-none focus-visible:underline">
+          {{ $verificationPending ? 'View application' : 'Verify now' }}
+          <i class="fas fa-arrow-right text-[10px]" aria-hidden="true"></i>
+         </a>
         </div>
-        <div class="border-t">
-         <a href="{{ url('/tickets') }}" class="block px-4 py-2 text-sm hover:bg-gray-100">Tickets</a>
-         <a href="{{ route('account.qr-codes') }}" class="block px-4 py-2 text-sm hover:bg-gray-100">Account QR codes</a>
+        @endif
+        <div class="px-2 pb-2">
+         <a href="{{ url('/tickets') }}" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
+          <i class="fas fa-ticket-alt w-4 text-center text-gray-400" aria-hidden="true"></i>
+          Tickets
+         </a>
+         <a href="{{ route('account.qr-codes') }}" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
+          <i class="fas fa-qrcode w-4 text-center text-gray-400" aria-hidden="true"></i>
+          Account QR codes
+         </a>
         </div>
-        <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('logout') ? route('logout') : url('/logout') }}" class="border-t">
+        <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('logout') ? route('logout') : url('/logout') }}" class="border-t border-gray-100 p-2">
          @csrf
-         <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Log out</button>
+         <button type="submit" class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50 focus:bg-red-50 focus:outline-none">
+          <i class="fas fa-sign-out-alt w-4 text-center" aria-hidden="true"></i>
+          Log out
+         </button>
         </form>
        </div>
       </li>
@@ -150,6 +222,12 @@
         <i class="fas fa-user"></i>
        </span>
        <span class="text-sm font-semibold">{{ Auth::user()->name }}</span>
+       @unless(Auth::user()->is_admin)
+       <span role="status" class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $isVerifiedStudent ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+        <i class="fas {{ $isVerifiedStudent ? 'fa-check' : 'fa-times' }}" aria-hidden="true"></i>
+        {{ $isVerifiedStudent ? 'Verified' : 'Not Verified' }}
+       </span>
+       @endunless
        <span class="text-xs text-gray-200">{{ Auth::user()->email }}</span>
         <a href="{{ route('account.qr-codes') }}" class="text-sm text-white underline">Account QR codes</a>
         <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('logout') ? route('logout') : url('/logout') }}" class="w-full mt-1">
@@ -177,15 +255,15 @@
      How It Works
     </h3>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
-    <a href="{{ url('/candidate/register') }}" class="block h-full">
+    <a href="{{ route('register.options') }}" class="block h-full">
      <div class="bg-white p-6 rounded-lg shadow-lg text-center transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl h-full flex flex-col justify-center">
       <i class="fas fa-user-graduate text-blue-600 text-4xl mb-4">
       </i>
       <h4 class="text-2xl font-bold text-gray-800 mb-2">
-       Candidate Registration
+       Register
       </h4>
       <p class="text-gray-600">
-       Sign up with your student credentials to apply as a candidate.
+       Choose candidate registration or voter registration.
       </p>
      </div>
     </a>
@@ -571,17 +649,34 @@
         if (profileToggle && profileMenu) {
             profileToggle.addEventListener('click', (event) => {
                 event.stopPropagation();
-                profileMenu.classList.toggle('hidden');
+                const isExpanded = profileToggle.getAttribute('aria-expanded') === 'true';
+                profileToggle.setAttribute('aria-expanded', String(!isExpanded));
+                profileToggle.setAttribute('aria-label', isExpanded ? 'Open profile menu' : 'Close profile menu');
+                profileMenu.classList.toggle('hidden', isExpanded);
+                document.querySelector('[data-profile-chevron]')?.classList.toggle('rotate-180', !isExpanded);
             });
 
             profileMenu.addEventListener('click', (event) => {
                 event.stopPropagation();
             });
 
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && !profileMenu.classList.contains('hidden')) {
+                    profileMenu.classList.add('hidden');
+                    profileToggle.setAttribute('aria-expanded', 'false');
+                    profileToggle.setAttribute('aria-label', 'Open profile menu');
+                    document.querySelector('[data-profile-chevron]')?.classList.remove('rotate-180');
+                    profileToggle.focus();
+                }
+            });
+
             // Close dropdown when clicking outside
             document.addEventListener('click', (event) => {
                 if (!profileMenu.classList.contains('hidden') && !profileMenu.contains(event.target) && event.target !== profileToggle && !profileToggle.contains(event.target)) {
                     profileMenu.classList.add('hidden');
+                    profileToggle.setAttribute('aria-expanded', 'false');
+                    profileToggle.setAttribute('aria-label', 'Open profile menu');
+                    document.querySelector('[data-profile-chevron]')?.classList.remove('rotate-180');
                 }
             });
         }

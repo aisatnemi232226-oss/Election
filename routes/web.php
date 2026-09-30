@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use App\Http\Controllers\Auth\{LoginController, RegisterController, ForgotPasswordController, ResetPasswordController};
 use App\Http\Controllers\Auth\RecoveryQrController;
-use App\Http\Controllers\{DashboardController, ElectionsController, CandidateController, PositionController, VoterController, 
+use App\Http\Controllers\{DashboardController, ElectionsController, CandidateController, PositionController, VoterController, StudentNotificationController,
     UserController, AdminController, RoleController, ViewElectionController, VerifiedVoterController, ElectionArticleController, 
     ArticleController, SearchController, ResultsController, ReportsController, AdminRoleController, ProfileSettingsController, 
     AuditLogController, AcademicYearController, CourseController, ElectionPartyController, ElectionEventSettingsController, VoteController, RegisterElectionController, CandidateRegistrationController, CandidateApprovalController, NotificationController};
@@ -30,7 +30,19 @@ Route::controller(LoginController::class)->group(function (): void {
 
 Route::controller(RegisterController::class)->group(function () {
     Route::get('/register', 'showRegistrationForm')->name('register');
-    Route::post('/register', 'register');
+    Route::post('/register', 'createAccount')->name('register.store');
+});
+
+Route::view('/register/options', 'voter.registration-options')->name('register.options');
+
+Route::middleware('auth')->controller(RegisterController::class)->group(function () {
+    Route::get('/register/verify', 'showVoterVerificationForm')->name('register.verify');
+    Route::post('/register/verify', 'submitVoterVerification')->name('register.verify.store');
+});
+
+Route::middleware('auth')->controller(StudentNotificationController::class)->prefix('student/notifications')->name('student.notifications.')->group(function (): void {
+    Route::get('/', 'index')->name('index');
+    Route::post('/read', 'markRead')->name('read');
 });
 
 Route::controller(CandidateRegistrationController::class)->group(function () {
@@ -236,6 +248,7 @@ Route::get('/positions/paginatePositions', [PositionController::class, 'paginate
     // ✅ Routes for Verified-Voters
     Route::get('/verified-voters', [VerifiedVoterController::class, 'index'])->name('verified-voters.index');
     Route::post('/verified-voters', [VerifiedVoterController::class, 'store'])->name('verified-voters.store');
+    Route::post('/verified-voters/{user}/reject', [VerifiedVoterController::class, 'rejectVerification'])->name('verified-voters.reject');
     Route::post('/verified-voters/import', [VerifiedVoterController::class, 'import'])->name('verified-voters.import');
     Route::get('/verified-voters/export', [VerifiedVoterController::class, 'export'])->name('verified-voters.export');
     Route::get('/verified-voters/search', [VerifiedVoterController::class, 'search'])->name('verified-voters.search');

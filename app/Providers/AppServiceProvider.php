@@ -51,6 +51,7 @@ class AppServiceProvider extends ServiceProvider
 
             $pendingVoterVerification = User::query()
                 ->where('is_admin', false)
+                ->whereNotNull('voter_verification_submitted_at')
                 ->whereDoesntHave('verifiedVoter')
                 ->count();
 

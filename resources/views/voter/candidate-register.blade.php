@@ -27,9 +27,40 @@
     </script>
     <style>
         body { font-family: 'Roboto', sans-serif; }
+        @keyframes success-modal-enter {
+            from { opacity: 0; transform: translateY(0.75rem) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @media (prefers-reduced-motion: no-preference) {
+            #success-modal:not(.hidden) .success-modal-card {
+                animation: success-modal-enter 0.24s ease-out both;
+            }
+        }
+        #candidate-error-toast {
+            position: fixed;
+            inset: 1rem 1rem auto auto;
+            margin: 0;
+        }
+        @supports (transition-behavior: allow-discrete) {
+            #candidate-error-toast {
+                opacity: 0;
+                transform: translateY(-0.5rem);
+                transition: opacity 0.2s ease, transform 0.2s ease, display 0.2s allow-discrete;
+            }
+            #candidate-error-toast:popover-open {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            @starting-style {
+                #candidate-error-toast:popover-open {
+                    opacity: 0;
+                    transform: translateY(-0.5rem);
+                }
+            }
+        }
     </style>
 </head>
-<body class="relative bg-gray-100">
+<body class="relative flex min-h-screen flex-col bg-gray-100">
     <div class="pointer-events-none fixed inset-0 flex items-center justify-center opacity-30 z-0" aria-hidden="true">
         <img src="{{ asset('images/pculogo.png') }}" alt="" class="w-[62vw] max-w-[820px] h-auto" />
     </div>
@@ -60,7 +91,14 @@
         </div>
     </header>
 
-    <main class="relative z-10 container mx-auto p-4">
+    <main class="relative z-10 container mx-auto w-full flex-1 p-4">
+        <a href="{{ url('/') }}"
+            class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-bold text-blue-700 shadow-md transition hover:bg-blue-50 hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            aria-label="Back to home">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            <i class="fas fa-home" aria-hidden="true"></i>
+            <span>Home</span>
+        </a>
         <section class="text-center my-8">
             <h2 class="text-4xl font-bold text-gray-800 mb-2">Candidate Registration</h2>
             <p class="text-gray-600 text-lg">Apply as a candidate by selecting your position and submitting your details.</p>
@@ -68,23 +106,27 @@
 
         <section class="my-8">
             <div class="bg-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
-                <div class="mb-4 rounded-lg bg-blue-50 px-4 py-3 text-blue-900 border border-blue-200">
-                    After submitting your application, it will be reviewed by the admin within 1-3 working days. Please wait for approval before appearing as an official candidate.
-                </div>
+                @if (!session('success') && !($hasExistingApplication ?? false))
+                    <div class="mb-4 rounded-lg bg-blue-50 px-4 py-3 text-blue-900 border border-blue-200">
+                        After submitting your application, it will be reviewed by the admin within 1-3 working days. Please wait for approval before appearing as an official candidate.
+                    </div>
+                @endif
+
+                @if (($voterVerificationPending ?? false) && !$errors->any())
+                    <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-amber-900" role="status">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-clock mt-1 text-amber-600" aria-hidden="true"></i>
+                            <div>
+                                <h3 class="font-bold">Pending Candidate Application</h3>
+                                <p class="mt-1 text-sm">Your verification request has been submitted and is awaiting administrator review. You can vote after your account is verified.</p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
 
                 @if (session('success'))
                     <div class="mb-4 rounded-lg bg-green-50 px-4 py-3 text-green-800">
                         {{ session('success') }}
-                    </div>
-                @endif
-
-                @if ($errors->any())
-                    <div class="mb-4 rounded-lg bg-red-50 px-4 py-3 text-red-800">
-                        <ul class="list-disc pl-5">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
                     </div>
                 @endif
 
@@ -96,10 +138,6 @@
                     @elseif (($existingApplicationStatus ?? null) === 'Rejected')
                         <div class="mb-4 rounded-lg bg-red-50 px-4 py-3 text-red-800">
                             Your candidate application has been rejected by the admin.
-                        </div>
-                    @elseif (($hasExistingApplication ?? false) && ($existingApplicationStatus ?? null) === 'Pending')
-                        <div class="mb-4 rounded-lg bg-green-50 px-4 py-3 text-green-800">
-                            You have already submitted your application. Please wait for admin approval (1-3 working days).
                         </div>
                     @endif
                 @endif
@@ -181,10 +219,12 @@
                             <div>
                                 <label class="block text-gray-700 font-bold mb-2">Profile Image</label>
                                 <input class="w-full p-2 border border-gray-300 rounded" type="file" name="profile_img" accept="image/*" required>
+                                <p class="mt-1 text-xs text-gray-500">Maximum file size: 10 MB.</p>
                             </div>
                             <div>
                                 <label class="block text-gray-700 font-bold mb-2">Banner Image</label>
                                 <input class="w-full p-2 border border-gray-300 rounded" type="file" name="banner_img" accept="image/*" required>
+                                <p class="mt-1 text-xs text-gray-500">Maximum file size: 10 MB.</p>
                             </div>
                         </div>
 
@@ -217,37 +257,92 @@
         </section>
     </main>
 
-    @if (session('success'))
-        <div id="success-modal" class="fixed inset-0 hidden" style="z-index: 9999;">
-            <div class="absolute inset-0 bg-gray-900/50" id="success-modal-backdrop"></div>
-            <div class="relative h-full w-full flex items-center justify-center p-4">
-                <div class="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
-                    <div class="p-5">
-                        <div class="flex items-start justify-between gap-4">
-                            <div>
-                                <h3 class="text-lg font-bold text-gray-900">Application Submitted</h3>
-                                <p class="mt-2 text-sm text-gray-700">We will review your application. Please wait for the admin approval (1-3 working days).</p>
-                            </div>
-                            <button type="button" id="close-success-modal" class="text-gray-500 hover:text-gray-700" aria-label="Close">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="px-5 py-4 bg-gray-50 flex justify-end">
-                        <button type="button" id="ok-success-modal" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">OK</button>
-                    </div>
+    @if ($errors->any())
+        <div id="candidate-error-toast" popover="manual" class="w-[calc(100%-2rem)] max-w-md rounded-lg border border-red-200 bg-white p-4 text-left text-red-800 shadow-xl" role="alert" aria-live="assertive">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h2 class="font-bold">Please fix the following errors</h2>
+                    <ul class="mt-2 list-disc pl-5 text-sm">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
                 </div>
+                <button type="button" id="close-candidate-error-toast" class="text-red-700 hover:text-red-900" aria-label="Dismiss errors">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
             </div>
         </div>
     @endif
 
-    <footer class="relative z-10 bg-blue-600 text-white p-4 text-center">
-        <p>2026 Philippine Christian University Online Election System. All rights reserved.</p>
+    @if (session('success'))
+        <div id="success-modal" class="fixed inset-0 z-[9999] hidden" role="dialog" aria-modal="true" aria-labelledby="success-modal-title" aria-describedby="success-modal-description">
+            <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity" id="success-modal-backdrop"></div>
+            <div class="relative flex min-h-full items-center justify-center p-4 sm:p-6">
+                <section class="success-modal-card relative w-full max-w-md overflow-hidden rounded-3xl border border-white/70 bg-white shadow-2xl shadow-slate-950/25">
+                    <div class="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-emerald-400 via-teal-500 to-blue-600"></div>
+                    <button type="button" id="close-success-modal" class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" aria-label="Close confirmation">
+                        <i class="fas fa-times" aria-hidden="true"></i>
+                    </button>
+
+                    <div class="px-7 pb-7 pt-10 text-center sm:px-9 sm:pb-9">
+                        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-8 ring-emerald-50/60">
+                            <i class="fas fa-check text-2xl" aria-hidden="true"></i>
+                        </div>
+                        <p class="mt-6 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Submission received</p>
+                        <h2 id="success-modal-title" class="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Application submitted</h2>
+                        <p id="success-modal-description" class="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-600 sm:text-base">
+                            Your candidate application has been sent successfully. The admin team will review it within 1-3 working days.
+                        </p>
+                        <div class="mt-6 flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50/80 p-4 text-left">
+                            <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm">
+                                <i class="fas fa-clock" aria-hidden="true"></i>
+                            </span>
+                            <p class="text-sm leading-5 text-blue-950">
+                                <span class="font-semibold">What happens next?</span><br>
+                                Please wait for the review before appearing as an official candidate.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-slate-100 bg-slate-50/80 px-7 py-5 sm:px-9">
+                        <button type="button" id="ok-success-modal" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-900/15 transition hover:-translate-y-0.5 hover:bg-blue-800 hover:shadow-blue-900/25 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            <span>Got it</span>
+                            <i class="fas fa-arrow-right text-xs" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    @endif
+
+    <footer class="relative z-10 mt-auto border-t border-blue-500/30 bg-blue-700 px-4 py-5 text-center text-sm text-white sm:py-4">
+        <p class="mx-auto max-w-7xl leading-relaxed">
+            &copy; {{ date('Y') }} Philippine Christian University Online Election System. All rights reserved.
+        </p>
     </footer>
 
 <script>
     let html5QrCode = null;
     let isScanning = false;
+
+    const candidateErrorToast = document.getElementById('candidate-error-toast');
+    if (candidateErrorToast) {
+        const dismissCandidateErrorToast = () => {
+            if (typeof candidateErrorToast.hidePopover === 'function') {
+                candidateErrorToast.hidePopover();
+            } else {
+                candidateErrorToast.remove();
+            }
+        };
+
+        document.getElementById('close-candidate-error-toast')?.addEventListener('click', dismissCandidateErrorToast);
+
+        if (typeof candidateErrorToast.showPopover === 'function') {
+            candidateErrorToast.showPopover();
+        }
+        window.setTimeout(dismissCandidateErrorToast, 5000);
+    }
 
     function syncSubmittedFields() {
         const idInput = document.getElementById('display-idnumber');
@@ -415,14 +510,21 @@
         function close() {
             modal.classList.add('hidden');
             document.body.style.overflow = '';
+            document.removeEventListener('keydown', handleEscape);
+        }
+
+        function handleEscape(event) {
+            if (event.key === 'Escape') close();
         }
 
         modal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
+        document.getElementById('ok-success-modal')?.focus();
 
         document.getElementById('close-success-modal')?.addEventListener('click', close);
         document.getElementById('ok-success-modal')?.addEventListener('click', close);
         document.getElementById('success-modal-backdrop')?.addEventListener('click', close);
+        document.addEventListener('keydown', handleEscape);
     })();
 </script>
 

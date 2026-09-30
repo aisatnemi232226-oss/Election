@@ -7,6 +7,7 @@ use App\Models\VerifiedVoter;
 use App\Models\User;
 use App\Models\Acadyr;
 use App\Models\Semesters;
+use App\Notifications\StudentVoterVerified;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Maatwebsite\Excel\Facades\Excel;
@@ -268,11 +269,17 @@ class VerifiedVoterController extends Controller
                 ->with('error', 'User is already verified for this academic year and semester.');
         }
 
-        VerifiedVoter::create([
-            'users_id' => $request->user_id,
-            'acadyr_id' => $request->acadyr_id,
-            'sem_id' => $request->sem_id,
-        ]);
+        DB::transaction(function () use ($request): void {
+            VerifiedVoter::create([
+                'users_id' => $request->user_id,
+                'acadyr_id' => $request->acadyr_id,
+                'sem_id' => $request->sem_id,
+            ]);
+
+            User::query()
+                ->findOrFail($request->user_id)
+                ->notify(new StudentVoterVerified());
+        });
 
         if ($request->ajax() || $request->expectsJson()) {
             return response()->json([
@@ -282,6 +289,41 @@ class VerifiedVoterController extends Controller
         }
 
         return redirect()->route('admin.verified-voters.index')->with('success', 'Voter verified successfully.');
+    }
+
+    public function rejectVerification(Request $request, User $user)
+    {
+        if (
+            $user->is_admin
+            || $user->voter_verification_submitted_at === null
+            || $user->verifiedVoter()->exists()
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This voter application is no longer pending.',
+            ], 422);
+        }
+
+        $user->voter_verification_submitted_at = null;
+        $user->save();
+
+        \App\Support\AuditLogger::log(
+            $request,
+            $request->user()?->id,
+            'AUDIT',
+            'UPDATE',
+            'Voter Verification Rejected',
+            'Rejected voter verification application: ' . ($user->name ?? ('#' . $user->id)),
+            'users',
+            (int) $user->id,
+            ['voter_verification_submitted_at' => true],
+            ['voter_verification_submitted_at' => null]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Voter application rejected. The student can submit again.',
+        ]);
     }
 
     public function destroy($id)

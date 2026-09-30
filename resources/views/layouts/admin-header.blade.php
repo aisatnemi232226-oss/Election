@@ -1,7 +1,7 @@
 <header class="bg-blue-600 text-white p-4 fixed top-0 left-0 w-full shadow-md transition-transform duration-300 z-50">
     <div class="container mx-auto">
-        <div class="hidden lg:flex items-center justify-center">
-            <div class="flex items-center justify-center gap-6">
+        <div class="hidden md:flex items-center justify-between">
+            <div class="flex w-full items-center justify-between gap-3">
             <div class="flex items-center gap-3">
                 <a href="{{ route('admin.dashboard') }}" class="text-inherit inline-flex items-center gap-3">
                     <img src="{{ asset('images/pculogo.png') }}" alt="School Logo" class="w-20 h-20 object-contain flex-shrink-0" onerror="this.onerror=null;this.style.display='none';">
@@ -15,7 +15,7 @@
                 </a>
             </div>
 
-            <nav>
+            <nav class="hidden lg:block">
                 <ul class="flex items-center justify-center gap-4 text-base">
                     <li><a class="hover:underline" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
                     <li class="relative group">
@@ -132,7 +132,7 @@
         </div>
 
         <div class="lg:hidden flex flex-col items-center">
-            <a href="{{ route('admin.dashboard') }}" class="text-inherit inline-flex items-center gap-3">
+            <a href="{{ route('admin.dashboard') }}" class="text-inherit inline-flex items-center gap-3 md:hidden">
                 <img src="{{ asset('images/pculogo.png') }}" alt="School Logo" class="w-16 h-16 -my-2 object-contain flex-shrink-0" onerror="this.onerror=null;this.style.display='none';">
                 <div class="leading-tight text-center">
                     <div class="text-xl font-bold">Philippine Christian University</div>
@@ -374,19 +374,55 @@
             }).join('');
         }
 
+        let voterAcademicYears = [];
+        let voterSemesters = [];
+        let currentVoters = [];
+
         function renderVoters(items) {
             if (!votersList) return;
+            currentVoters = Array.isArray(items) ? items : [];
+            items = currentVoters;
             if (!items || items.length === 0) return renderEmpty(votersList, 'No voters waiting for verification.');
-            votersList.innerHTML = items.map((u) => {
-                const name = u.name || ('User #' + u.id);
-                const idnum = u.idnumber ? ` (${u.idnumber})` : '';
-                return `
-                    <a class="block px-4 py-3 hover:bg-gray-50" href="{{ route('admin.verified-voters.index') }}?focus=${u.id}">
-                        <div class="text-sm font-semibold text-gray-900">${name}${idnum}</div>
-                        <div class="text-xs text-gray-500">Needs verification</div>
-                    </a>
-                `;
-            }).join('');
+            votersList.replaceChildren();
+
+            items.forEach((user) => {
+                const item = document.createElement('div');
+                item.className = 'px-4 py-3 hover:bg-gray-50';
+
+                const header = document.createElement('div');
+                header.className = 'flex items-start justify-between gap-3';
+
+                const voterLink = document.createElement('a');
+                voterLink.className = 'text-sm font-semibold text-gray-900 hover:underline';
+                voterLink.href = `{{ route('admin.verified-voters.index') }}?focus=${encodeURIComponent(user.id)}`;
+                voterLink.textContent = user.name || `User #${user.id}`;
+
+                const details = document.createElement('div');
+                details.className = 'text-xs text-gray-500';
+                details.textContent = user.idnumber ? `Student No: ${user.idnumber}` : 'Needs verification';
+
+                const actions = document.createElement('div');
+                actions.className = 'flex shrink-0 gap-2';
+                actions.dataset.voterActions = '';
+                actions.dataset.userId = user.id;
+
+                const verify = document.createElement('button');
+                verify.type = 'button';
+                verify.className = 'notif-voter-action rounded bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700';
+                verify.dataset.action = 'verify';
+                verify.textContent = 'Verify';
+
+                const reject = document.createElement('button');
+                reject.type = 'button';
+                reject.className = 'notif-voter-action rounded bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700';
+                reject.dataset.action = 'reject';
+                reject.textContent = 'Reject';
+
+                actions.append(verify, reject);
+                header.append(voterLink, actions);
+                item.append(header, details);
+                votersList.append(item);
+            });
         }
 
         async function loadNotifs() {
@@ -395,13 +431,17 @@
                     headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                     credentials: 'same-origin'
                 });
+                if (!res.ok) throw new Error('Unable to load admin notifications.');
                 const data = await res.json();
                 const c = Number(data?.counts?.candidates_pending || 0);
                 const v = Number(data?.counts?.voters_pending_verification || 0);
+                voterAcademicYears = Array.isArray(data?.academic_years) ? data.academic_years : [];
+                voterSemesters = Array.isArray(data?.semesters) ? data.semesters : [];
                 updateBadge(c + v);
                 renderCandidates(data?.candidates || []);
                 renderVoters(data?.voters || []);
             } catch (e) {
+                console.error(e);
                 renderEmpty(candidatesList, 'Failed to load notifications.');
                 renderEmpty(votersList, 'Failed to load notifications.');
             }
@@ -421,6 +461,82 @@
                 credentials: 'same-origin'
             });
             if (!res.ok) throw new Error('Failed');
+        }
+
+        async function submitVoterAction(userId, action, acadyrId, semesterId) {
+            const isReject = action === 'reject';
+            const url = isReject
+                ? `{{ url('/admin/verified-voters') }}/${encodeURIComponent(userId)}/reject`
+                : "{{ route('admin.verified-voters.store') }}";
+            const body = isReject ? undefined : JSON.stringify({
+                user_id: userId,
+                acadyr_id: acadyrId,
+                sem_id: semesterId,
+            });
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrf || '',
+                    ...(body ? { 'Content-Type': 'application/json' } : {}),
+                },
+                body,
+                credentials: 'same-origin'
+            });
+            const data = await res.json();
+            if (!res.ok || data?.success !== true) {
+                throw new Error(data?.message || 'Unable to update voter application.');
+            }
+        }
+
+        function showVoterApprovalForm(userId, actions) {
+            actions.replaceChildren();
+
+            const form = document.createElement('div');
+            form.className = 'mt-3 grid grid-cols-1 gap-2';
+            form.dataset.voterApprovalForm = '';
+
+            const yearSelect = document.createElement('select');
+            yearSelect.className = 'w-full rounded border border-gray-300 px-2 py-1 text-xs text-gray-800';
+            yearSelect.setAttribute('aria-label', 'Academic year');
+            const yearPlaceholder = new Option('Select academic year', '');
+            yearSelect.add(yearPlaceholder);
+            voterAcademicYears.forEach((year) => yearSelect.add(new Option(year.name || `Year ${year.id}`, year.id)));
+
+            const semesterSelect = document.createElement('select');
+            semesterSelect.className = 'w-full rounded border border-gray-300 px-2 py-1 text-xs text-gray-800';
+            semesterSelect.setAttribute('aria-label', 'Semester');
+            semesterSelect.add(new Option('Select semester', ''));
+            voterSemesters.forEach((semester) => semesterSelect.add(new Option(semester.name || `Semester ${semester.id}`, semester.id)));
+
+            const message = document.createElement('p');
+            message.className = 'hidden text-xs text-red-600';
+            message.setAttribute('role', 'alert');
+            if (voterAcademicYears.length === 0 || voterSemesters.length === 0) {
+                message.textContent = 'Set up an academic year and semester before verifying voters.';
+                message.classList.remove('hidden');
+            }
+
+            const controls = document.createElement('div');
+            controls.className = 'flex justify-end gap-2';
+
+            const cancel = document.createElement('button');
+            cancel.type = 'button';
+            cancel.className = 'notif-voter-action rounded bg-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-300';
+            cancel.dataset.action = 'cancel';
+            cancel.textContent = 'Cancel';
+
+            const confirm = document.createElement('button');
+            confirm.type = 'button';
+            confirm.className = 'notif-voter-action rounded bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50';
+            confirm.dataset.action = 'confirm';
+            confirm.textContent = 'Confirm';
+            confirm.disabled = voterAcademicYears.length === 0 || voterSemesters.length === 0;
+
+            controls.append(cancel, confirm);
+            form.append(yearSelect, semesterSelect, message, controls);
+            actions.append(form);
         }
 
         function openNotifs() {
@@ -462,19 +578,83 @@
             notifPanel.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const btn = e.target.closest('.notif-candidate-action');
-                if (!btn) return;
-                const id = btn.getAttribute('data-id');
-                const action = btn.getAttribute('data-action');
-                if (!id || !action) return;
-                btn.disabled = true;
-                btn.classList.add('opacity-60');
-                actCandidate(id, action)
-                    .then(() => loadNotifs())
-                    .finally(() => {
-                        btn.disabled = false;
-                        btn.classList.remove('opacity-60');
-                    });
+                if (btn) {
+                    const id = btn.getAttribute('data-id');
+                    const action = btn.getAttribute('data-action');
+                    if (!id || !action) return;
+                    btn.disabled = true;
+                    btn.classList.add('opacity-60');
+                    actCandidate(id, action)
+                        .then(() => loadNotifs())
+                        .catch((error) => {
+                            console.error(error);
+                            renderEmpty(candidatesList, 'Could not update candidate. Please try again.');
+                        })
+                        .finally(() => {
+                            btn.disabled = false;
+                            btn.classList.remove('opacity-60');
+                        });
+                    return;
+                }
+
+                const voterButton = e.target.closest('.notif-voter-action');
+                if (!voterButton) return;
+                const voterActions = voterButton.closest('[data-voter-actions]');
+                const userId = voterActions?.dataset.userId;
+                const action = voterButton.dataset.action;
+                if (!voterActions || !userId || !action) return;
+
+                if (action === 'verify') {
+                    showVoterApprovalForm(userId, voterActions);
+                    return;
+                }
+                if (action === 'cancel') {
+                    renderVotersFromCurrentData();
+                    return;
+                }
+
+                if (action === 'confirm') {
+                    const form = voterButton.closest('[data-voter-approval-form]');
+                    const yearSelect = form?.querySelector('select[aria-label="Academic year"]');
+                    const semesterSelect = form?.querySelector('select[aria-label="Semester"]');
+                    const message = form?.querySelector('[role="alert"]');
+                    if (!yearSelect?.value || !semesterSelect?.value || !message) {
+                        if (message) {
+                            message.textContent = 'Select an academic year and semester.';
+                            message.classList.remove('hidden');
+                        }
+                        return;
+                    }
+
+                    voterButton.disabled = true;
+                    submitVoterAction(userId, 'verify', yearSelect.value, semesterSelect.value)
+                        .then(() => loadNotifs())
+                        .catch((error) => {
+                            console.error(error);
+                            message.textContent = error.message;
+                            message.classList.remove('hidden');
+                            voterButton.disabled = false;
+                        });
+                    return;
+                }
+
+                if (action === 'reject') {
+                    voterButton.disabled = true;
+                    submitVoterAction(userId, 'reject')
+                        .then(() => loadNotifs())
+                        .catch((error) => {
+                            console.error(error);
+                            renderEmpty(votersList, 'Could not reject this application. Please try again.');
+                        })
+                        .finally(() => {
+                            voterButton.disabled = false;
+                        });
+                }
             });
+        }
+
+        function renderVotersFromCurrentData() {
+            renderVoters(currentVoters);
         }
 
         document.addEventListener('click', () => {
@@ -484,5 +664,9 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeNotifs();
         });
+
+        window.setInterval(() => {
+            if (notifPanel && !notifPanel.classList.contains('hidden')) loadNotifs();
+        }, 30000);
     });
 </script>
