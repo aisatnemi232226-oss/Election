@@ -1,78 +1,47 @@
 @extends('layouts.voter')
 
-@section('title', 'Account QR Codes | PCU Online Election')
+@section('title', 'Choose a New Password | PCU Online Election')
 
 @section('content')
-<div class="page-content auth-content account-qr-page">
-    <header class="page-intro">
-        <h1>Account QR codes</h1>
-        <p>Keep both codes private. Anyone with your login QR can sign in; your recovery QR can reset your password once.</p>
-    </header>
-    <section class="surface-card qr-account-card">
-        <a href="{{ $continueTo }}" class="text-link">Continue</a>
-        @if (session('status'))
-            <p class="notice account-qr-status" role="status">{{ session('status') }}</p>
-        @endif
-        <div class="surface-grid qr-account-grid">
-            <section class="surface-subcard qr-account-item">
-                <h2>Login QR</h2>
-                @if ($loginSecret)
-                    <p>Download and save this reusable sign-in code. Generating a replacement invalidates this one.</p>
-                    <div id="login-qr" class="qr-display" aria-label="Your private login QR"></div>
-                    <button id="download-login-qr" type="button" class="button button-secondary">Download login QR</button>
-                @else
-                    <p>No login QR is being displayed. Generate a new one to download it.</p>
-                @endif
-                <form method="POST" action="{{ route('account.login-qr.generate') }}">
-                    @csrf
-                    <button type="submit" class="button button-primary button-block">{{ $loginSecret ? 'Generate replacement login QR' : 'Generate login QR' }}</button>
-                </form>
-            </section>
-            <section class="surface-subcard qr-account-item">
-                <h2>Password recovery QR</h2>
-                @if ($recoverySecret)
-                    <p>Save this one-time recovery code. Scanning it to reset your password invalidates it.</p>
-                    <div id="recovery-qr" class="qr-display" aria-label="Your private password recovery QR"></div>
-                    <button id="download-recovery-qr" type="button" class="button button-secondary">Download recovery QR</button>
-                @else
-                    <p>No recovery QR is being displayed. Generate a new one to download it.</p>
-                @endif
-                <form method="POST" action="{{ route('account.recovery-qr.generate') }}">
-                    @csrf
-                    <button type="submit" class="button button-primary button-block">{{ $recoverySecret ? 'Generate replacement recovery QR' : 'Generate recovery QR' }}</button>
-                </form>
-            </section>
-        </div>
+<div class="page-content auth-content password-recovery-page">
+    <section class="surface-card">
+        <a href="{{ route('login') }}" class="text-link">← Back to login</a>
+        <h1 class="auth-page-title">Choose a new password</h1>
+        <p class="muted-text">Your new password must be at least 8 characters long.</p>
+        <form class="password-recovery-form" method="POST" action="{{ route('password.update') }}">
+            @csrf
+            <div class="field">
+                <label for="password">New password</label>
+                <div class="password-control">
+                    <input id="password" name="password" type="password" autocomplete="new-password" required>
+                    <button type="button" data-password-toggle="password" aria-controls="password" aria-pressed="false" aria-label="Show new password" class="password-toggle">Show</button>
+                </div>
+                @error('password')<p class="field-error">{{ $message }}</p>@enderror
+            </div>
+            <div class="field">
+                <label for="password_confirmation">Confirm new password</label>
+                <div class="password-control">
+                    <input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" required>
+                    <button type="button" data-password-toggle="password_confirmation" aria-controls="password_confirmation" aria-pressed="false" aria-label="Show confirmation password" class="password-toggle">Show</button>
+                </div>
+            </div>
+            <button type="submit" class="button button-primary button-block">Update password</button>
+        </form>
     </section>
 </div>
 @endsection
 
-@if ($loginSecret || $recoverySecret)
-    @push('scripts')
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script>
-        function renderDownloadableQr(containerId, buttonId, filename, payload) {
-            const container = document.getElementById(containerId);
-            new QRCode(container, { text: JSON.stringify(payload), width: 192, height: 192 });
-            document.getElementById(buttonId).addEventListener('click', function () {
-                const image = container.querySelector('img');
-                const canvas = container.querySelector('canvas');
-                const link = document.createElement('a');
-                link.download = filename;
-                link.href = image?.src || canvas?.toDataURL('image/png') || '';
-                if (link.href) link.click();
-            });
-        }
-        @if ($loginSecret)
-            renderDownloadableQr('login-qr', 'download-login-qr', 'account-login-qr.png', {
-                purpose: 'login', user_id: @json($userId), secret: @json($loginSecret),
-            });
-        @endif
-        @if ($recoverySecret)
-            renderDownloadableQr('recovery-qr', 'download-recovery-qr', 'password-recovery-qr.png', {
-                purpose: 'password-recovery', user_id: @json($userId), secret: @json($recoverySecret),
-            });
-        @endif
-    </script>
-    @endpush
-@endif
+@push('scripts')
+<script>
+document.querySelectorAll('[data-password-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+        const input = document.getElementById(button.dataset.passwordToggle);
+        const isVisible = input.type === 'password';
+        input.type = isVisible ? 'text' : 'password';
+        button.textContent = isVisible ? 'Hide' : 'Show';
+        button.setAttribute('aria-pressed', String(isVisible));
+        button.setAttribute('aria-label', isVisible ? 'Hide password' : 'Show password');
+    });
+});
+</script>
+@endpush

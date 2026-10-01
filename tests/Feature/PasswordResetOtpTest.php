@@ -66,6 +66,12 @@ class PasswordResetOtpTest extends TestCase
         $this->post('/forgot-password', ['email' => $user->email])
             ->assertRedirect('/forgot-password/verify');
 
+        $this->get('/forgot-password/verify')
+            ->assertOk()
+            ->assertSee('Verification code')
+            ->assertSee('name="otp"', false)
+            ->assertSee('sweetalert2', false);
+
         $otp = null;
         Mail::assertSent(PasswordResetOtpMail::class, function (PasswordResetOtpMail $mail) use (&$otp): bool {
             $otp = $mail->otp;
@@ -75,6 +81,11 @@ class PasswordResetOtpTest extends TestCase
 
         $this->post('/forgot-password/verify', ['otp' => $otp])
             ->assertRedirect('/reset-password');
+
+        $this->get('/reset-password')
+            ->assertOk()
+            ->assertSee('Choose a new password')
+            ->assertSee('name="password"', false);
 
         $this->post('/reset-password', [
             'password' => 'new-secure-password',

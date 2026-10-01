@@ -1,47 +1,51 @@
 @extends('layouts.voter')
 
-@section('title', 'Choose a New Password | PCU Online Election')
+@section('title', 'Verify Code | PCU Online Election')
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@if (session('status') || session('mail_error'))
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    if (!window.Swal) return;
+
+    window.Swal.fire({
+        icon: @json(session('mail_error') ? 'error' : 'success'),
+        title: @json(session('mail_error') ? 'Email not sent' : 'Check your email'),
+        text: @json(session('mail_error') ?? session('status')),
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#1d4ed8'
+    });
+});
+</script>
+@endif
+@endpush
 
 @section('content')
 <div class="page-content auth-content password-recovery-page">
     <section class="surface-card">
         <a href="{{ route('login') }}" class="text-link">← Back to login</a>
-        <h1 class="auth-page-title">Choose a new password</h1>
-        <p class="muted-text">Your new password must be at least 8 characters long.</p>
-        <form class="password-recovery-form" method="POST" action="{{ route('password.update') }}">
+        <h1 class="auth-page-title">Check your email</h1>
+        <p class="muted-text">If an account exists for that address, a six-digit code has been sent. It expires in 10 minutes.</p>
+        @if (session('status'))
+            <p class="notice password-recovery-status" role="status">{{ session('status') }}</p>
+        @endif
+        @error('otp')
+            <p class="notice notice-error password-recovery-error" role="alert">{{ $message }}</p>
+        @enderror
+        <form class="password-recovery-form" method="POST" action="{{ route('password.otp.verify') }}">
             @csrf
             <div class="field">
-                <label for="password">New password</label>
-                <div class="password-control">
-                    <input id="password" name="password" type="password" autocomplete="new-password" required>
-                    <button type="button" data-password-toggle="password" aria-controls="password" aria-pressed="false" aria-label="Show new password" class="password-toggle">Show</button>
-                </div>
-                @error('password')<p class="field-error">{{ $message }}</p>@enderror
+                <label for="otp">Verification code</label>
+                <input id="otp" name="otp" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required autofocus class="otp-input" value="{{ old('otp') }}">
             </div>
-            <div class="field">
-                <label for="password_confirmation">Confirm new password</label>
-                <div class="password-control">
-                    <input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" required>
-                    <button type="button" data-password-toggle="password_confirmation" aria-controls="password_confirmation" aria-pressed="false" aria-label="Show confirmation password" class="password-toggle">Show</button>
-                </div>
-            </div>
-            <button type="submit" class="button button-primary button-block">Update password</button>
+            <button type="submit" class="button button-primary button-block">Verify code</button>
+        </form>
+        <form class="otp-resend-form" method="POST" action="{{ route('password.email') }}">
+            @csrf
+            <input type="hidden" name="email" value="{{ session('password_otp_email') }}">
+            <button type="submit" class="text-link">Send a new code</button>
         </form>
     </section>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-document.querySelectorAll('[data-password-toggle]').forEach((button) => {
-    button.addEventListener('click', () => {
-        const input = document.getElementById(button.dataset.passwordToggle);
-        const isVisible = input.type === 'password';
-        input.type = isVisible ? 'text' : 'password';
-        button.textContent = isVisible ? 'Hide' : 'Show';
-        button.setAttribute('aria-pressed', String(isVisible));
-        button.setAttribute('aria-label', isVisible ? 'Hide password' : 'Show password');
-    });
-});
-</script>
-@endpush
