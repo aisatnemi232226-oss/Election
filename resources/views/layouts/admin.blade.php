@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+        (function () {
+            var theme = 'light';
+            try {
+                theme = localStorage.getItem('pcu-theme') || 'light';
+            } catch (error) {
+                theme = 'light';
+            }
+            document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
+        })();
+    </script>
     <title>University Online Election System - Admin Dashboard</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.tailwindcss.com"></script>
@@ -61,8 +72,12 @@
         .no-wrap { white-space: nowrap; }
         .ql-font-courier-new { font-family: 'Courier New', Courier, monospace; }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/pcu-theme.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/pcu-admin.css') }}">
+    <script src="{{ asset('js/pcu-theme.js') }}" defer></script>
 </head>
-<body class="relative flex flex-col min-h-screen bg-gray-100 pt-16">
+<body class="admin-theme relative flex flex-col min-h-screen bg-gray-100 pt-16">
 
     @include('layouts.admin-header')
 
@@ -72,7 +87,7 @@
         <img src="{{ asset('images/pculogo.png') }}" alt="" class="w-[62vw] max-w-[820px] h-auto" />
     </div>
 
-    <main class="relative z-10 flex-1 container mx-auto p-4">
+    <main class="admin-main relative z-10 flex-1 container mx-auto p-4">
         @yield('content')
     </main>
 
@@ -194,35 +209,52 @@
                 const menu = document.getElementById(menuId);
                 if (!toggle || !menu) return;
 
-                let hoverTimeout;
-                toggle.addEventListener("mouseenter", function () {
-                    clearTimeout(hoverTimeout);
-                    menu.classList.remove("hidden");
+                const dropdown = { toggle, menu, container: toggle.parentElement };
+                adminNavDropdowns.push(dropdown);
+
+                toggle.addEventListener("click", function () {
+                    const shouldOpen = toggle.getAttribute("aria-expanded") !== "true";
+                    adminNavDropdowns.forEach(closeAdminNavDropdown);
+                    if (shouldOpen) {
+                        menu.classList.remove("hidden");
+                        toggle.setAttribute("aria-expanded", "true");
+                    }
                 });
-                menu.addEventListener("mouseenter", function () {
-                    clearTimeout(hoverTimeout);
-                    menu.classList.remove("hidden");
-                });
-                toggle.addEventListener("mouseleave", function () {
-                    hoverTimeout = setTimeout(() => {
-                        if (!menu.matches(":hover")) {
-                            menu.classList.add("hidden");
-                        }
-                    }, 300);
-                });
-                menu.addEventListener("mouseleave", function () {
-                    menu.classList.add("hidden");
-                });
+
+            }
+
+            const adminNavDropdowns = [];
+            function closeAdminNavDropdown(dropdown) {
+                dropdown.menu.classList.add("hidden");
+                dropdown.toggle.setAttribute("aria-expanded", "false");
             }
 
             setupDropdown("election-management-toggle", "election-management-menu");
             setupDropdown("settings-toggle", "settings-menu");
+
+            document.addEventListener("click", function (event) {
+                adminNavDropdowns.forEach(dropdown => {
+                    if (!dropdown.container.contains(event.target)) closeAdminNavDropdown(dropdown);
+                });
+            });
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key !== "Escape") return;
+                const openDropdown = adminNavDropdowns.find(dropdown => dropdown.toggle.getAttribute("aria-expanded") === "true");
+                if (openDropdown) {
+                    closeAdminNavDropdown(openDropdown);
+                    openDropdown.toggle.focus();
+                }
+            });
 
             const menuToggle = document.getElementById("menu-toggle");
             const menu = document.getElementById("menu");
             if (menuToggle && menu) {
                 menuToggle.addEventListener("click", () => {
                     menu.classList.toggle("hidden");
+                    const isOpen = !menu.classList.contains("hidden");
+                    menuToggle.setAttribute("aria-expanded", String(isOpen));
+                    menuToggle.setAttribute("aria-label", isOpen ? "Close navigation menu" : "Open navigation menu");
                 });
             }
         });

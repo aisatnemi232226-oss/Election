@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <tr>
                                 <td class="py-2 px-4 border-b">
                                     <img 
-                                        src="${candidate.profile_img ? '/storage/upload/profile-picture/' + candidate.profile_img : '/images/default-profile.jpg'}"
+                                        src="${candidate.profile_image_url || '/images/default-profile.jpg'}"
                                         alt="${candidate.name}"
                                         class="w-10 h-10 object-cover rounded-full"
                                         onerror="this.onerror=null; this.src='/images/default-profile.jpg';"
@@ -230,8 +230,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                             data-party="${candidate.party ? candidate.party.name : 'No Party'}" 
                                             data-description="${(candidate.description || '').replace(/"/g, '&quot;')}" 
                                             data-status="${candidate.status}" 
-                                            data-profile-image="${candidate.profile_img ? '/storage/upload/profile-picture/' + candidate.profile_img : '/images/default-profile.jpg'}" 
-                                            data-banner-image="${candidate.banner_img ? '/storage/upload/banner/' + candidate.banner_img : '/images/default-banner.png'}" 
+                                            data-profile-image="${candidate.profile_image_url || '/images/default-profile.jpg'}" 
+                                            data-banner-image="${candidate.banner_image_url || '/images/default-banner.png'}" 
                                             data-platforms="${(candidate.platforms || 'No Platforms').replace(/"/g, '&quot;')}" 
                                             data-related-events="${(candidate.related_events || '').replace(/"/g, '&quot;')}" 
                                             data-joined-elections="${String(candidate.joined_elections || '').replace(/"/g, '&quot;')}">
@@ -249,8 +249,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                                 data-party-id="${candidate.party ? candidate.party.id : ''}" 
                                                 data-description="${(candidate.description || '').replace(/"/g, '&quot;')}" 
                                                 data-status="${candidate.status}" 
-                                                data-profile-image="${candidate.profile_img ? '/storage/upload/profile-picture/' + candidate.profile_img : '/images/default-profile.jpg'}" 
-                                                data-banner-image="${candidate.banner_img ? '/storage/upload/banner/' + candidate.banner_img : '/images/default-banner.png'}" 
+                                                data-profile-image="${candidate.profile_image_url || '/images/default-profile.jpg'}" 
+                                                data-banner-image="${candidate.banner_image_url || '/images/default-banner.png'}" 
                                                 data-platforms="${(candidate.platforms || '').replace(/"/g, '&quot;')}"
                                                 data-related-events="${(candidate.related_events || '').replace(/"/g, '&quot;')}"
                                                 data-joined-elections="${String(candidate.joined_elections || '').replace(/"/g, '&quot;')}">

@@ -1,13 +1,15 @@
 (() => {
     const root = document.documentElement;
-    const themeButton = document.querySelector('[data-theme-toggle]');
+    const themeButtons = Array.from(document.querySelectorAll('[data-theme-toggle]'));
     let themeTransitionTimeout;
 
     function setTheme(theme, persist) {
         const normalizedTheme = theme === 'dark' ? 'dark' : 'light';
         root.setAttribute('data-theme', normalizedTheme);
-        themeButton?.setAttribute('aria-label', normalizedTheme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
-        themeButton?.setAttribute('aria-pressed', String(normalizedTheme === 'dark'));
+        themeButtons.forEach((themeButton) => {
+            themeButton.setAttribute('aria-label', normalizedTheme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+            themeButton.setAttribute('aria-pressed', String(normalizedTheme === 'dark'));
+        });
         if (persist) {
             try {
                 localStorage.setItem('pcu-theme', normalizedTheme);
@@ -18,19 +20,21 @@
     }
 
     setTheme(root.getAttribute('data-theme'), false);
-    themeButton?.addEventListener('click', () => {
-        root.classList.add('theme-transitioning');
-        themeButton.classList.remove('is-switching');
-        void themeButton.offsetWidth;
-        themeButton.classList.add('is-switching');
+    themeButtons.forEach((themeButton) => {
+        themeButton.addEventListener('click', () => {
+            root.classList.add('theme-transitioning');
+            themeButtons.forEach((button) => button.classList.remove('is-switching'));
+            void themeButton.offsetWidth;
+            themeButton.classList.add('is-switching');
 
-        window.clearTimeout(themeTransitionTimeout);
-        themeTransitionTimeout = window.setTimeout(() => {
-            root.classList.remove('theme-transitioning');
-            themeButton.classList.remove('is-switching');
-        }, 650);
+            window.clearTimeout(themeTransitionTimeout);
+            themeTransitionTimeout = window.setTimeout(() => {
+                root.classList.remove('theme-transitioning');
+                themeButtons.forEach((button) => button.classList.remove('is-switching'));
+            }, 650);
 
-        setTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark', true);
+            setTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark', true);
+        });
     });
 
     const profileToggle = document.getElementById('profile-toggle');

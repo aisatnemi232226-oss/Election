@@ -27,10 +27,6 @@ class CandidateController extends Controller
         try {
             Log::info('CandidateController@index - Starting');
             
-            // Simple query to check if the database connection works
-            $candidateCount = DB::table('candidate')->count();
-            Log::info('Raw candidate count: ' . $candidateCount);
-            
             $perPage = 10;
             $isArchived = request()->boolean('archived');
             $status = $request->query('status');
@@ -540,7 +536,8 @@ public function update(Request $request, $id)
             }
             
             // Build the base query with course join for search
-            $query = Candidate::leftJoin('courses', 'candidate.course_id', '=', 'courses.id')
+            $query = Candidate::with(['course', 'party', 'position'])
+                             ->leftJoin('courses', 'candidate.course_id', '=', 'courses.id')
                              ->leftJoin('electionparty', 'candidate.electionparty_id', '=', 'electionparty.id')
                              ->leftJoin('positions', 'candidate.position_id', '=', 'positions.id')
                              ->select('candidate.*');
@@ -593,29 +590,19 @@ public function update(Request $request, $id)
             foreach ($candidates as $candidate) {
                 $candidateArray = $candidate->toArray();
                 
-                // Get course data
-                if ($candidate->course_id) {
-                    $course = Course::find($candidate->course_id);
-                    $candidateArray['course'] = $course ? $course->toArray() : null;
-                } else {
-                    $candidateArray['course'] = null;
-                }
-                
-                // Get party data
-                if ($candidate->electionparty_id) {
-                    $party = ElectionParty::find($candidate->electionparty_id);
-                    $candidateArray['party'] = $party ? $party->toArray() : null;
-                } else {
-                    $candidateArray['party'] = null;
-                }
-
-                // Get position data
-                if ($candidate->position_id) {
-                    $position = Position::find($candidate->position_id);
-                    $candidateArray['position'] = $position ? $position->toArray() : null;
-                } else {
-                    $candidateArray['position'] = null;
-                }
+                $candidateArray['course'] = $candidate->course ? $candidate->course->toArray() : null;
+                $candidateArray['party'] = $candidate->party ? $candidate->party->toArray() : null;
+                $candidateArray['position'] = $candidate->position ? $candidate->position->toArray() : null;
+                $candidateArray['profile_image_url'] = $this->candidateImageUrl(
+                    $candidate->profile_img,
+                    'profile-picture',
+                    'default-profile.jpg'
+                );
+                $candidateArray['banner_image_url'] = $this->candidateImageUrl(
+                    $candidate->banner_img,
+                    'banner',
+                    'default-banner.png'
+                );
                 
                 $candidatesData[] = $candidateArray;
             }
@@ -655,6 +642,30 @@ public function update(Request $request, $id)
                 ]
             ], 500);
         }
+    }
+
+    private function candidateImageUrl(?string $imagePath, string $directory, string $fallback): string
+    {
+        if (!$imagePath) {
+            return asset('images/' . $fallback);
+        }
+
+        $imagePath = ltrim(str_replace('\\', '/', trim($imagePath)), '/');
+        foreach (['storage/upload/', 'upload/'] as $prefix) {
+            if (Str::startsWith($imagePath, $prefix)) {
+                $imagePath = Str::after($imagePath, $prefix);
+                break;
+            }
+        }
+
+        if (!Str::startsWith($imagePath, $directory . '/')) {
+            $imagePath = $directory . '/' . $imagePath;
+        }
+
+        return route('storage.image', [
+            'folder' => 'upload',
+            'filename' => $imagePath,
+        ]);
     }
 
     /**

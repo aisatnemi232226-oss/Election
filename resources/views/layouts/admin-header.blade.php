@@ -1,4 +1,4 @@
-<header class="bg-blue-600 text-white p-4 fixed top-0 left-0 w-full shadow-md transition-transform duration-300 z-50">
+<header class="admin-header bg-blue-600 text-white p-4 fixed top-0 left-0 w-full shadow-md transition-transform duration-300 z-50">
     <div class="container mx-auto">
         <div class="hidden md:flex items-center justify-between">
             <div class="flex w-full items-center justify-between gap-3">
@@ -18,9 +18,9 @@
             <nav class="hidden lg:block">
                 <ul class="flex items-center justify-center gap-4 text-base">
                     <li><a class="hover:underline" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                    <li class="relative group">
-                        <a id="election-management-toggle" class="hover:underline cursor-pointer block whitespace-nowrap">Election Management</a>
-                        <ul id="election-management-menu" class="absolute left-0 mt-1 hidden bg-white text-gray-800 shadow-lg rounded-lg w-56 z-50 p-2 group-hover:block">
+                    <li class="relative">
+                        <button id="election-management-toggle" type="button" class="hover:underline cursor-pointer block whitespace-nowrap focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white" aria-controls="election-management-menu" aria-expanded="false">Election Management</button>
+                        <ul id="election-management-menu" class="absolute left-0 mt-1 hidden bg-white text-gray-800 shadow-lg rounded-lg w-56 z-50 p-2">
                             <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.elections.index') }}">Manage Elections</a></li>
                             <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.election-events-settings.edit') }}">Manage Election Events</a></li>
                             <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.candidates.index') }}">Manage Candidates</a></li>
@@ -32,9 +32,9 @@
                         </ul>
                     </li>
                     <li><a class="hover:underline" href="{{ route('admin.reports.index') }}">Reports</a></li>
-                    <li class="relative group">
-                        <a id="settings-toggle" class="hover:underline cursor-pointer block">Settings</a>
-                        <ul id="settings-menu" class="absolute left-0 mt-1 hidden bg-white text-gray-800 shadow-lg rounded-lg w-56 z-50 p-2 group-hover:block">
+                    <li class="relative">
+                        <button id="settings-toggle" type="button" class="hover:underline cursor-pointer block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white" aria-controls="settings-menu" aria-expanded="false">Settings</button>
+                        <ul id="settings-menu" class="absolute left-0 mt-1 hidden bg-white text-gray-800 shadow-lg rounded-lg w-56 z-50 p-2">
                             <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.admin-roles.index') }}">Admin Roles</a></li>
                             <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.chatbot.index') }}">Manage Chatbot</a></li>
                             <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.tickets.index') }}">Manage Tickets</a></li>
@@ -51,6 +51,10 @@
 
             <div class="flex items-center justify-end">
                 @auth
+                <button type="button" class="admin-theme-toggle theme-toggle mr-2 inline-grid h-11 w-11 place-items-center rounded-xl border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" data-theme-toggle aria-label="Switch to dark theme" aria-pressed="false">
+                    <svg class="icon theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.2A8.4 8.4 0 0 1 8.8 3.8 8.5 8.5 0 1 0 20.2 15.2Z"/></svg>
+                    <svg class="icon theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>
+                </button>
                 @php
                     $pendingCandidates = (int) data_get($adminWidget ?? [], 'candidates.pending', 0);
                     $pendingVoterVerification = (int) data_get($adminWidget ?? [], 'voters.pending_verification', 0);
@@ -58,7 +62,7 @@
                 @endphp
 
                 <div class="relative mr-4">
-                    <button type="button" id="admin-notif-toggle" class="relative" aria-haspopup="true" aria-expanded="false" title="Notifications">
+                    <button type="button" id="admin-notif-toggle" class="relative" aria-haspopup="true" aria-expanded="false" aria-label="Open notifications" title="Notifications">
                         <span class="inline-flex items-center justify-center w-9 h-9 bg-white/15 rounded-full hover:bg-white/20">
                             <i class="fas fa-bell"></i>
                         </span>
@@ -172,9 +176,17 @@
                 </div>
             </a>
 
-            <button id="menu-toggle" class="text-2xl text-white mt-2 focus:outline-none">
-                <i class="fas fa-bars"></i>
-            </button>
+            <div class="flex items-center gap-2 mt-2">
+                @auth
+                <button type="button" class="admin-theme-toggle theme-toggle inline-grid h-11 w-11 place-items-center rounded-xl border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" data-theme-toggle aria-label="Switch to dark theme" aria-pressed="false">
+                    <svg class="icon theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.2A8.4 8.4 0 0 1 8.8 3.8 8.5 8.5 0 1 0 20.2 15.2Z"/></svg>
+                    <svg class="icon theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>
+                </button>
+                @endauth
+                <button id="menu-toggle" type="button" class="text-2xl text-white focus:outline-none" aria-controls="menu" aria-expanded="false" aria-label="Open navigation menu">
+                    <i class="fas fa-bars" aria-hidden="true"></i>
+                </button>
+            </div>
 
             <ul class="hidden w-full flex-col space-y-2 text-center mt-2" id="menu">
                 <li><a class="hover:underline block py-1" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
@@ -214,7 +226,7 @@
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         let lastScrollTop = 0;
-        const navbar = document.querySelector("header");
+        const navbar = document.querySelector(".admin-header");
         let scrollTimeout;
 
         const timeEl = document.getElementById('admin-live-time');
@@ -303,7 +315,9 @@
             clearTimeout(scrollTimeout);
             let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
 
-            if (scrollTop === 0) {
+            const navbarInUse = navbar && (navbar.matches(":hover") || navbar.contains(document.activeElement));
+
+            if (scrollTop === 0 || navbarInUse) {
                 navbar.style.transform = "translateY(0)";
             } else if (scrollTop > lastScrollTop) {
                 navbar.style.transform = "translateY(-100%)";
@@ -315,7 +329,7 @@
 
             // Keep navbar visible for a short period before hiding it
             scrollTimeout = setTimeout(() => {
-                if (window.pageYOffset > 100) {
+                if (window.pageYOffset > 100 && navbar && !navbar.matches(":hover") && !navbar.contains(document.activeElement)) {
                     navbar.style.transform = "translateY(-100%)";
                 }
             }, 1500); // 1.5 seconds before hiding again
