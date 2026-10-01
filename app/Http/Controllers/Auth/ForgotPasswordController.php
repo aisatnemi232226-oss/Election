@@ -30,11 +30,9 @@ class ForgotPasswordController extends Controller
     {
         $validated = $request->validate(['email' => 'required|email']);
         $email = Str::lower(trim($validated['email']));
-        $request->session()->put('password_otp_email', $email);
 
         $user = User::query()->where('email', $email)->whereNull('deleted_at')->first();
         $limiterKey = 'password-otp-email:'.hash('sha256', $email);
-        $emailDeliveryFailed = false;
 
         if ($user && ! RateLimiter::tooManyAttempts($limiterKey, 1)) {
             $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
@@ -59,18 +57,22 @@ class ForgotPasswordController extends Controller
                 Log::error('Password reset OTP email could not be sent.', [
                     'exception' => $exception,
                 ]);
-                $emailDeliveryFailed = true;
+                DB::table('password_reset_otps')->where('email', $email)->delete();
+                $request->session()->forget('password_otp_email');
+
+                return redirect()
+                    ->route('password.request')
+                    ->withInput(['email' => $email])
+                    ->with('mail_error', 'We could not send the verification email. Please try again shortly or contact support.');
             }
         }
 
-        $redirect = redirect()->route('password.otp.form')->with(
-            'status',
-            'If an account exists for that email, a verification code has been sent.'
-        );
+        $request->session()->put('password_otp_email', $email);
 
-        return $emailDeliveryFailed
-            ? $redirect->with('mail_error', 'We could not send the verification email. Please try again shortly or contact support.')
-            : $redirect;
+        return redirect()->route('password.otp.form')->with(
+            'status',
+            'If an account exists for that email, a verification code has been sent. Check your inbox.'
+        );
     }
 
     public function showOtpForm(Request $request)

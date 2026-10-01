@@ -17,12 +17,48 @@
         <img src="{{ asset('images/pculogo.png') }}" alt="" class="w-[62vw] max-w-[820px] h-auto">
     </div>
 
-    <header class="relative bg-blue-600 p-4 text-white">
-        <div class="container mx-auto">
-            <a href="{{ url('/') }}" class="inline-flex items-center gap-3">
-                <img src="{{ asset('images/pculogo.png') }}" alt="School Logo" class="h-16 w-16 object-contain">
-                <span class="text-xl font-bold md:text-2xl">Philippine Christian University Online Election System</span>
+    <header class="relative z-50 bg-blue-600 p-4 text-white">
+        <div class="container mx-auto flex flex-col items-center justify-between md:flex-row">
+            <a href="{{ url('/') }}" class="mb-4 flex items-center gap-3 md:mb-0">
+                <img src="{{ asset('images/pculogo.png') }}" alt="School Logo" class="-my-4 h-16 w-16 shrink-0 object-contain md:h-24 md:w-24" onerror="this.onerror=null;this.style.display='none';">
+                <span class="text-xl font-bold md:text-3xl">Philippine Christian University Online Election System</span>
             </a>
+            <div class="flex items-center gap-2 md:hidden">
+                @auth
+                    <button
+                        type="button"
+                        class="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-white transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white"
+                        aria-label="Notifications"
+                        aria-haspopup="true"
+                        aria-expanded="false"
+                        data-student-notification-toggle
+                        data-list-url="{{ route('student.notifications.index') }}"
+                        data-read-url="{{ route('student.notifications.read') }}"
+                    >
+                        <i class="fas fa-bell" aria-hidden="true"></i>
+                        <span data-student-notification-badge class="hidden absolute -right-1 -top-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold text-white">0</span>
+                    </button>
+                @endauth
+                <button type="button" class="text-white focus:outline-none focus:ring-2 focus:ring-white" id="menu-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="menu">
+                    <i class="fas fa-bars text-2xl" aria-hidden="true"></i>
+                </button>
+            </div>
+            <nav class="hidden md:block" id="menu">
+                <ul class="flex flex-col items-center space-y-2 md:flex-row md:space-x-4 md:space-y-0">
+                    <li><a class="hover:underline" href="{{ url('/') }}">Home</a></li>
+                    <li><a class="hover:underline" href="{{ url('/election') }}">Election</a></li>
+                    <li><a class="hover:underline" href="{{ route('election.details') }}">Vote</a></li>
+                    <li><a class="hover:underline" href="{{ url('/result') }}">Results</a></li>
+                    <li><a class="hover:underline" href="{{ url('/contact') }}">Contact</a></li>
+                    @guest
+                        <li><a class="hover:underline" href="{{ route('login') }}">Log In</a></li>
+                    @endguest
+                    @auth
+                        @include('voter.partials.verification-notifications')
+                        @include('voter.partials.account-profile')
+                    @endauth
+                </ul>
+            </nav>
         </div>
     </header>
 
@@ -50,5 +86,18 @@
             <a href="{{ url('/') }}" class="mt-8 inline-block text-blue-700 hover:underline">Back to Home</a>
         </section>
     </main>
+    <script>
+        const menuToggle = document.getElementById('menu-toggle');
+        const menu = document.getElementById('menu');
+
+        if (menuToggle && menu) {
+            menuToggle.addEventListener('click', () => {
+                const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
+                menu.classList.toggle('hidden', isExpanded);
+                menuToggle.setAttribute('aria-expanded', String(!isExpanded));
+                menuToggle.setAttribute('aria-label', isExpanded ? 'Open navigation menu' : 'Close navigation menu');
+            });
+        }
+    </script>
 </body>
 </html>

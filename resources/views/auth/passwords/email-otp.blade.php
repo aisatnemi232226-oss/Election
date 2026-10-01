@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Forgot password</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="min-h-screen bg-gray-100 px-4 py-12 text-gray-800">
     <main class="mx-auto w-full max-w-md rounded-lg bg-white p-8 shadow">
@@ -12,8 +13,18 @@
         <h1 class="mt-6 text-2xl font-bold">Forgot password?</h1>
         <p class="mt-2 text-sm text-gray-600">Enter the email address on your account and we will send a verification code.</p>
 
-        @if (session('status'))
-            <p class="mt-5 rounded border border-blue-200 bg-blue-50 p-3 text-sm" role="status">{{ session('status') }}</p>
+        @if (session('status') || session('mail_error'))
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    Swal.fire({
+                        icon: @json(session('mail_error') ? 'error' : 'success'),
+                        title: @json(session('mail_error') ? 'Email not sent' : 'Check your email'),
+                        text: @json(session('mail_error') ?? session('status')),
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#1d4ed8'
+                    });
+                });
+            </script>
         @endif
         @error('email')
             <p class="mt-5 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{{ $message }}</p>

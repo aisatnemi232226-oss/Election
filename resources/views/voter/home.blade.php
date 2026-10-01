@@ -148,11 +148,11 @@
          @endunless
         </div>
         @if(!Auth::user()->is_admin && !$isVerifiedStudent)
-        <div class="mx-3 my-3 rounded-xl border px-3.5 py-3 {{ $verificationPending ? 'border-amber-200 bg-amber-50' : 'border-blue-100 bg-blue-50' }}">
-         <p class="text-xs leading-relaxed {{ $verificationPending ? 'text-amber-900' : 'text-blue-900' }}">
+        <div class="mx-3 my-3 rounded-xl border px-3.5 py-3 {{ $verificationPending ? 'border-amber-200 bg-amber-50' : 'border-red-200 bg-red-50' }}">
+         <p class="text-xs leading-relaxed {{ $verificationPending ? 'text-amber-900' : 'text-red-900' }}">
           {{ $verificationPending ? 'Your voter verification application is awaiting review.' : 'Verify your account to vote in elections.' }}
          </p>
-         <a href="{{ route('register.verify') }}" class="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold {{ $verificationPending ? 'text-amber-800 hover:text-amber-950' : 'text-blue-700 hover:text-blue-900' }} focus:outline-none focus-visible:underline">
+         <a href="{{ route('register.verify') }}" class="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold {{ $verificationPending ? 'text-amber-800 hover:text-amber-950' : 'text-red-700 hover:text-red-900' }} focus:outline-none focus-visible:underline">
           {{ $verificationPending ? 'View application' : 'Verify now' }}
           <i class="fas fa-arrow-right text-[10px]" aria-hidden="true"></i>
          </a>

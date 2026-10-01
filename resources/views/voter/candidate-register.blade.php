@@ -72,7 +72,7 @@
                 <h1 class="text-3xl font-bold">Philippine Christian University Online Election System</h1>
             </a>
             <nav class="hidden md:block" id="menu">
-                <ul class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4">
+                <ul class="flex flex-col md:flex-row space-y-2 md:items-center md:space-y-0 md:space-x-4">
                     <li><a class="hover:underline" href="{{ url('/') }}">Home</a></li>
                     <li><a class="hover:underline" href="{{ url('/election') }}">Election</a></li>
                     <li><a class="hover:underline" href="{{ route('election.details') }}">Vote</a></li>
@@ -82,9 +82,7 @@
                         <li><a class="hover:underline" href="{{ \Illuminate\Support\Facades\Route::has('login') ? route('login') : url('/login') }}">Log In</a></li>
                     @endguest
                     @auth
-                        <li class="border-t md:border-t-0 md:pt-0 pt-2">
-                            <span class="text-sm font-semibold">{{ auth()->user()->name }}</span>
-                        </li>
+                        @include('voter.partials.account-profile')
                     @endauth
                 </ul>
             </nav>
@@ -193,7 +191,6 @@
                                     <i class="fas fa-qrcode"></i>
                                 </button>
                             </div>
-                            <p class="text-xs text-gray-500 mt-1">Guest: scan QR to auto-fill. Logged in: auto-filled.</p>
                         </div>
 
                         <input type="hidden" id="idnumber" name="idnumber" value="{{ old('idnumber', auth()->check() ? (auth()->user()->idnumber ?? '') : ($prefillIdNumber ?? '')) }}" />

@@ -57,7 +57,7 @@
 
                     <!-- Pagination at the top - properly aligned -->
                     <div id="pagination-container-top" class="flex items-center">
-                        {{ $candidates->appends(['archived' => $isArchived ? 1 : 0, 'status' => $status ?? request('status')])->links('components.pagination') }}
+                        {{ $candidates->appends(['archived' => $isArchived ? 1 : 0, 'status' => $status ?? request('status'), 'sort' => $sort, 'direction' => $sort ? $direction : null])->links('components.pagination') }}
                     </div>
                     
                     @if (!$isArchived)
@@ -84,9 +84,14 @@
                         <tr>
                             <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Photo</th>
                             <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Name</th>
-                            <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Course</th>
-                            <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Party</th>
-                            <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Position</th>
+                            @foreach (['course' => 'Course', 'party' => 'Party', 'position' => 'Position'] as $sortField => $label)
+                                <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold" data-sort-header="{{ $sortField }}" aria-sort="{{ $sort === $sortField ? ($direction === 'asc' ? 'ascending' : 'descending') : 'none' }}">
+                                    <button type="button" data-sort-field="{{ $sortField }}" class="inline-flex items-center gap-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                                        {{ $label }}
+                                        <i class="fas {{ $sort === $sortField ? ($direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort' }} text-xs text-gray-400" aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                            @endforeach
                             <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Status</th>
                             <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Actions</th>
                         </tr>
@@ -463,12 +468,13 @@
 
     <!-- Create New Candidate Modal -->
     <div class="fixed inset-0 overflow-y-auto hidden" id="new-candidate-modal" style="z-index: 9999;">
-        <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="flex min-h-full items-center justify-center p-4">
             <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity modal-backdrop"></div>
-            <div class="relative bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full">
-                <div class="p-6">
+            <div class="relative flex w-full max-w-lg flex-col overflow-hidden rounded-lg bg-white shadow-xl transform transition-all"
+                style="max-height: calc(100vh - 2rem); max-height: calc(100dvh - 2rem);">
+                <div class="flex min-h-0 flex-col p-6">
                     <h3 class="text-lg font-bold text-gray-800 mb-4">Create New Candidate</h3>
-                    <form id="new-candidate-form" method="POST" action="{{ route('admin.candidates.store') }}" enctype="multipart/form-data">
+                    <form id="new-candidate-form" method="POST" action="{{ route('admin.candidates.store') }}" enctype="multipart/form-data" class="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
                         @csrf
                         <div>
                             <label class="block mb-2" for="new-candidate-name">Name</label>
@@ -564,7 +570,7 @@
                                 <option value="Inactive">Inactive</option>
                             </select>
                         </div>
-                        <div class="flex justify-end mt-4">
+                        <div class="sticky bottom-0 flex justify-end mt-4 bg-white py-2">
                             <button type="button" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400" id="cancel-new-candidate">Cancel</button>
                             <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 ml-2" id="save-new-candidate">Save</button>
                         </div>

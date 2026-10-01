@@ -100,10 +100,12 @@ class PasswordResetOtpTest extends TestCase
             ->andThrow(new TransportException('SMTP authentication failed.'));
 
         $this->post('/forgot-password', ['email' => $user->email])
-            ->assertRedirect('/forgot-password/verify')
-            ->assertSessionHas('mail_error');
+            ->assertRedirect('/forgot-password')
+            ->assertSessionHas('mail_error')
+            ->assertSessionMissing('password_otp_email');
 
         $this->assertFalse(RateLimiter::tooManyAttempts($limiterKey, 1));
+        $this->assertDatabaseMissing('password_reset_otps', ['email' => $user->email]);
     }
 
     public function test_recovery_qr_grants_a_single_password_reset(): void

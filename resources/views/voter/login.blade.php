@@ -3,6 +3,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Philippine Christian University Online Election System - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
     <script>
@@ -76,9 +77,6 @@
     </a>
     <div class="relative z-10 bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
         <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Philippine Christian University Online Election System</h2>
-        @if (session('status'))
-            <div class="mb-4 rounded border border-green-200 bg-green-50 p-3 text-sm text-green-800" role="status">{{ session('status') }}</div>
-        @endif
         <form action="{{route('login')}}" method="POST">
             @csrf
             @if ($errors->any())
@@ -150,6 +148,19 @@
             </div>
         </div>
     </div>
+    @if (session('status'))
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Password reset',
+                    text: @json(session('status')),
+                    confirmButtonText: 'Continue to login',
+                    confirmButtonColor: '#2563eb'
+                });
+            });
+        </script>
+    @endif
     <script>
         let html5QrCode = null;
         let isScanning = false;

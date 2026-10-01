@@ -105,24 +105,53 @@
                 </div>
 
                 <div class="relative">
-                    <button id="admin-profile-toggle" class="flex items-center space-x-2 focus:outline-none text-base">
-                        <span class="inline-flex items-center justify-center w-8 h-8 bg-white text-blue-600 rounded-full">
-                            <i class="fas fa-user"></i>
+                    <button id="admin-profile-toggle" type="button"
+                        class="group inline-flex h-12 max-w-full items-center gap-2.5 rounded-full border border-white/30 bg-white/15 py-1 pl-1 pr-3 text-left text-white transition-colors hover:bg-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-600"
+                        aria-controls="admin-profile-menu" aria-expanded="false" aria-label="Open profile menu">
+                        <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-blue-700 shadow-sm">
+                            <i class="fas fa-user-shield" aria-hidden="true"></i>
                         </span>
-                        <span class="text-base no-wrap">{{ Auth::user()->name ?? 'Admin' }}</span>
+                        <span class="hidden min-w-0 items-center gap-2 md:flex">
+                            <span class="max-w-28 truncate text-sm font-semibold">{{ Auth::user()->first_name ?: \Illuminate\Support\Str::before((string) Auth::user()->name, ' ') ?: 'Admin' }}</span>
+                            <span class="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-100 px-2 py-1 text-[10px] font-semibold leading-none text-blue-800">
+                                <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                                Admin
+                            </span>
+                        </span>
+                        <i class="fas fa-chevron-down hidden shrink-0 text-[10px] text-blue-100 transition-transform md:block" aria-hidden="true" data-admin-profile-chevron></i>
                     </button>
 
-                    <div id="admin-profile-menu" class="hidden absolute right-0 mt-2 w-56 bg-white text-gray-800 rounded-md shadow-lg z-50">
-                        <div class="px-4 py-2 border-b">
-                            <p class="font-semibold text-sm truncate">{{ Auth::user()->name }}</p>
-                            <p class="text-xs text-gray-500 truncate">{{ Auth::user()->email }}</p>
+                    <div id="admin-profile-menu" class="pointer-events-auto absolute right-0 top-full z-50 mt-2 hidden w-[300px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl bg-white text-gray-800 shadow-[0_12px_32px_rgba(15,23,42,0.18),0_2px_6px_rgba(15,23,42,0.08)]">
+                        <div class="border-b border-gray-100 px-5 pb-4 pt-5">
+                            <div class="flex items-center gap-3">
+                                <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-100">
+                                    <i class="fas fa-user-shield" aria-hidden="true"></i>
+                                </span>
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-semibold text-gray-900">{{ Auth::user()->name }}</p>
+                                    <p class="mt-0.5 truncate text-xs text-gray-500">{{ Auth::user()->email }}</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center justify-between gap-3 text-xs">
+                                <span class="text-gray-500">Administrator account</span>
+                                <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 font-semibold text-blue-700 ring-1 ring-blue-200">
+                                    <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                                    Admin
+                                </span>
+                            </div>
                         </div>
-                        <div class="px-4 py-2 text-sm">
-                            <p class="mb-1">Student No: {{ Auth::user()->idnumber }}</p>
+                        <div class="px-2 py-2">
+                            <a href="{{ route('admin.profile-settings.index') }}" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
+                                <i class="fas fa-cog w-4 text-center text-gray-400" aria-hidden="true"></i>
+                                Profile settings
+                            </a>
                         </div>
-                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="border-t">
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="border-t border-gray-100 p-2">
                             @csrf
-                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Log out</button>
+                            <button type="submit" class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50 focus:bg-red-50 focus:outline-none">
+                                <i class="fas fa-sign-out-alt w-4 text-center" aria-hidden="true"></i>
+                                Log out
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -297,17 +326,30 @@
         const adminProfileMenu = document.getElementById('admin-profile-menu');
 
         if (adminProfileToggle && adminProfileMenu) {
+            const setAdminProfileMenuOpen = (isOpen) => {
+                adminProfileMenu.classList.toggle('hidden', !isOpen);
+                adminProfileToggle.setAttribute('aria-expanded', String(isOpen));
+                adminProfileToggle.setAttribute('aria-label', isOpen ? 'Close profile menu' : 'Open profile menu');
+                document.querySelector('[data-admin-profile-chevron]')?.classList.toggle('rotate-180', isOpen);
+            };
+
             adminProfileToggle.addEventListener('click', (event) => {
                 event.stopPropagation();
-                adminProfileMenu.classList.toggle('hidden');
+                setAdminProfileMenuOpen(adminProfileToggle.getAttribute('aria-expanded') !== 'true');
             });
 
+            adminProfileMenu.addEventListener('click', (event) => event.stopPropagation());
+
             document.addEventListener('click', (event) => {
-                if (!adminProfileMenu.classList.contains('hidden') &&
-                    !adminProfileMenu.contains(event.target) &&
-                    event.target !== adminProfileToggle &&
-                    !adminProfileToggle.contains(event.target)) {
-                    adminProfileMenu.classList.add('hidden');
+                if (!adminProfileMenu.contains(event.target) && !adminProfileToggle.contains(event.target)) {
+                    setAdminProfileMenuOpen(false);
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && adminProfileToggle.getAttribute('aria-expanded') === 'true') {
+                    setAdminProfileMenuOpen(false);
+                    adminProfileToggle.focus();
                 }
             });
         }

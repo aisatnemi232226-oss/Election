@@ -102,29 +102,9 @@
              </a>
             </li>
             @endguest
-      @auth
-      <li class="relative">
-       <button id="profile-toggle" type="button" class="flex items-center space-x-2 focus:outline-none">
-        <span class="inline-flex items-center justify-center w-8 h-8 bg-white text-blue-600 rounded-full">
-         <i class="fas fa-user"></i>
-        </span>
-        <span class="hidden md:inline text-sm">{{ Auth::user()->name ?? 'Profile' }}</span>
-       </button>
-       <div id="profile-menu" class="hidden absolute right-0 mt-2 w-56 bg-white text-gray-800 rounded-md shadow-lg z-50 pointer-events-auto">
-        <div class="px-4 py-2 border-b">
-         <p class="font-semibold text-sm truncate">{{ Auth::user()->name }}</p>
-         <p class="text-xs text-gray-500 truncate">{{ Auth::user()->email }}</p>
-        </div>
-        <div class="px-4 py-2 text-sm">
-         <p class="mb-2">Student No: {{ Auth::user()->idnumber }}</p>
-        </div>
-        <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('logout') ? route('logout') : url('/logout') }}" class="border-t">
-         @csrf
-         <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Log out</button>
-        </form>
-       </div>
-      </li>
-      @endauth
+            @auth
+            @include('voter.partials.account-profile')
+            @endauth
      </ul>
     </nav>
    </div>
@@ -720,26 +700,6 @@
                 }
             });
         });
-
-        const profileToggle = document.getElementById('profile-toggle');
-        const profileMenu = document.getElementById('profile-menu');
-
-        if (profileToggle && profileMenu) {
-            profileToggle.addEventListener('click', (event) => {
-                event.stopPropagation();
-                profileMenu.classList.toggle('hidden');
-            });
-
-            profileMenu.addEventListener('click', (event) => {
-                event.stopPropagation();
-            });
-
-            document.addEventListener('click', (event) => {
-                if (!profileMenu.classList.contains('hidden') && !profileMenu.contains(event.target) && event.target !== profileToggle && !profileToggle.contains(event.target)) {
-                    profileMenu.classList.add('hidden');
-                }
-            });
-        }
 
         const menuToggle = document.getElementById('menu-toggle');
         const mobileMenu = document.getElementById('mobile-menu');

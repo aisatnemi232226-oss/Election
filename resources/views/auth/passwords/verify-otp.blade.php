@@ -5,15 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Verify code</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="min-h-screen bg-gray-100 px-4 py-12 text-gray-800">
     <main class="mx-auto w-full max-w-md rounded-lg bg-white p-8 shadow">
-        <h1 class="text-2xl font-bold">Check your email</h1>
+        <a href="{{ route('login') }}" class="text-sm font-semibold text-blue-700 hover:text-blue-900">&larr; Back to login</a>
+        <h1 class="mt-6 text-2xl font-bold">Check your email</h1>
         <p class="mt-2 text-sm text-gray-600">If an account exists for that address, a six-digit code has been sent. It expires in 10 minutes.</p>
-
-        @if (session('mail_error'))
-            <p class="mt-5 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">{{ session('mail_error') }}</p>
-        @endif
 
         @error('otp')
             <p class="mt-5 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{{ $message }}</p>
@@ -35,5 +33,18 @@
             <button type="submit" class="text-sm font-semibold text-blue-700 hover:text-blue-900">Send a new code</button>
         </form>
     </main>
+    @if (session('status') || session('mail_error'))
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                Swal.fire({
+                    icon: @json(session('mail_error') ? 'error' : 'success'),
+                    title: @json(session('mail_error') ? 'Email not sent' : 'Check your email'),
+                    text: @json(session('mail_error') ?? session('status')),
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#1d4ed8'
+                });
+            });
+        </script>
+    @endif
 </body>
 </html>

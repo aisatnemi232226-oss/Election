@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     // ===== MODULE DEFINITIONS =====
     const isArchivedView = new URLSearchParams(window.location.search).get('archived') === '1';
+    const initialParams = new URLSearchParams(window.location.search);
+    const initialSort = ['course', 'party', 'position'].includes(initialParams.get('sort')) ? initialParams.get('sort') : '';
 
     const ModalController = {
         modals: {
@@ -77,10 +79,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const PaginationController = {
         currentPage: 1,
         filters: {
-            search: '',
-            course: '',
+            search: initialParams.get('search') || '',
+            course: initialParams.get('course') || '',
             name: '',
-            status: '',
+            status: initialParams.get('status') || '',
+            sort: initialSort,
+            direction: initialParams.get('direction') === 'desc' ? 'desc' : 'asc',
             isLoading: false
         },
         setupStatusFilters() {
@@ -93,6 +97,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 const status = btn.getAttribute('data-status-filter') || '';
                 this.filters.status = status;
                 this.loadCandidates(1);
+            });
+        },
+        setupSortHeaders() {
+            document.querySelector('thead')?.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-sort-field]');
+                if (!button) return;
+
+                const field = button.getAttribute('data-sort-field');
+                if (!['course', 'party', 'position'].includes(field)) return;
+
+                this.filters.direction = this.filters.sort === field && this.filters.direction === 'asc' ? 'desc' : 'asc';
+                this.filters.sort = field;
+                this.updateSortHeaders();
+
+                const params = new URLSearchParams(window.location.search);
+                params.set('sort', field);
+                params.set('direction', this.filters.direction);
+                params.delete('page');
+                window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+                this.loadCandidates(1);
+            });
+        },
+        updateSortHeaders() {
+            document.querySelectorAll('[data-sort-header]').forEach((header) => {
+                const field = header.getAttribute('data-sort-header');
+                const isActive = field === this.filters.sort;
+                header.setAttribute('aria-sort', isActive ? (this.filters.direction === 'asc' ? 'ascending' : 'descending') : 'none');
+
+                const icon = header.querySelector('i');
+                if (icon) {
+                    icon.className = `fas ${isActive ? (this.filters.direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'} text-xs text-gray-400`;
+                }
             });
         },
         setupPaginationLinks() {
@@ -133,6 +169,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 `&course=${encodeURIComponent(this.filters.course)}` +
                 `&name=${encodeURIComponent(this.filters.name)}` +
                 `&status=${encodeURIComponent(this.filters.status)}` +
+                `&sort=${encodeURIComponent(this.filters.sort)}` +
+                `&direction=${encodeURIComponent(this.filters.direction)}` +
                 `&archived=${isArchivedView ? 1 : 0}`;
             
             fetch(url, {
@@ -307,6 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         init() {
             this.setupPaginationLinks();
+            this.setupSortHeaders();
             // Don't auto-load on init as the page already has data
         }
     };

@@ -32,7 +32,7 @@
                 <button id="menu-toggle" class="md:hidden text-white focus:outline-none">
                     <i class="fas fa-bars"></i>
                 </button>
-                <ul id="menu" class="hidden md:flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 text-center md:text-left">
+                <ul id="menu" class="hidden md:flex flex-col md:flex-row space-y-2 md:items-center md:space-y-0 md:space-x-4 text-center md:text-left">
                     <li><a class="hover:underline" href="{{ url('/') }}">Home</a></li>
                     <li><a class="hover:underline" href="{{ url('/election') }}">Election</a></li>
                     <li><a class="hover:underline" href="{{ route('election.details') }}">Vote</a></li>
@@ -42,25 +42,7 @@
                     <li><a class="hover:underline" href="{{ \Illuminate\Support\Facades\Route::has('login') ? route('login') : url('/login') }}">Log In</a></li>
                     @endguest
                     @auth
-                    <li class="relative">
-                        <button type="button" class="flex items-center space-x-2 focus:outline-none" data-profile-toggle>
-
-                            <span class="inline-flex items-center justify-center w-8 h-8 bg-white text-blue-600 rounded-full">
-                                <i class="fas fa-user"></i>
-                            </span>
-                            <span class="hidden md:inline text-sm">{{ auth()->user()->name ?? 'Profile' }}</span>
-                        </button>
-                        <div class="hidden absolute right-0 mt-2 w-56 bg-white text-gray-800 rounded-md shadow-lg z-50 pointer-events-auto" data-profile-menu>
-                            <div class="px-4 py-2 border-b">
-                                <p class="font-semibold text-sm truncate">{{ auth()->user()->name }}</p>
-                                <p class="text-xs text-gray-500 truncate">{{ auth()->user()->email }}</p>
-                            </div>
-                            <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('logout') ? route('logout') : url('/logout') }}" class="border-t">
-                                @csrf
-                                <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Log out</button>
-                            </form>
-                        </div>
-                    </li>
+                    @include('voter.partials.account-profile')
                     @endauth
                 </ul>
             </nav>
@@ -175,21 +157,6 @@
             loginLink.addEventListener('click', function(event) {
                 event.preventDefault();
                 document.getElementById('login-modal').classList.remove('hidden');
-            });
-        }
-
-        const profileToggle = document.querySelector('[data-profile-toggle]');
-        const profileMenu = document.querySelector('[data-profile-menu]');
-        if (profileToggle && profileMenu) {
-            profileToggle.addEventListener('click', (e) => {
-                e.stopPropagation();
-                profileMenu.classList.toggle('hidden');
-            });
-            profileMenu.addEventListener('click', (e) => {
-                e.stopPropagation();
-            });
-            document.addEventListener('click', () => {
-                profileMenu.classList.add('hidden');
             });
         }
 
