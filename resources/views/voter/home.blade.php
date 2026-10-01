@@ -507,12 +507,15 @@
         window.addEventListener('resize', refreshCarousels);
 
         document.addEventListener('click', (event) => {
-            const eventCard = event.target.closest('[data-event-card]');
-            const articleCard = event.target.closest('[data-article-card]');
+            const target = event.target instanceof Element ? event.target : null;
+            if (!target) return;
+
+            const eventCard = target.closest('[data-event-card]');
+            const articleCard = target.closest('[data-article-card]');
             if (eventCard) openEvent(eventCard);
             if (articleCard) openArticle(articleCard);
-            if (event.target.matches('[data-close-article]')) setModalOpen(articleModal, false);
-            if (event.target.matches('[data-close-event]')) setModalOpen(eventModal, false);
+            if (target.closest('[data-close-article]')) setModalOpen(articleModal, false);
+            if (target.closest('[data-close-event]')) setModalOpen(eventModal, false);
             if (event.target === articleModal) setModalOpen(articleModal, false);
             if (event.target === eventModal) setModalOpen(eventModal, false);
         });
