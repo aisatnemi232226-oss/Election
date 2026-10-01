@@ -1,11 +1,10 @@
-<html>
-<head>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>PCU Online Election System - Candidate Registration</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
-    <script>
+@extends('layouts.voter')
+
+@section('title', 'PCU Online Election System - Candidate Registration')
+
+@section('content')
+<div class="page-content registration-shell registration-shell-candidate-register">
+<script>
         (function () {
             function loadScript(src, onload, onerror) {
                 var s = document.createElement('script');
@@ -25,76 +24,10 @@
             );
         })();
     </script>
-    <style>
-        body { font-family: 'Roboto', sans-serif; }
-        @keyframes success-modal-enter {
-            from { opacity: 0; transform: translateY(0.75rem) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @media (prefers-reduced-motion: no-preference) {
-            #success-modal:not(.hidden) .success-modal-card {
-                animation: success-modal-enter 0.24s ease-out both;
-            }
-        }
-        #candidate-error-toast {
-            position: fixed;
-            inset: 1rem 1rem auto auto;
-            margin: 0;
-        }
-        @supports (transition-behavior: allow-discrete) {
-            #candidate-error-toast {
-                opacity: 0;
-                transform: translateY(-0.5rem);
-                transition: opacity 0.2s ease, transform 0.2s ease, display 0.2s allow-discrete;
-            }
-            #candidate-error-toast:popover-open {
-                opacity: 1;
-                transform: translateY(0);
-            }
-            @starting-style {
-                #candidate-error-toast:popover-open {
-                    opacity: 0;
-                    transform: translateY(-0.5rem);
-                }
-            }
-        }
-    </style>
-</head>
-<body class="relative flex min-h-screen flex-col bg-gray-100">
-    <div class="pointer-events-none fixed inset-0 flex items-center justify-center opacity-30 z-0" aria-hidden="true">
-        <img src="{{ asset('images/pculogo.png') }}" alt="" class="w-[62vw] max-w-[820px] h-auto" />
-    </div>
-
-    <header class="relative z-50 bg-blue-600 text-white p-4">
-        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
-            <a href="{{ url('/') }}" class="flex items-center gap-3 mb-4 md:mb-0">
-                <img src="{{ asset('images/pculogo.png') }}" alt="School Logo" class="w-16 h-16 md:w-24 md:h-24 -my-4 object-contain flex-shrink-0" onerror="this.onerror=null;this.style.display='none';">
-                <h1 class="text-3xl font-bold">Philippine Christian University Online Election System</h1>
-            </a>
-            <nav class="hidden md:block" id="menu">
-                <ul class="flex flex-col md:flex-row space-y-2 md:items-center md:space-y-0 md:space-x-4">
-                    <li><a class="hover:underline" href="{{ url('/') }}">Home</a></li>
-                    <li><a class="hover:underline" href="{{ url('/election') }}">Election</a></li>
-                    <li><a class="hover:underline" href="{{ route('election.details') }}">Vote</a></li>
-                    <li><a class="hover:underline" href="{{ url('/result') }}">Results</a></li>
-                    <li><a class="hover:underline" href="{{ url('/contact') }}">Contact</a></li>
-                    @guest
-                        <li><a class="hover:underline" href="{{ \Illuminate\Support\Facades\Route::has('login') ? route('login') : url('/login') }}">Log In</a></li>
-                    @endguest
-                    @auth
-                        @include('voter.partials.account-profile')
-                    @endauth
-                </ul>
-            </nav>
-        </div>
-    </header>
-
-    <main class="relative z-10 container mx-auto w-full flex-1 p-4">
         <a href="{{ url('/') }}"
             class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-bold text-blue-700 shadow-md transition hover:bg-blue-50 hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             aria-label="Back to home">
-            <i class="fas fa-arrow-left" aria-hidden="true"></i>
-            <i class="fas fa-home" aria-hidden="true"></i>
+
             <span>Home</span>
         </a>
         <section class="text-center my-8">
@@ -113,7 +46,7 @@
                 @if (($voterVerificationPending ?? false) && !$errors->any())
                     <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-amber-900" role="status">
                         <div class="flex items-start gap-3">
-                            <i class="fas fa-clock mt-1 text-amber-600" aria-hidden="true"></i>
+                            
                             <div>
                                 <h3 class="font-bold">Pending Candidate Application</h3>
                                 <p class="mt-1 text-sm">Your verification request has been submitted and is awaiting administrator review. You can vote after your account is verified.</p>
@@ -188,7 +121,7 @@
                             <div class="relative">
                                 <input class="w-full p-3 border border-gray-300 rounded-lg pr-12" id="credential" type="text" placeholder="Scan QR or type student number/email" value="{{ $credentialValue }}" {{ auth()->check() ? 'readonly' : '' }}>
                                 <button class="absolute inset-y-0 right-0 z-10 flex items-center bg-green-600 text-white px-3 rounded-r-lg hover:bg-green-700 {{ auth()->check() ? 'hidden' : '' }}" type="button" id="scan-qr-button" aria-label="Scan QR">
-                                    <i class="fas fa-qrcode"></i>
+                                    Scan QR
                                 </button>
                             </div>
                         </div>
@@ -214,13 +147,13 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                             <div>
-                                <label class="block text-gray-700 font-bold mb-2">Profile Image</label>
-                                <input class="w-full p-2 border border-gray-300 rounded" type="file" name="profile_img" accept="image/*" required>
+                                <label class="block text-gray-700 font-bold mb-2" for="profile_img">Profile Image</label>
+                                <input class="w-full p-2 border border-gray-300 rounded" id="profile_img" type="file" name="profile_img" accept="image/*" required>
                                 <p class="mt-1 text-xs text-gray-500">Maximum file size: 10 MB.</p>
                             </div>
                             <div>
-                                <label class="block text-gray-700 font-bold mb-2">Banner Image</label>
-                                <input class="w-full p-2 border border-gray-300 rounded" type="file" name="banner_img" accept="image/*" required>
+                                <label class="block text-gray-700 font-bold mb-2" for="banner_img">Banner Image</label>
+                                <input class="w-full p-2 border border-gray-300 rounded" id="banner_img" type="file" name="banner_img" accept="image/*" required>
                                 <p class="mt-1 text-xs text-gray-500">Maximum file size: 10 MB.</p>
                             </div>
                         </div>
@@ -244,7 +177,7 @@
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-gray-700 text-sm font-bold">Scan QR Code</span>
                             <button class="text-gray-600 hover:text-gray-800" type="button" id="close-qr-button" aria-label="Close scanner">
-                                <i class="fas fa-times"></i>
+                                Close
                             </button>
                         </div>
                         <div id="qr-reader"></div>
@@ -252,7 +185,6 @@
                 @endif
             </div>
         </section>
-    </main>
 
     @if ($errors->any())
         <div id="candidate-error-toast" popover="manual" class="w-[calc(100%-2rem)] max-w-md rounded-lg border border-red-200 bg-white p-4 text-left text-red-800 shadow-xl" role="alert" aria-live="assertive">
@@ -266,7 +198,7 @@
                     </ul>
                 </div>
                 <button type="button" id="close-candidate-error-toast" class="text-red-700 hover:text-red-900" aria-label="Dismiss errors">
-                    <i class="fas fa-times" aria-hidden="true"></i>
+                    Dismiss
                 </button>
             </div>
         </div>
@@ -279,12 +211,12 @@
                 <section class="success-modal-card relative w-full max-w-md overflow-hidden rounded-3xl border border-white/70 bg-white shadow-2xl shadow-slate-950/25">
                     <div class="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-emerald-400 via-teal-500 to-blue-600"></div>
                     <button type="button" id="close-success-modal" class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" aria-label="Close confirmation">
-                        <i class="fas fa-times" aria-hidden="true"></i>
+                        <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                     </button>
 
                     <div class="px-7 pb-7 pt-10 text-center sm:px-9 sm:pb-9">
                         <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-8 ring-emerald-50/60">
-                            <i class="fas fa-check text-2xl" aria-hidden="true"></i>
+                            
                         </div>
                         <p class="mt-6 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Submission received</p>
                         <h2 id="success-modal-title" class="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Application submitted</h2>
@@ -293,7 +225,7 @@
                         </p>
                         <div class="mt-6 flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50/80 p-4 text-left">
                             <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm">
-                                <i class="fas fa-clock" aria-hidden="true"></i>
+                                
                             </span>
                             <p class="text-sm leading-5 text-blue-950">
                                 <span class="font-semibold">What happens next?</span><br>
@@ -305,19 +237,13 @@
                     <div class="border-t border-slate-100 bg-slate-50/80 px-7 py-5 sm:px-9">
                         <button type="button" id="ok-success-modal" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-900/15 transition hover:-translate-y-0.5 hover:bg-blue-800 hover:shadow-blue-900/25 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                             <span>Got it</span>
-                            <i class="fas fa-arrow-right text-xs" aria-hidden="true"></i>
+                            
                         </button>
                     </div>
                 </section>
             </div>
         </div>
     @endif
-
-    <footer class="relative z-10 mt-auto border-t border-blue-500/30 bg-blue-700 px-4 py-5 text-center text-sm text-white sm:py-4">
-        <p class="mx-auto max-w-7xl leading-relaxed">
-            &copy; {{ date('Y') }} Philippine Christian University Online Election System. All rights reserved.
-        </p>
-    </footer>
 
 <script>
     let html5QrCode = null;
@@ -524,6 +450,5 @@
         document.addEventListener('keydown', handleEscape);
     })();
 </script>
-
-</body>
-</html>
+</div>
+@endsection

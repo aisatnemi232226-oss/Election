@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PCU Online Election System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>(function(){var t="light";try{t=localStorage.getItem("pcu-theme")||"light"}catch(e){}document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")})()</script>
+<style>
+:root{
+  --bg:#f5f8fd;--card:#fff;--ink:#0f1b33;--mut:#4a5873;--line:#dfe6f1;--brand:#2563eb;--brand-d:#1d4ed8;--tint:#eaf1ff;
+  --ok:#15803d;--ok-bg:#dcfce7;--bad:#b91c1c;--bad-bg:#fee2e2;--wait:#a16207;--wait-bg:#fef3c7;
+  --h1:#eaf2ff;--h2:#f5f8fd;--sh:0 1px 2px rgba(15,27,51,.06),0 10px 28px rgba(15,27,51,.07);
+  --font:Figtree,"Segoe UI",Roboto,system-ui,Arial,sans-serif;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+:root[data-theme="dark"]{color-scheme:dark;--h1:#0f1d3c;--h2:#0a1120;--bg:#0a1120;--card:#121b2e;--ink:#e9effc;--mut:#a5b3cd;--line:#233149;--brand:#5b94ff;--brand-d:#7aa8ff;--tint:#16254a;--ok:#86efac;--ok-bg:#12351f;--bad:#fca5a5;--bad-bg:#431818;--wait:#fcd34d;--wait-bg:#3b2f0b}
+html{scroll-behavior:smooth;scroll-padding-top:calc(84px + env(safe-area-inset-top,0px))}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--font);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px;border-radius:8px}
+.i{width:1.25em;height:1.25em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.wrap{width:min(1100px,100% - 2*clamp(16px,4vw,32px));margin-inline:auto}
+.skip{position:absolute;left:12px;top:-60px;background:#fff;color:#000;padding:10px 14px;border-radius:8px;z-index:100}.skip:focus{top:12px}
+
+/* Header */
+.hd{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:var(--card);border-bottom:1px solid var(--line)}
+.hd .wrap{display:flex;align-items:center;gap:14px;min-height:68px}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto;min-width:0;font-weight:800;line-height:1.15;letter-spacing:-.01em}
+.brand svg{width:44px;height:44px;flex:none}.brand small{display:block;font-weight:600;color:var(--mut);font-size:.78rem}
+.nav{display:none;gap:2px}.nav a{padding:9px 14px;border-radius:10px;font-weight:600;color:var(--mut)}
+.nav a:hover{background:var(--tint);color:var(--brand)}.nav a[aria-current]{background:var(--tint);color:var(--brand)}
+.ib{width:44px;height:44px;border:0;border-radius:12px;background:none;display:grid;place-items:center}.ib:hover{background:var(--tint)}
+.login{display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:12px;background:var(--brand);color:#fff;font-weight:700}
+.acct{position:relative}
+.trig{display:flex;align-items:center;gap:8px;min-height:48px;padding:4px 12px 4px 4px;border-radius:999px;border:1px solid var(--line);background:var(--card)}
+.trig:hover{border-color:var(--brand)}.trig .ch{width:1em;height:1em;transition:transform .18s}.trig[aria-expanded=true] .ch{transform:rotate(180deg)}
+.av{position:relative;width:38px;height:38px;border-radius:50%;background:var(--tint);color:var(--brand);display:grid;place-items:center;flex:none}
+.av .dot{position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;border-radius:50%;border:2px solid var(--card);background:var(--bad)}.v .av .dot{background:#22c55e}
+.nm{display:none;font-weight:700;font-size:.92rem}
+.bdg{display:inline-flex;align-items:center;gap:5px;padding:3px 10px 3px 8px;border-radius:999px;font-size:.75rem;font-weight:700;background:var(--bad-bg);color:var(--bad);white-space:nowrap}
+.v .bdg,.bdg.ok{background:var(--ok-bg);color:var(--ok)}.bdg .i{width:12px;height:12px;stroke-width:3}.trig .bdg{display:none}
+.menu{position:absolute;right:0;top:calc(100% + 10px);width:310px;max-width:calc(100vw - 24px);background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 44px rgba(15,27,51,.25);overflow:hidden;opacity:0;visibility:hidden;transform:translateY(-6px);transition:.15s}
+.menu.open{opacity:1;visibility:visible;transform:none}
+.mh{padding:18px 20px 14px}.mh .r{display:flex;gap:12px;align-items:center}.mh strong{display:block;line-height:1.2}.mh small{color:var(--mut);font-size:.85rem;word-break:break-all}
+.meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px;font-size:.88rem;color:var(--mut)}.meta b{color:var(--ink)}
+.note{margin:0 12px 12px;padding:12px 14px;border-radius:12px;background:var(--bad-bg);color:var(--bad);font-size:.9rem}.note p{margin:0 0 4px}.note a{font-weight:700;text-decoration:underline}
+.ml{padding:6px;border-top:1px solid var(--line)}.ml a,.ml button{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:0;background:none;border-radius:10px;text-align:left;font-weight:500}
+.ml a:hover,.ml button:hover{background:var(--tint)}.ml .i{color:var(--mut)}.ml .out,.ml .out .i{color:#dc2626}
+.mob{display:none;border-top:1px solid var(--line)}.mob.open{display:block}.mob a{display:block;padding:15px 4px;font-weight:600;border-bottom:1px solid var(--line)}.mob a:last-child{border:0}
+
+/* Hero */
+.hero{background:linear-gradient(180deg,var(--h1) 0%,var(--h2) 100%)}
+.sun{display:none}[data-theme="dark"] .sun{display:block}[data-theme="dark"] .moon{display:none}
+.hero .wrap{display:grid;gap:28px;padding-block:clamp(32px,6vw,72px)}
+.status{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:var(--ok-bg);color:var(--ok);font-weight:700;font-size:.9rem}
+.status::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+h1{margin:16px 0 12px;font-size:clamp(2rem,5vw,3.2rem);line-height:1.1;letter-spacing:-.03em;font-weight:800}
+.lead{margin:0 0 24px;color:var(--mut);font-size:clamp(1.02rem,1.8vw,1.2rem);max-width:46ch}
+.cta{display:flex;flex-wrap:wrap;gap:12px}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:52px;padding:0 24px;border-radius:14px;font-weight:700;border:2px solid var(--brand);transition:transform .15s}
+.btn:hover{transform:translateY(-2px)}.btn.p{background:var(--brand);color:#fff}.btn.s{color:var(--brand);background:transparent}
+.steps{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--sh);padding:22px}
+.steps h2{margin:0 0 4px;font-size:1.15rem}.steps>p{margin:0 0 14px;color:var(--mut);font-size:.92rem}
+.steps ol{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.st{display:flex;gap:14px;align-items:center;padding:12px 14px;border-radius:14px;border:1px solid var(--line)}
+.st .n{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:none;font-weight:800;font-size:.9rem;background:var(--bg);color:var(--mut);border:2px solid var(--line)}
+.st b{display:block;line-height:1.25}.st span.t{font-size:.86rem;color:var(--mut)}
+.st.done .n{background:var(--ok-bg);border-color:var(--ok-bg);color:var(--ok)}
+.st.now{border-color:var(--brand);background:var(--tint)}.st.now .n{background:var(--brand);border-color:var(--brand);color:#fff}
+.st .tag{margin-left:auto;font-size:.75rem;font-weight:700;color:var(--brand);white-space:nowrap}.st.done .tag{color:var(--ok)}
+
+/* Sections */
+section.s{padding-block:clamp(28px,4.5vw,52px)}
+.sh{margin-bottom:20px}.sh h2{margin:0;font-size:clamp(1.5rem,3vw,2rem);letter-spacing:-.02em;line-height:1.2}.sh p{margin:6px 0 0;color:var(--mut)}
+.g3{display:grid;gap:16px}
+.act{display:flex;flex-direction:column;gap:8px;padding:24px;border-radius:20px;background:var(--card);border:1px solid var(--line);box-shadow:var(--sh);transition:transform .18s,border-color .18s}
+.act:hover{transform:translateY(-3px);border-color:var(--brand)}
+.ico{width:52px;height:52px;border-radius:14px;background:var(--tint);color:var(--brand);display:grid;place-items:center}.ico .i{width:26px;height:26px}
+.act h3{margin:8px 0 0;font-size:1.25rem}.act p{margin:0;color:var(--mut)}.act .go{margin-top:auto;padding-top:10px;font-weight:700;color:var(--brand);display:inline-flex;gap:6px;align-items:center}
+.dates{display:grid;gap:12px}
+.dt{padding:18px 20px;border-radius:16px;background:var(--card);border:1px solid var(--line);display:flex;gap:14px;align-items:center}
+.dt .i{color:var(--brand);width:24px;height:24px}.dt b{display:block;line-height:1.25}.dt span{color:var(--mut);font-size:.92rem}
+.dt.now{border-color:var(--brand);background:var(--tint)}
+.news{display:grid;gap:14px}
+.nw{display:flex;gap:16px;align-items:flex-start;padding:18px 20px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
+.nw time{flex:none;width:58px;padding:6px 0;border-radius:12px;background:var(--tint);color:var(--brand);text-align:center;font-weight:800;line-height:1.1;font-size:1.25rem}
+.nw time small{display:block;font-size:.72rem;font-weight:700}.nw h3{margin:0 0 2px;font-size:1.05rem}.nw p{margin:0;color:var(--mut);font-size:.95rem}
+details{background:var(--card);border:1px solid var(--line);border-radius:16px;margin-bottom:10px}
+summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 20px;font-weight:700;min-height:56px}
+summary::-webkit-details-marker{display:none}summary .i{transition:transform .18s;color:var(--brand)}details[open] summary .i{transform:rotate(180deg)}
+details p{margin:0;padding:0 20px 18px;color:var(--mut)}
+.ft{border-top:1px solid var(--line);padding-block:26px;color:var(--mut);font-size:.92rem;margin-top:20px}.ft .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
+
+/* Help, preview */
+.help{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:max(16px,env(safe-area-inset-bottom,0px));z-index:30;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.fab{display:flex;align-items:center;gap:8px;min-height:52px;padding:0 20px;border:0;border-radius:999px;background:var(--brand);color:#fff;font-weight:700;box-shadow:0 8px 24px rgba(37,99,235,.4)}
+.hp{display:none;width:270px;max-width:calc(100vw - 32px);padding:16px;border-radius:16px;background:var(--card);border:1px solid var(--line);box-shadow:var(--sh)}.hp.open{display:block}
+.hp b{display:block;margin-bottom:4px}.hp p{margin:0 0 10px;color:var(--mut);font-size:.92rem}.hp a{color:var(--brand);font-weight:700}
+.prev{position:fixed;left:max(12px,env(safe-area-inset-left,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:30;display:flex;padding:4px;border-radius:999px;background:var(--card);border:1px solid var(--line);box-shadow:var(--sh);font-size:.75rem}
+.prev button{border:0;background:none;padding:7px 10px;border-radius:999px;font-weight:600;color:var(--mut)}.prev button[aria-pressed=true]{background:var(--brand);color:#fff}
+
+@media (min-width:640px){.nm{display:block}.trig .bdg{display:inline-flex}.g3{grid-template-columns:repeat(3,1fr)}.dates{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:900px){.nav{display:flex}.ib.mt{display:none}.mob{display:none!important}.hero .wrap{grid-template-columns:1.1fr .9fr;align-items:center}.dates{grid-template-columns:repeat(4,1fr)}.dt{flex-direction:column;align-items:flex-start}.news{grid-template-columns:repeat(3,1fr)}.nw{flex-direction:column}}
+@media (max-width:520px){.prev{display:none}.brand small{display:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="seal" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#fff" stroke="#2563eb" stroke-width="4"/><circle cx="50" cy="50" r="36" fill="none" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="2 3"/><path d="M50 24c6 8 9 13 0 22-9-9-6-14 0-22Z" fill="#2563eb"/><path d="M42 52h16l-3 14H45Z" fill="#2563eb"/><text x="50" y="82" font-size="9" font-weight="800" text-anchor="middle" fill="#2563eb" font-family="sans-serif">1946</text></symbol>
+<symbol id="user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></symbol>
+<symbol id="grad" viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5Z"/><path d="M6 11.5V16c0 1.6 2.7 3 6 3s6-1.4 6-3v-4.5"/></symbol>
+<symbol id="vote" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="12" rx="2"/><path d="M8.5 9l2.5 2.5L15.5 7M5 21h14M12 15v6"/></symbol>
+<symbol id="chart" viewBox="0 0 24 24"><path d="M4 4v16h16M9 16v-4M13 16V8M17 16v-6"/></symbol>
+<symbol id="bell" viewBox="0 0 24 24"><path d="M18 16v-5a6 6 0 1 0-12 0v5l-2 2h16ZM10 21h4"/></symbol>
+<symbol id="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+<symbol id="ticket" viewBox="0 0 24 24"><path d="M3 9V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v3a3 3 0 0 0 0 6v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a3 3 0 0 0 0-6Z"/><path d="M14 5v14" stroke-dasharray="2 3"/></symbol>
+<symbol id="qr" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h3M20 17v4"/></symbol>
+<symbol id="out" viewBox="0 0 24 24"><path d="M9 21H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h4M16 17l5-5-5-5M21 12H9"/></symbol>
+<symbol id="cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+<symbol id="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+<symbol id="chat" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></symbol>
+<symbol id="menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+<symbol id="x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+<symbol id="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></symbol>
+<symbol id="ok" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+</defs></svg>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="hd">
+  <div class="wrap">
+    <a class="brand" href="#" aria-label="PCU Online Election System home"><svg aria-hidden="true"><use href="#seal"/></svg><span>PCU Online Election<small>Philippine Christian University</small></span></a>
+    <nav class="nav" aria-label="Main"><a href="#" aria-current="page">Home</a><a href="#">Election</a><a href="#">Vote</a><a href="#">Results</a><a href="#">Contact</a></nav>
+    <button class="ib" id="th" type="button" aria-label="Switch to dark theme"><svg class="i moon" aria-hidden="true"><use href="#moon"/></svg><svg class="i sun" aria-hidden="true"><use href="#sun"/></svg></button>
+    <button class="ib" id="bell" aria-label="Notifications" hidden><svg class="i"><use href="#bell"/></svg></button>
+    <div class="acct" id="acct"></div>
+    <button class="ib mt" id="mt" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mob"><svg class="i"><use href="#menu"/></svg></button>
+  </div>
+  <nav class="mob" id="mob" aria-label="Mobile"><div class="wrap"><a href="#">Home</a><a href="#">Election</a><a href="#">Vote</a><a href="#">Results</a><a href="#">Contact</a></div></nav>
+</header>
+
+<main id="main">
+  <section class="hero"><div class="wrap">
+    <div>
+      <span class="status">Voting is open until April 7</span>
+      <h1>Vote for your student leaders</h1>
+      <p class="lead" id="lead">It takes about two minutes. Log in with your student account to get started.</p>
+      <div class="cta"><a class="btn p" href="#" id="cta"></a><a class="btn s" href="#how">How it works</a></div>
+    </div>
+    <aside class="steps" aria-label="Your progress">
+      <h2>Your steps to vote</h2><p id="sp">Follow these in order.</p>
+      <ol id="sl"></ol>
+    </aside>
+  </div></section>
+
+  <section class="s" id="how"><div class="wrap">
+    <div class="sh"><h2>What would you like to do?</h2><p>Pick one to continue.</p></div>
+    <div class="g3">
+      <a class="act" href="#"><span class="ico"><svg class="i"><use href="#grad"/></svg></span><h3>Register</h3><p>Sign up as a voter or as a candidate.</p><span class="go">Start registration <svg class="i"><use href="#arrow"/></svg></span></a>
+      <a class="act" href="#"><span class="ico"><svg class="i"><use href="#vote"/></svg></span><h3>Vote</h3><p>Choose your candidates and submit your ballot.</p><span class="go">Open my ballot <svg class="i"><use href="#arrow"/></svg></span></a>
+      <a class="act" href="#"><span class="ico"><svg class="i"><use href="#chart"/></svg></span><h3>Results</h3><p>See who won once voting has ended.</p><span class="go">View results <svg class="i"><use href="#arrow"/></svg></span></a>
+    </div>
+  </div></section>
+
+  <section class="s" id="dates"><div class="wrap">
+    <div class="sh"><h2>Key dates</h2><p>Election 2026 for CSG · University Student Government</p></div>
+    <div class="dates">
+      <div class="dt"><svg class="i"><use href="#cal"/></svg><div><b>Registration closes</b><span>February 25, 2026</span></div></div>
+      <div class="dt"><svg class="i"><use href="#cal"/></svg><div><b>Campaign period</b><span>March 1 to 31</span></div></div>
+      <div class="dt now"><svg class="i"><use href="#vote"/></svg><div><b>Voting period · now</b><span>April 1 to 7</span></div></div>
+      <div class="dt"><svg class="i"><use href="#chart"/></svg><div><b>Results announced</b><span>April 10, 2026</span></div></div>
+    </div>
+  </div></section>
+
+  <section class="s"><div class="wrap">
+    <div class="sh"><h2>News and events</h2></div>
+    <div class="news">
+      <article class="nw"><time>01<small>MAR</small></time><div><h3>Election kickoff</h3><p>Hear from candidates at the official start of the election season.</p></div></article>
+      <article class="nw"><time>15<small>MAR</small></time><div><h3>Candidate debate</h3><p>Watch candidates discuss key issues and share their plans.</p></div></article>
+      <article class="nw"><time>01<small>APR</small></time><div><h3>Voting day</h3><p>Cast your vote online and make your voice heard.</p></div></article>
+    </div>
+  </div></section>
+
+  <section class="s"><div class="wrap">
+    <div class="sh"><h2>Common questions</h2></div>
+    <details><summary>Who can vote?<svg class="i"><use href="#chev"/></svg></summary><p>Any enrolled PCU student with a verified account.</p></details>
+    <details><summary>How do I get verified?<svg class="i"><use href="#chev"/></svg></summary><p>Open your account menu, choose “Verify now”, and submit your student details. You will be notified once it is approved.</p></details>
+    <details><summary>Can I change my vote?<svg class="i"><use href="#chev"/></svg></summary><p>No. Once you submit your ballot it is final, so review your choices first.</p></details>
+    <details><summary>When will I see the results?<svg class="i"><use href="#chev"/></svg></summary><p>Results are posted on the Results page after voting ends on April 10.</p></details>
+  </div></section>
+</main>
+
+<footer class="ft"><div class="wrap"><span>© 2026 Philippine Christian University</span><span>Online Election System</span></div></footer>
+
+<div class="help">
+  <div class="hp" id="hp"><b>Need help?</b><p>Questions about registering or voting? Contact the election office.</p><a href="#">Contact us</a></div>
+  <button class="fab" id="fab" aria-expanded="false" aria-controls="hp"><svg class="i"><use href="#chat"/></svg>Need help?</button>
+</div>
+<div class="prev" role="group" aria-label="Preview account state"><button data-s="g" aria-pressed="false">Guest</button><button data-s="u" aria-pressed="true">Not verified</button><button data-s="v" aria-pressed="false">Verified</button></div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const ic=n=>`<svg class="i" aria-hidden="true"><use href="#${n}"/></svg>`;
+const acct=$('#acct');let state='u';
+const badge=v=>`<span class="bdg" role="status">${ic(v?'ok':'x')}${v?'Verified':'Not verified'}</span>`;
+
+function render(){
+  const v=state==='v',g=state==='g';
+  $('#bell').hidden=g;
+  $$('.prev button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===state));
+  // Step list: the page tells the student exactly what to do next
+  const cur=g?1:v?3:2;
+  const steps=[['Log in','Use your student account'],['Get verified','Submit your student details'],['Cast your vote','Pick your candidates'],['See the results','Posted April 10']];
+  $('#sl').innerHTML=steps.map((s,i)=>{const n=i+1,c=n<cur?'done':n===cur?'now':'';
+    return `<li class="st ${c}"><span class="n">${c==='done'?ic('ok'):n}</span><div><b>${s[0]}</b><span class="t">${s[1]}</span></div><span class="tag">${c==='done'?'Done':c==='now'?'Next step':''}</span></li>`}).join('');
+  $('#sp').textContent=g?'You are not logged in yet.':v?'You are ready to vote.':'One more step before you can vote.';
+  const cta=$('#cta');
+  cta.innerHTML=(g?'Log in to vote':v?'Vote now':'Verify my account')+ic('arrow');
+  $('#lead').textContent=g?'It takes about two minutes. Log in with your student account to get started.':v?'Your account is verified. Choose your candidates and submit your ballot.':'Your account needs to be verified before you can vote. It only takes a minute.';
+  if(g){acct.className='acct';acct.innerHTML='<a class="login" href="#">Log in</a>';return}
+  acct.className='acct '+(v?'v':'');
+  acct.innerHTML=`<button class="trig" id="trig" aria-expanded="false" aria-controls="menu" aria-label="Account menu"><span class="av">${ic('user')}<span class="dot"></span></span><span class="nm">Nemz</span>${badge(v)}${ic('chev').replace('class="i"','class="i ch"')}</button>
+  <div class="menu" id="menu"><div class="mh"><div class="r"><span class="av">${ic('user')}</span><div><strong>Nemz Kie</strong><small>jclnemi@pcu.edu.ph</small></div></div><div class="meta"><span>Student No: <b>232800</b></span>${badge(v)}</div></div>
+  ${v?'':`<div class="note"><p>Verify your account to vote in elections.</p><a href="#">Verify now</a></div>`}
+  <div class="ml"><a href="#">${ic('ticket')}Tickets</a><a href="#">${ic('qr')}Account QR codes</a></div><div class="ml"><button class="out" type="button">${ic('out')}Log out</button></div></div>`;
+  const t=$('#trig'),m=$('#menu');
+  t.onclick=e=>{e.stopPropagation();const o=!m.classList.contains('open');m.classList.toggle('open',o);t.setAttribute('aria-expanded',o)};
+}
+function closeMenu(focus){const m=$('#menu');if(m&&m.classList.contains('open')){m.classList.remove('open');const t=$('#trig');t.setAttribute('aria-expanded',false);if(focus)t.focus()}}
+const mt=$('#mt'),mob=$('#mob'),fab=$('#fab'),hp=$('#hp');
+const closeMob=()=>{mob.classList.remove('open');mt.setAttribute('aria-expanded',false)};
+const closeHelp=()=>{hp.classList.remove('open');fab.setAttribute('aria-expanded',false)};
+mt.onclick=()=>{const o=!mob.classList.contains('open');mob.classList.toggle('open',o);mt.setAttribute('aria-expanded',o)};
+fab.onclick=e=>{e.stopPropagation();const o=!hp.classList.contains('open');hp.classList.toggle('open',o);fab.setAttribute('aria-expanded',o)};
+document.addEventListener('click',e=>{if(!acct.contains(e.target))closeMenu();if(!e.target.closest('.help'))closeHelp()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu(true);closeHelp();closeMob()}});
+$$('.prev button').forEach(b=>b.onclick=()=>{state=b.dataset.s;render()});
+render();
+const root=document.documentElement,th=$('#th');
+function setTheme(t,save){root.setAttribute('data-theme',t);th.setAttribute('aria-label',t==='dark'?'Switch to light theme':'Switch to dark theme');
+  if(save){try{localStorage.setItem('pcu-theme',t)}catch(e){}}}
+th.onclick=()=>setTheme(root.getAttribute('data-theme')==='dark'?'light':'dark',true);
+setTheme(root.getAttribute('data-theme')==='dark'?'dark':'light',false);
+</script>
+</body>
+</html>

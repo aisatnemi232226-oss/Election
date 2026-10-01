@@ -5,10 +5,10 @@
             ->where('type', \App\Notifications\StudentVoterVerified::class)
             ->count();
     @endphp
-    <li class="relative">
+    <li>
         <button
             type="button"
-            class="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-white transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white"
+            class="icon-button notification-toggle"
             aria-label="Notifications"
             aria-haspopup="true"
             aria-expanded="false"
@@ -16,20 +16,22 @@
             data-list-url="{{ route('student.notifications.index') }}"
             data-read-url="{{ route('student.notifications.read') }}"
         >
-            <i class="fas fa-bell" aria-hidden="true"></i>
-            <span data-student-notification-badge class="{{ $studentVerificationUnreadCount > 0 ? '' : 'hidden' }} absolute -right-1 -top-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold text-white">
-                {{ $studentVerificationUnreadCount > 99 ? '99+' : $studentVerificationUnreadCount }}
-            </span>
+            <svg class="icon" aria-hidden="true"><use href="#pcu-bell"/></svg>
+            <span
+                data-student-notification-badge
+                class="notification-badge"
+                @if($studentVerificationUnreadCount === 0) hidden @endif
+            >{{ $studentVerificationUnreadCount > 99 ? '99+' : $studentVerificationUnreadCount }}</span>
         </button>
-        <section id="student-notification-panel" class="fixed right-4 top-20 z-[60] hidden w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl bg-white text-left text-gray-800 shadow-xl sm:w-96" aria-label="Notifications">
-            <div class="flex items-center justify-between border-b px-4 py-3">
-                <h2 class="font-semibold">Notifications</h2>
-                <button type="button" id="student-notification-close" class="rounded px-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Close notifications">
-                    <span aria-hidden="true" class="text-xl leading-none">&times;</span>
+        <section id="student-notification-panel" class="notification-panel" aria-label="Notifications" hidden>
+            <div class="notification-panel-head">
+                <h2>Notifications</h2>
+                <button type="button" id="student-notification-close" class="icon-button" aria-label="Close notifications">
+                    <svg class="icon" aria-hidden="true"><use href="#pcu-x"/></svg>
                 </button>
             </div>
-            <div id="student-notification-list" class="max-h-80 overflow-y-auto" aria-live="polite">
-                <p class="px-4 py-6 text-sm text-gray-500">Open notifications to check for updates.</p>
+            <div id="student-notification-list" class="notification-panel-content" aria-live="polite">
+                <p class="notification-empty">Open notifications to check for updates.</p>
             </div>
         </section>
     </li>
@@ -48,14 +50,14 @@
                 const unreadCount = Number(count) || 0;
                 badges.forEach((badge) => {
                     badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
-                    badge.classList.toggle('hidden', unreadCount === 0);
+                    badge.hidden = unreadCount === 0;
                 });
             }
 
             function showMessage(message) {
                 list.replaceChildren();
                 const item = document.createElement('p');
-                item.className = 'px-4 py-6 text-sm text-gray-500';
+                item.className = 'notification-empty';
                 item.textContent = message;
                 list.append(item);
             }
@@ -69,17 +71,13 @@
 
                 notifications.forEach((notification) => {
                     const link = document.createElement('a');
-                    link.className = 'block border-b px-4 py-3 transition hover:bg-gray-50';
+                    link.className = 'notification-item';
                     link.href = notification.url;
 
-                    const title = document.createElement('p');
-                    title.className = 'text-sm font-semibold text-gray-900';
+                    const title = document.createElement('strong');
                     title.textContent = notification.title;
-
-                    const message = document.createElement('p');
-                    message.className = 'mt-1 text-sm leading-5 text-gray-600';
+                    const message = document.createElement('span');
                     message.textContent = notification.message;
-
                     link.append(title, message);
                     list.append(link);
                 });
@@ -111,14 +109,14 @@
             }
 
             function closePanel() {
-                panel.classList.add('hidden');
+                panel.hidden = true;
                 toggles.forEach((toggle) => toggle.setAttribute('aria-expanded', 'false'));
             }
 
             toggles.forEach((toggle) => toggle.addEventListener('click', function (event) {
                 event.stopPropagation();
-                const opening = panel.classList.contains('hidden');
-                panel.classList.toggle('hidden', !opening);
+                const opening = panel.hidden;
+                panel.hidden = !opening;
                 toggles.forEach((item) => item.setAttribute('aria-expanded', String(opening)));
                 if (opening) {
                     refreshNotifications(true).catch((error) => {
@@ -134,15 +132,11 @@
             document.addEventListener('keydown', (event) => {
                 if (event.key === 'Escape') closePanel();
             });
-
             window.setInterval(() => {
-                refreshNotifications(!panel.classList.contains('hidden'))
-                    .catch((error) => {
-                        console.error(error);
-                        if (!panel.classList.contains('hidden')) {
-                            showMessage('Notifications could not be refreshed. Please try again.');
-                        }
-                    });
+                refreshNotifications(!panel.hidden).catch((error) => {
+                    console.error(error);
+                    if (!panel.hidden) showMessage('Notifications could not be refreshed. Please try again.');
+                });
             }, 30000);
         });
     </script>

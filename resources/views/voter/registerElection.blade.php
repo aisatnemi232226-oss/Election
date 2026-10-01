@@ -1,14 +1,10 @@
-<html>
- <head>
-  <title>
-   Philippine Christian University Online Election System - Registration
-  </title>
-  <meta name="csrf-token" content="{{ csrf_token() }}">
-  <script src="https://cdn.tailwindcss.com">
-  </script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&amp;display=swap" rel="stylesheet"/>
-  <script>
+@extends('layouts.voter')
+
+@section('title', 'Philippine Christian University Online Election System - Registration')
+
+@section('content')
+<div class="page-content registration-shell registration-shell-registerElection">
+<script>
    (function () {
             function loadScript(src, onload, onerror) {
                 var s = document.createElement('script');
@@ -28,137 +24,6 @@
             );
         })();
   </script>
-  <style>
-   body {
-            font-family: 'Roboto', sans-serif;
-        }
-  </style>
- </head>
-
- <body class="relative bg-gray-100">
-  <div class="pointer-events-none fixed inset-0 flex items-center justify-center opacity-30 z-0" aria-hidden="true">
-   <img src="{{ asset('images/pculogo.png') }}" alt="" class="w-[62vw] max-w-[820px] h-auto" />
-  </div>
-  <header class="relative z-50 bg-blue-600 text-white p-4">
-   <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
-    <a href="{{ url('/') }}" class="flex items-center gap-3 mb-4 md:mb-0">
-        <img src="{{ asset('images/pculogo.png') }}" alt="School Logo" class="w-16 h-16 md:w-24 md:h-24 -my-4 object-contain flex-shrink-0" onerror="this.onerror=null;this.style.display='none';">
-        <h1 class="text-3xl font-bold">Philippine Christian University Online Election System</h1>
-    </a>
-    <button class="md:hidden text-white" id="menu-toggle">
-     <i class="fas fa-bars text-2xl">
-     </i>
-    </button>
-    <nav class="hidden md:block" id="menu">
-     <ul class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4">
-     <li>
-       <a class="hover:underline" href="{{ url('/') }}">
-        Home
-       </a>
-      </li>
-      <li>
-       <a class="hover:underline" href="{{ url('/election') }}">
-        Election
-       </a>
-      </li>
-      <li>
-       <a class="hover:underline" href="{{ route('election.details') }}">
-        Vote
-       </a>
-      </li>
-      <li>
-       <a class="hover:underline" href="{{ url('/result') }}">
-        Results
-       </a>
-      </li>
-      <li>
-       <a class="hover:underline" href="{{ url('/contact') }}">
-        Contact
-       </a>
-      </li>
-      @guest
-      <li>
-       <a class="hover:underline" href="{{ \Illuminate\Support\Facades\Route::has('login') ? route('login') : url('/login') }}">
-        Log In
-       </a>
-      </li>
-      @endguest
-      @auth
-      <li class="relative">
-       <button type="button" class="flex items-center space-x-2 focus:outline-none" data-profile-toggle>
-        <span class="inline-flex items-center justify-center w-8 h-8 bg-white text-blue-600 rounded-full">
-         <i class="fas fa-user"></i>
-        </span>
-        <span class="hidden md:inline text-sm">{{ auth()->user()->name ?? 'Profile' }}</span>
-       </button>
-       <div class="hidden absolute right-0 mt-2 w-56 bg-white text-gray-800 rounded-md shadow-lg z-50 pointer-events-auto" data-profile-menu>
-        <div class="px-4 py-2 border-b">
-         <p class="font-semibold text-sm truncate">{{ auth()->user()->name }}</p>
-         <p class="text-xs text-gray-500 truncate">{{ auth()->user()->email }}</p>
-        </div>
-        <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('logout') ? route('logout') : url('/logout') }}" class="border-t">
-         @csrf
-         <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Log out</button>
-        </form>
-       </div>
-      </li>
-      @endauth
-     </ul>
-    </nav>
-   </div>
-   <nav class="md:hidden hidden" id="mobile-menu">
-    <ul class="flex flex-col space-y-2 mt-4">
-     <li>
-      <a class="hover:underline block text-center" href="#">
-       Home
-      </a>
-     </li>
-     <li>
-      <a class="hover:underline block text-center" href="{{ url('/election') }}">
-       Election
-      </a>
-     </li>
-     <li>
-      <a class="hover:underline block text-center" href="{{ route('election.details') }}">
-       Vote
-      </a>
-     </li>
-     <li>
-      <a class="hover:underline block text-center" href="{{ url('/result') }}">
-       Results
-      </a>
-     </li>
-     <li>
-      <a class="hover:underline block text-center" href="{{ url('/contact') }}">
-       Contact
-      </a>
-     </li>
-     @guest
-     <li>
-      <a class="hover:underline block text-center" href="{{ \Illuminate\Support\Facades\Route::has('login') ? route('login') : url('/login') }}">
-       Log In
-      </a>
-     </li>
-     @endguest
-     @auth
-     <li class="border-t pt-2">
-      <div class="flex flex-col items-center space-y-1">
-       <span class="inline-flex items-center justify-center w-10 h-10 bg-white text-blue-600 rounded-full">
-        <i class="fas fa-user"></i>
-       </span>
-       <span class="text-sm font-semibold">{{ auth()->user()->name }}</span>
-       <span class="text-xs text-gray-200">{{ auth()->user()->email }}</span>
-       <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('logout') ? route('logout') : url('/logout') }}" class="w-full mt-1">
-        @csrf
-        <button type="submit" class="w-full text-center text-sm text-red-200 hover:text-white">Log out</button>
-       </form>
-      </div>
-     </li>
-     @endauth
-    </ul>
-   </nav>
-  </header>
-  <main class="relative z-10 container mx-auto p-4">
    <section class="text-center my-8">
     <h2 class="text-4xl font-bold text-gray-800 mb-4">
      Register for Philippine Christian University Online Election System
@@ -214,7 +79,7 @@
        <div class="relative">
         <input class="w-full p-3 border border-gray-300 rounded-lg pr-12" id="credential" name="credential" type="text" placeholder="Scan QR or type student number/email" value="{{ old('credential', $prefillCredential ?? '') }}" {{ auth()->check() ? 'readonly' : '' }} />
         <button class="absolute inset-y-0 right-0 z-10 flex items-center bg-green-600 text-white px-3 rounded-r-lg hover:bg-green-700 {{ auth()->check() ? 'hidden' : '' }}" type="button" id="scan-qr-button" aria-label="Scan QR">
-         <i class="fas fa-qrcode"></i>
+         Scan QR
         </button>
        </div>
        <p class="text-xs text-gray-500 mt-1">
@@ -252,43 +117,15 @@
       <div class="flex items-center justify-between mb-2">
        <span class="text-gray-700 text-sm font-bold">Scan QR Code</span>
        <button class="text-gray-600 hover:text-gray-800" type="button" id="close-qr-button" aria-label="Close scanner">
-        <i class="fas fa-times"></i>
+        Close
        </button>
       </div>
       <div id="qr-reader"></div>
      </div>
     </div>
    </section>
-  </main>
 
-    <footer class="relative z-10 bg-blue-600 text-white p-4 text-center">
-     <p>
-        2026 Philippine Christian University Online Election System. All rights reserved.
-     </p>
-    </footer>
-  <script>
-   const menuToggle = document.getElementById('menu-toggle');
-        const mobileMenu = document.getElementById('mobile-menu');
-
-        const profileToggle = document.querySelector('[data-profile-toggle]');
-        const profileMenu = document.querySelector('[data-profile-menu]');
-        if (profileToggle && profileMenu) {
-            profileToggle.addEventListener('click', (e) => {
-                e.stopPropagation();
-                profileMenu.classList.toggle('hidden');
-            });
-            profileMenu.addEventListener('click', (e) => {
-                e.stopPropagation();
-            });
-            document.addEventListener('click', () => {
-                profileMenu.classList.add('hidden');
-            });
-        }
-
-        menuToggle.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
-        });
-  </script>
+    
 
   <script>
    let html5QrCode = null;
@@ -440,6 +277,5 @@
             });
         });
   </script>
-
- </body>
-</html>
+</div>
+@endsection
