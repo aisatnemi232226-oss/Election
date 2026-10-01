@@ -57,7 +57,7 @@
 
                     <!-- Pagination at the top - properly aligned -->
                     <div id="pagination-container-top" class="flex items-center">
-                        {{ $candidates->appends(['archived' => $isArchived ? 1 : 0, 'status' => $status ?? request('status'), 'sort' => $sort, 'direction' => $sort ? $direction : null])->links('components.pagination') }}
+                        {{ $candidates->appends(['archived' => $isArchived ? 1 : 0, 'status' => $status, 'course' => $courseFilter, 'party' => $partyFilter, 'position' => $positionFilter])->links('components.pagination') }}
                     </div>
                     
                     @if (!$isArchived)
@@ -84,14 +84,36 @@
                         <tr>
                             <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Photo</th>
                             <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Name</th>
-                            @foreach (['course' => 'Course', 'party' => 'Party', 'position' => 'Position'] as $sortField => $label)
-                                <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold" data-sort-header="{{ $sortField }}" aria-sort="{{ $sort === $sortField ? ($direction === 'asc' ? 'ascending' : 'descending') : 'none' }}">
-                                    <button type="button" data-sort-field="{{ $sortField }}" class="inline-flex items-center gap-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
-                                        {{ $label }}
-                                        <i class="fas {{ $sort === $sortField ? ($direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort' }} text-xs text-gray-400" aria-hidden="true"></i>
-                                    </button>
-                                </th>
-                            @endforeach
+                            <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">
+                                <label for="candidate-course-filter" class="sr-only">Filter by course</label>
+                                <select id="candidate-course-filter" data-candidate-filter="course" class="max-w-48 rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+                                    <option value="">All Courses</option>
+                                    <option value="none" @selected($courseFilter === 'none')>No Course</option>
+                                    @foreach ($courses as $course)
+                                        <option value="{{ $course->id }}" @selected((string) $courseFilter === (string) $course->id)>{{ $course->name }}</option>
+                                    @endforeach
+                                </select>
+                            </th>
+                            <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">
+                                <label for="candidate-party-filter" class="sr-only">Filter by party</label>
+                                <select id="candidate-party-filter" data-candidate-filter="party" class="max-w-48 rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+                                    <option value="">All Parties</option>
+                                    <option value="none" @selected($partyFilter === 'none')>No Party</option>
+                                    @foreach ($parties as $party)
+                                        <option value="{{ $party->id }}" @selected((string) $partyFilter === (string) $party->id)>{{ $party->name }}</option>
+                                    @endforeach
+                                </select>
+                            </th>
+                            <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">
+                                <label for="candidate-position-filter" class="sr-only">Filter by position</label>
+                                <select id="candidate-position-filter" data-candidate-filter="position" class="max-w-48 rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+                                    <option value="">All Positions</option>
+                                    <option value="none" @selected($positionFilter === 'none')>No Position</option>
+                                    @foreach ($positions as $position)
+                                        <option value="{{ $position->id }}" @selected((string) $positionFilter === (string) $position->id)>{{ $position->name }}</option>
+                                    @endforeach
+                                </select>
+                            </th>
                             <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Status</th>
                             <th class="py-2 px-4 border-b-2 text-left text-gray-600 font-bold">Actions</th>
                         </tr>

@@ -106,7 +106,25 @@
                         <tr>
                             <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Name</th>
                             <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Student ID</th>
-                            <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Course</th>
+                            <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">
+                                <form method="GET" action="{{ route('admin.voters.index') }}">
+                                    @if (request('search'))
+                                        <input type="hidden" name="search" value="{{ request('search') }}">
+                                    @endif
+                                    <label for="voter-course-filter" class="sr-only">Filter voters by course</label>
+                                    <select
+                                        id="voter-course-filter"
+                                        name="course"
+                                        class="max-w-48 rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                        onchange="this.form.submit()">
+                                        <option value="">All Courses</option>
+                                        <option value="__none__" @selected($courseFilter === '__none__')>No Course</option>
+                                        @foreach ($courses as $course)
+                                            <option value="{{ $course }}" @selected($courseFilter === $course)>{{ $course }}</option>
+                                        @endforeach
+                                    </select>
+                                </form>
+                            </th>
                             <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Email Address</th>
                             <th class="py-2 px-4 border-b-2 border-gray-300 text-left text-gray-600 font-bold">Actions</th>
                         </tr>

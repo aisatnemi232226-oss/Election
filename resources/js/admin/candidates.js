@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== MODULE DEFINITIONS =====
     const isArchivedView = new URLSearchParams(window.location.search).get('archived') === '1';
     const initialParams = new URLSearchParams(window.location.search);
-    const initialSort = ['course', 'party', 'position'].includes(initialParams.get('sort')) ? initialParams.get('sort') : '';
 
     const ModalController = {
         modals: {
@@ -59,12 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 searchInputId: 'candidates-search',
                 onSearch: (query) => {
                     console.log('Search query:', query);
-                    // Clear existing filters
                     PaginationController.filters.search = query;
-                    PaginationController.filters.status = '';
-                    PaginationController.filters.course = '';
-                    
-                    // Load first page with new search
+                    PaginationController.syncFilterQuery();
                     PaginationController.loadCandidates(1);
                 }
             });
@@ -81,10 +76,11 @@ document.addEventListener('DOMContentLoaded', () => {
         filters: {
             search: initialParams.get('search') || '',
             course: initialParams.get('course') || '',
+            party: initialParams.get('party') || '',
+            position: initialParams.get('position') || '',
             name: '',
             status: initialParams.get('status') || '',
-            sort: initialSort,
-            direction: initialParams.get('direction') === 'desc' ? 'desc' : 'asc',
+            pendingPage: null,
             isLoading: false
         },
         setupStatusFilters() {
@@ -96,40 +92,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!btn) return;
                 const status = btn.getAttribute('data-status-filter') || '';
                 this.filters.status = status;
+                this.syncFilterQuery();
                 this.loadCandidates(1);
             });
         },
-        setupSortHeaders() {
-            document.querySelector('thead')?.addEventListener('click', (event) => {
-                const button = event.target.closest('[data-sort-field]');
-                if (!button) return;
-
-                const field = button.getAttribute('data-sort-field');
-                if (!['course', 'party', 'position'].includes(field)) return;
-
-                this.filters.direction = this.filters.sort === field && this.filters.direction === 'asc' ? 'desc' : 'asc';
-                this.filters.sort = field;
-                this.updateSortHeaders();
-
-                const params = new URLSearchParams(window.location.search);
-                params.set('sort', field);
-                params.set('direction', this.filters.direction);
-                params.delete('page');
-                window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
-                this.loadCandidates(1);
+        setupColumnFilters() {
+            document.querySelectorAll('[data-candidate-filter]').forEach((select) => {
+                select.addEventListener('change', () => {
+                    const field = select.getAttribute('data-candidate-filter');
+                    if (!['course', 'party', 'position'].includes(field)) return;
+                    this.filters[field] = select.value;
+                    this.syncFilterQuery();
+                    this.loadCandidates(1);
+                });
             });
         },
-        updateSortHeaders() {
-            document.querySelectorAll('[data-sort-header]').forEach((header) => {
-                const field = header.getAttribute('data-sort-header');
-                const isActive = field === this.filters.sort;
-                header.setAttribute('aria-sort', isActive ? (this.filters.direction === 'asc' ? 'ascending' : 'descending') : 'none');
-
-                const icon = header.querySelector('i');
-                if (icon) {
-                    icon.className = `fas ${isActive ? (this.filters.direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'} text-xs text-gray-400`;
+        syncFilterQuery() {
+            const params = new URLSearchParams(window.location.search);
+            ['course', 'party', 'position', 'status'].forEach((field) => {
+                if (this.filters[field]) {
+                    params.set(field, this.filters[field]);
+                } else {
+                    params.delete(field);
                 }
             });
+            if (this.filters.search) {
+                params.set('search', this.filters.search);
+            } else {
+                params.delete('search');
+            }
+            params.delete('sort');
+            params.delete('direction');
+            params.delete('page');
+            window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
         },
         setupPaginationLinks() {
             // Handle pagination clicks on both top and bottom containers
@@ -150,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         loadCandidates(page = 1) {
             if (this.filters.isLoading) {
+                this.filters.pendingPage = page;
                 return;
             }
             
@@ -167,10 +163,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = `/admin/candidates/paginateCandidates?page=${page}` +
                 `&search=${encodeURIComponent(this.filters.search)}` +
                 `&course=${encodeURIComponent(this.filters.course)}` +
+                `&party=${encodeURIComponent(this.filters.party)}` +
+                `&position=${encodeURIComponent(this.filters.position)}` +
                 `&name=${encodeURIComponent(this.filters.name)}` +
                 `&status=${encodeURIComponent(this.filters.status)}` +
-                `&sort=${encodeURIComponent(this.filters.sort)}` +
-                `&direction=${encodeURIComponent(this.filters.direction)}` +
                 `&archived=${isArchivedView ? 1 : 0}`;
             
             fetch(url, {
@@ -314,6 +310,11 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .finally(() => {
                 this.filters.isLoading = false;
+                if (this.filters.pendingPage !== null) {
+                    const pendingPage = this.filters.pendingPage;
+                    this.filters.pendingPage = null;
+                    this.loadCandidates(pendingPage);
+                }
             });
         },
         reattachEventListeners() {
@@ -345,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         init() {
             this.setupPaginationLinks();
-            this.setupSortHeaders();
+            this.setupColumnFilters();
             // Don't auto-load on init as the page already has data
         }
     };

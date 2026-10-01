@@ -34,11 +34,9 @@ class CandidateController extends Controller
             $perPage = 10;
             $isArchived = request()->boolean('archived');
             $status = $request->query('status');
-            $sort = $request->query('sort');
-            if (!in_array($sort, ['course', 'party', 'position'], true)) {
-                $sort = null;
-            }
-            $direction = $request->query('direction') === 'desc' ? 'desc' : 'asc';
+            $courseFilter = $request->query('course');
+            $partyFilter = $request->query('party');
+            $positionFilter = $request->query('position');
             $candidatesQuery = Candidate::with(['course', 'party', 'position'])->orderBy('created_at', 'desc');
             if ($isArchived) {
                 $candidatesQuery->onlyTrashed();
@@ -48,14 +46,26 @@ class CandidateController extends Controller
                 $candidatesQuery->where('status', $status);
             }
 
-            $this->applyCandidateSort($candidatesQuery, $sort, $direction);
+            foreach ([
+                'course_id' => $courseFilter,
+                'electionparty_id' => $partyFilter,
+                'position_id' => $positionFilter,
+            ] as $column => $value) {
+                if ($value === 'none') {
+                    $candidatesQuery->whereNull($column);
+                } elseif (filled($value)) {
+                    $candidatesQuery->where($column, $value);
+                }
+            }
+
             $candidates = $candidatesQuery
                 ->paginate($perPage)
                 ->appends([
                     'archived' => $isArchived ? 1 : 0,
                     'status' => $status,
-                    'sort' => $sort,
-                    'direction' => $sort ? $direction : null,
+                    'course' => $courseFilter,
+                    'party' => $partyFilter,
+                    'position' => $positionFilter,
                 ]);
             
             // Get courses and parties separately to avoid relationship issues
@@ -64,7 +74,17 @@ class CandidateController extends Controller
             $positions = Position::all();
             
             Log::info('CandidateController@index - Success');
-            return view('admin.candidates', compact('candidates', 'courses', 'parties', 'positions', 'isArchived', 'status', 'sort', 'direction'));
+            return view('admin.candidates', compact(
+                'candidates',
+                'courses',
+                'parties',
+                'positions',
+                'isArchived',
+                'status',
+                'courseFilter',
+                'partyFilter',
+                'positionFilter'
+            ));
         } catch (\Exception $e) {
             Log::error('Error in candidates index: ' . $e->getMessage());
             Log::error('Stack trace: ' . $e->getTraceAsString());
@@ -549,21 +569,22 @@ public function update(Request $request, $id)
                 $query->where('candidate.status', $request->status);
             }
             
-            // Apply course filter if provided
-            if ($request->filled('course')) {
-                Log::info('Applying course filter: ' . $request->course);
-                $query->where('candidate.course_id', $request->course);
+            foreach ([
+                'course' => 'candidate.course_id',
+                'party' => 'candidate.electionparty_id',
+                'position' => 'candidate.position_id',
+            ] as $filter => $column) {
+                $value = $request->query($filter);
+                if ($value === 'none') {
+                    $query->whereNull($column);
+                } elseif (filled($value)) {
+                    $query->where($column, $value);
+                }
             }
-            
-            $sort = $request->query('sort');
-            if (!in_array($sort, ['course', 'party', 'position'], true)) {
-                $sort = null;
-            }
-            $direction = $request->query('direction') === 'desc' ? 'desc' : 'asc';
 
             // Execute the paginated query
             Log::info('Executing paginated query...');
-            $this->applyCandidateSort($query, $sort, $direction);
+            $query->orderBy('candidate.created_at', 'desc');
             $candidates = $query->paginate(10);
             Log::info('Basic pagination successful, count: ' . $candidates->count());
             
@@ -634,30 +655,6 @@ public function update(Request $request, $id)
                 ]
             ], 500);
         }
-    }
-
-    private function applyCandidateSort(\Illuminate\Database\Eloquent\Builder $query, ?string $sort, string $direction): void
-    {
-        if ($sort === null) {
-            $query->orderBy('candidate.created_at', 'desc');
-            return;
-        }
-
-        $sortColumns = [
-            'course' => ['courses', 'course_id'],
-            'party' => ['electionparty', 'electionparty_id'],
-            'position' => ['positions', 'position_id'],
-        ];
-        [$table, $foreignKey] = $sortColumns[$sort];
-
-        $query->reorder()
-            ->orderBy(
-                DB::table($table)
-                    ->select('name')
-                    ->whereColumn($table . '.id', 'candidate.' . $foreignKey),
-                $direction
-            )
-            ->orderBy('candidate.id', 'asc');
     }
 
     /**

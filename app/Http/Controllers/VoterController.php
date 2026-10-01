@@ -21,6 +21,7 @@ class VoterController extends Controller
     public function index(Request $request)
     {
         $query = User::query();
+        $courseFilter = $request->query('course', '');
 
         // Search functionality
         if ($request->has('search') && $request->search) {
@@ -32,18 +33,35 @@ class VoterController extends Controller
             });
         }
 
-        $voters = $query->orderBy('created_at', 'desc')->paginate(10);
+        if ($courseFilter === '__none__') {
+            $query->where(function ($courseQuery) {
+                $courseQuery->whereNull('course')->orWhere('course', '');
+            });
+        } elseif ($courseFilter !== '') {
+            $query->where('course', $courseFilter);
+        }
+
+        $voters = $query->orderBy('created_at', 'desc')
+            ->paginate(10)
+            ->appends($request->only('search', 'course'));
 
         $positions = collect();
         if (Schema::hasTable('positions')) {
             $positions = Position::query()->orderBy('name')->get();
         }
 
+        $courses = User::query()
+            ->whereNotNull('course')
+            ->where('course', '<>', '')
+            ->distinct()
+            ->orderBy('course')
+            ->pluck('course');
+
         if ($request->ajax()) {
             return view('admin.voters.table', compact('voters'));
         }
 
-        return view('admin.voters', compact('voters', 'positions'));
+        return view('admin.voters', compact('voters', 'positions', 'courses', 'courseFilter'));
     }
 
     public function resetVotesAll($id)

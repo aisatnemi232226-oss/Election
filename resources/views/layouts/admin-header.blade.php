@@ -39,7 +39,7 @@
                             <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.chatbot.index') }}">Manage Chatbot</a></li>
                             <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.tickets.index') }}">Manage Tickets</a></li>
                             <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.profile-settings.index') }}">Profile Settings</a></li>
-                            <li><a class="block px-4 py-2 hover:bg-gray-200" href="#">User Management</a></li>
+                            <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.users.index') }}">User Management</a></li>
                             <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.audit-logs.index') }}">Audit Logs</a></li>
                             <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.verified-voters.index') }}">Verify Voters</a></li>
                             <li><a class="block px-4 py-2 hover:bg-gray-200" href="{{ route('admin.academic-year.index') }}">Set Current Academic Year</a></li>
