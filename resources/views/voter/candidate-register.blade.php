@@ -2,7 +2,39 @@
 
 @section('title', 'PCU Online Election System - Candidate Registration')
 
+@php
+    $candidateApplicationPending = !session('success')
+        && ($existingApplicationStatus ?? null) === 'Pending'
+        && !$errors->any();
+@endphp
+
+@section('body-class', $candidateApplicationPending ? 'auth-page auth-register-page' : '')
+
+@if ($candidateApplicationPending)
+    @push('styles')
+        <link rel="stylesheet" href="{{ asset('css/pcu-auth.css') }}">
+    @endpush
+@endif
+
 @section('content')
+@if ($candidateApplicationPending)
+    <div class="page-content auth-wrap candidate-pending-wrap">
+        <section class="auth-card wide" aria-labelledby="candidate-pending-title">
+            <header class="auth-brand">
+                <img src="{{ asset('images/pculogo.png') }}" alt="" width="64" height="64">
+                <h1 id="candidate-pending-title">Candidate Registration</h1>
+                <p>Your candidate application is being reviewed by the administrator.</p>
+            </header>
+
+            <div class="auth-note warning" role="status">
+                <h2>Pending Candidate Application</h2>
+                <p>Your candidate application has been submitted and is awaiting administrator review.</p>
+            </div>
+
+            <p class="auth-foot"><a class="auth-link" href="{{ url('/') }}" aria-label="Back to home">Home</a></p>
+        </section>
+    </div>
+@else
 <div class="page-content registration-shell registration-shell-candidate-register">
 <script>
         (function () {
@@ -25,39 +57,42 @@
         })();
     </script>
         <a href="{{ url('/') }}"
-            class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-bold text-blue-700 shadow-md transition hover:bg-blue-50 hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            class="candidate-register-home-link inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-bold text-blue-700 shadow-md transition hover:bg-blue-50 hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             aria-label="Back to home">
 
             <span>Home</span>
         </a>
-        <section class="text-center my-8">
-            <h2 class="text-4xl font-bold text-gray-800 mb-2">Candidate Registration</h2>
-            <p class="text-gray-600 text-lg">Apply as a candidate by selecting your position and submitting your details.</p>
+        <section class="candidate-register-intro text-center my-8">
+            <h2 class="candidate-register-title text-4xl font-bold text-gray-800 mb-2">Candidate Registration</h2>
+            <p class="candidate-register-description text-gray-600 text-lg">Apply as a candidate by selecting your position and submitting your details.</p>
         </section>
 
         <section class="my-8">
-            <div class="bg-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
+            <div class="candidate-register-card bg-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
                 @if (!session('success') && !($hasExistingApplication ?? false))
                     <div class="mb-4 rounded-lg bg-blue-50 px-4 py-3 text-blue-900 border border-blue-200">
                         After submitting your application, it will be reviewed by the admin within 1-3 working days. Please wait for approval before appearing as an official candidate.
                     </div>
                 @endif
 
-                @if (($voterVerificationPending ?? false) && !$errors->any())
+                @if (!session('success') && ($existingApplicationStatus ?? null) === 'Pending' && !$errors->any())
                     <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-amber-900" role="status">
                         <div class="flex items-start gap-3">
                             
                             <div>
                                 <h3 class="font-bold">Pending Candidate Application</h3>
-                                <p class="mt-1 text-sm">Your verification request has been submitted and is awaiting administrator review. You can vote after your account is verified.</p>
+                                <p class="mt-1 text-sm">Your candidate application has been submitted and is awaiting administrator review.</p>
                             </div>
                         </div>
                     </div>
                 @endif
 
                 @if (session('success'))
-                    <div class="mb-4 rounded-lg bg-green-50 px-4 py-3 text-green-800">
-                        {{ session('success') }}
+                    <div id="success-inline-notice" class="candidate-success-inline" role="status" tabindex="-1" hidden>
+                        <span class="candidate-success-inline-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                        <span>{{ session('success') }}</span>
                     </div>
                 @endif
 
@@ -74,13 +109,13 @@
                 @endif
 
                 @if (!session('success') && !($hasExistingApplication ?? false))
-                    <form method="POST" action="{{ route('candidate.register.store') }}" enctype="multipart/form-data">
+                    <form class="candidate-registration-form" method="POST" action="{{ route('candidate.register.store') }}" enctype="multipart/form-data">
                         @csrf
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="candidate-register-grid grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label class="block text-gray-700 font-bold mb-2" for="position_id">Position</label>
-                                <select class="w-full p-3 border border-gray-300 rounded-lg" id="position_id" name="position_id" required>
+                                <select class="candidate-register-select w-full p-3 border border-gray-300 rounded-lg" id="position_id" name="position_id" required>
                                     <option value="">Select Position</option>
                                     @foreach($positions as $position)
                                         <option value="{{ $position->id }}" {{ (string) old('position_id', $prefillPositionId ?? '') === (string) $position->id ? 'selected' : '' }}>
@@ -92,7 +127,7 @@
 
                             <div>
                                 <label class="block text-gray-700 font-bold mb-2" for="course_id">Course</label>
-                                <select class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200" id="course_id" name="course_id" required>
+                                <select class="candidate-register-select w-full p-3 border border-gray-300 rounded-lg" id="course_id" name="course_id" required>
                                     <option value="">Select Course</option>
                                     @foreach($courses as $course)
                                         <option value="{{ $course->id }}" {{ (string) old('course_id') === (string) $course->id ? 'selected' : '' }}>
@@ -105,7 +140,7 @@
 
                             <div>
                                 <label class="block text-gray-700 font-bold mb-2" for="party_id">Party (Optional)</label>
-                                <select class="w-full p-3 border border-gray-300 rounded-lg" id="party_id" name="party_id">
+                                <select class="candidate-register-select w-full p-3 border border-gray-300 rounded-lg" id="party_id" name="party_id">
                                     <option value="">No Party</option>
                                     @foreach($parties as $party)
                                         <option value="{{ $party->id }}" {{ (string) old('party_id') === (string) $party->id ? 'selected' : '' }}>
@@ -116,7 +151,7 @@
                             </div>
                         </div>
 
-                        <div class="mt-5">
+                        <div class="candidate-register-credential mt-5">
                             <label class="block text-gray-700 font-bold mb-2" for="credential">Student QR / Credential</label>
                             <div class="relative">
                                 <input class="w-full p-3 border border-gray-300 rounded-lg pr-12" id="credential" type="text" placeholder="Scan QR or type student number/email" value="{{ $credentialValue }}" {{ auth()->check() ? 'readonly' : '' }}>
@@ -130,7 +165,7 @@
                         <input type="hidden" id="fullname" name="name" value="{{ old('name', auth()->check() ? (auth()->user()->name ?? '') : ($prefillName ?? '')) }}" />
                         <input type="hidden" id="email" name="email" value="{{ old('email', auth()->check() ? (auth()->user()->email ?? '') : ($prefillEmail ?? '')) }}" />
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                        <div class="candidate-register-grid candidate-register-identity-grid grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                             <div>
                                 <label class="block text-gray-700 font-bold mb-2" for="display-idnumber">Student Number</label>
                                 <input class="w-full p-3 border border-gray-300 rounded-lg {{ auth()->check() ? 'bg-gray-50' : '' }}" id="display-idnumber" type="text" value="{{ old('idnumber', auth()->check() ? (auth()->user()->idnumber ?? '') : ($prefillIdNumber ?? '')) }}" {{ auth()->check() ? 'readonly' : '' }} />
@@ -145,7 +180,7 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div class="candidate-register-grid candidate-register-upload-grid grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                             <div>
                                 <label class="block text-gray-700 font-bold mb-2" for="profile_img">Profile Image</label>
                                 <input class="w-full p-2 border border-gray-300 rounded" id="profile_img" type="file" name="profile_img" accept="image/*" required>
@@ -168,8 +203,8 @@
                             <textarea class="w-full p-3 border border-gray-300 rounded-lg" id="platforms" name="platforms" rows="4" required>{{ old('platforms') }}</textarea>
                         </div>
 
-                        <div class="mt-6 text-center">
-                            <button class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700" type="submit">Submit Application</button>
+                        <div class="candidate-register-actions mt-6 text-center">
+                            <button class="candidate-register-submit bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700" type="submit">Submit Application</button>
                         </div>
                     </form>
 
@@ -205,42 +240,41 @@
     @endif
 
     @if (session('success'))
-        <div id="success-modal" class="fixed inset-0 z-[9999] hidden" role="dialog" aria-modal="true" aria-labelledby="success-modal-title" aria-describedby="success-modal-description">
-            <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity" id="success-modal-backdrop"></div>
-            <div class="relative flex min-h-full items-center justify-center p-4 sm:p-6">
-                <section class="success-modal-card relative w-full max-w-md overflow-hidden rounded-3xl border border-white/70 bg-white shadow-2xl shadow-slate-950/25">
-                    <div class="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-emerald-400 via-teal-500 to-blue-600"></div>
-                    <button type="button" id="close-success-modal" class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" aria-label="Close confirmation">
-                        <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <div id="success-modal" class="success-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="success-modal-title" aria-describedby="success-modal-description">
+            <div class="success-modal-backdrop" id="success-modal-backdrop"></div>
+            <div class="success-modal-stage">
+                <div class="success-modal-panel">
+                    <div class="success-modal-accent" aria-hidden="true"></div>
+                    <button type="button" id="close-success-modal" class="success-modal-close" aria-label="Close confirmation">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                     </button>
 
-                    <div class="px-7 pb-7 pt-10 text-center sm:px-9 sm:pb-9">
-                        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-8 ring-emerald-50/60">
-                            
+                    <div class="success-modal-content">
+                        <div class="success-modal-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </div>
-                        <p class="mt-6 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Submission received</p>
-                        <h2 id="success-modal-title" class="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Application submitted</h2>
-                        <p id="success-modal-description" class="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-600 sm:text-base">
-                            Your candidate application has been sent successfully. The admin team will review it within 1-3 working days.
+                        <p class="success-modal-eyebrow">Submission received</p>
+                        <h2 id="success-modal-title">Application submitted</h2>
+                        <p id="success-modal-description" class="success-modal-description">
+                            Your candidate application has been sent successfully. The admin team will review it within 1–3 working days.
                         </p>
-                        <div class="mt-6 flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50/80 p-4 text-left">
-                            <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm">
-                                
+                        <div class="success-modal-next">
+                            <span class="success-modal-next-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5m0-8h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                             </span>
-                            <p class="text-sm leading-5 text-blue-950">
-                                <span class="font-semibold">What happens next?</span><br>
-                                Please wait for the review before appearing as an official candidate.
+                            <p>
+                                <strong>What happens next?</strong>
+                                <span>Please wait for the review before appearing as an official candidate.</span>
                             </p>
                         </div>
                     </div>
 
-                    <div class="border-t border-slate-100 bg-slate-50/80 px-7 py-5 sm:px-9">
-                        <button type="button" id="ok-success-modal" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-900/15 transition hover:-translate-y-0.5 hover:bg-blue-800 hover:shadow-blue-900/25 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                            <span>Got it</span>
-                            
+                    <div class="success-modal-footer">
+                        <button type="button" id="ok-success-modal" class="success-modal-confirm">
+                            Got it
                         </button>
                     </div>
-                </section>
+                </div>
             </div>
         </div>
     @endif
@@ -429,20 +463,43 @@
     (function () {
         const modal = document.getElementById('success-modal');
         if (!modal) return;
+        const closeButton = document.getElementById('close-success-modal');
+        const confirmButton = document.getElementById('ok-success-modal');
+        const inlineNotice = document.getElementById('success-inline-notice');
+        const focusableElements = [closeButton, confirmButton].filter(Boolean);
 
         function close() {
             modal.classList.add('hidden');
             document.body.style.overflow = '';
             document.removeEventListener('keydown', handleEscape);
+            if (inlineNotice) {
+                inlineNotice.hidden = false;
+                inlineNotice.focus();
+            }
         }
 
         function handleEscape(event) {
-            if (event.key === 'Escape') close();
+            if (event.key === 'Escape') {
+                close();
+                return;
+            }
+
+            if (event.key !== 'Tab' || focusableElements.length < 2) return;
+
+            const first = focusableElements[0];
+            const last = focusableElements[focusableElements.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
         }
 
         modal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
-        document.getElementById('ok-success-modal')?.focus();
+        closeButton?.focus();
 
         document.getElementById('close-success-modal')?.addEventListener('click', close);
         document.getElementById('ok-success-modal')?.addEventListener('click', close);
@@ -451,4 +508,5 @@
     })();
 </script>
 </div>
+@endif
 @endsection

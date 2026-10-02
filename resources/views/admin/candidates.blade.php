@@ -72,10 +72,10 @@
             </div>
             
             <div class="flex flex-wrap items-center gap-2 mb-4" id="candidate-status-filters">
-                <button type="button" class="px-3 py-2 text-sm font-medium rounded-md border border-gray-200 bg-white hover:bg-gray-50" data-status-filter="">All</button>
-                <button type="button" class="px-3 py-2 text-sm font-medium rounded-md border border-gray-200 bg-white hover:bg-gray-50" data-status-filter="Pending">Pending</button>
-                <button type="button" class="px-3 py-2 text-sm font-medium rounded-md border border-gray-200 bg-white hover:bg-gray-50" data-status-filter="Active">Active</button>
-                <button type="button" class="px-3 py-2 text-sm font-medium rounded-md border border-gray-200 bg-white hover:bg-gray-50" data-status-filter="Inactive">Inactive</button>
+                <button type="button" class="px-3 py-2 text-sm font-medium rounded-md border border-gray-200 bg-white hover:bg-gray-50" data-status-filter="" aria-pressed="false">All</button>
+                <button type="button" class="px-3 py-2 text-sm font-medium rounded-md border border-gray-200 bg-white hover:bg-gray-50" data-status-filter="Pending" aria-pressed="false">Pending</button>
+                <button type="button" class="px-3 py-2 text-sm font-medium rounded-md border border-gray-200 bg-white hover:bg-gray-50" data-status-filter="Active" aria-pressed="false">Active</button>
+                <button type="button" class="px-3 py-2 text-sm font-medium rounded-md border border-gray-200 bg-white hover:bg-gray-50" data-status-filter="Inactive" aria-pressed="false">Inactive</button>
             </div>
             
             <div class="overflow-x-auto">

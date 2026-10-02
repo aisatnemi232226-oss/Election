@@ -58,10 +58,10 @@ class LoginController extends Controller
             }
         } catch (\RuntimeException $e) {
             // Handles cases where the stored password is not a valid Bcrypt hash
-            return back()->withErrors(['email' => 'Invalid credentials']);
+            return back()->withErrors(['email' => 'Invalid credentials'])->withInput($request->only('email'));
         }
 
-        return back()->withErrors(['email' => 'Invalid credentials']);
+        return back()->withErrors(['email' => 'Invalid credentials'])->withInput($request->only('email'));
     }
 
     public function logout(Request $request)

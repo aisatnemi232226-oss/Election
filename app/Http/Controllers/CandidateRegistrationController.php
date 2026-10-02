@@ -69,9 +69,6 @@ class CandidateRegistrationController extends Controller
             'credentialValue' => $credentialValue,
             'hasExistingApplication' => $hasExistingApplication,
             'existingApplicationStatus' => $existingApplicationStatus,
-            'voterVerificationPending' => Auth::check()
-                && Auth::user()->voter_verification_submitted_at !== null
-                && !Auth::user()->isVerifiedVoter(),
         ]);
     }
 

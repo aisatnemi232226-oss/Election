@@ -38,60 +38,60 @@
         <div id="fw-minimized" title="Show dashboard widget" style="position:fixed;left:20px;bottom:20px;width:48px;height:48px;display:none;align-items:center;justify-content:center;border-radius:9999px;background:#ffffff;border:1px solid rgba(0,0,0,0.06);box-shadow:0 8px 20px rgba(2,6,23,0.08);cursor:pointer;z-index:9999;font-size:20px;">⏰</div>
 
         
-        <section class="my-8 grid grid-cols-1 md:grid-cols-4 gap-6">
+        <section class="dashboard-stats my-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
             <a href="{{ route('admin.elections.index') }}" class="stat-card block bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow" data-accent="blue" aria-label="Total Elections">
                 <span class="accent-strip" aria-hidden="true"></span>
-                <div class="flex items-start justify-between">
-                    <div>
-                        <h3 class="text-2xl font-bold text-gray-800 mb-1">Total Elections</h3>
-                        <div class="text-sm text-gray-500">Overview</div>
+                <div class="stat-card-content">
+                    <div class="stat-card-heading">
+                        <div>
+                            <h3 class="stat-label">Total Elections</h3>
+                            <div class="stat-description">Overview</div>
+                        </div>
+                        <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 13h18v2H3z" fill="currentColor" opacity="0.9"/><path d="M7 7h10v2H7z" fill="currentColor" opacity="0.9"/></svg></span>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <span class="stat-icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 13h18v2H3z" fill="currentColor" opacity="0.9"/><path d="M7 7h10v2H7z" fill="currentColor" opacity="0.9"/></svg></span>
-                        <p class="stat-value text-4xl font-bold text-blue-600" data-target="{{ $totalElections ?? 0 }}" aria-live="polite">0</p>
-                    </div>
+                    <p class="stat-value" data-target="{{ $totalElections ?? 0 }}" aria-live="polite">0</p>
                 </div>
             </a>
 
             <a href="{{ route('admin.candidates.index') }}" class="stat-card block bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow" data-accent="green" aria-label="Total Candidates">
                 <span class="accent-strip" aria-hidden="true"></span>
-                <div class="flex items-start justify-between">
-                    <div>
-                        <h3 class="text-2xl font-bold text-gray-800 mb-1">Total Candidates</h3>
-                        <div class="text-sm text-gray-500">Registered</div>
+                <div class="stat-card-content">
+                    <div class="stat-card-heading">
+                        <div>
+                            <h3 class="stat-label">Total Candidates</h3>
+                            <div class="stat-description">Registered</div>
+                        </div>
+                        <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12a4 4 0 100-8 4 4 0 000 8z" fill="currentColor"/><path d="M4 20a8 8 0 0116 0H4z" fill="currentColor" opacity="0.9"/></svg></span>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <span class="stat-icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12a4 4 0 100-8 4 4 0 000 8z" fill="currentColor"/><path d="M4 20a8 8 0 0116 0H4z" fill="currentColor" opacity="0.9"/></svg></span>
-                        <p class="stat-value text-4xl font-bold text-green-600" data-target="{{ $totalCandidates ?? 0 }}" aria-live="polite">0</p>
-                    </div>
+                    <p class="stat-value" data-target="{{ $totalCandidates ?? 0 }}" aria-live="polite">0</p>
                 </div>
             </a>
 
             <a href="{{ route('admin.verified-voters.index') }}" class="stat-card block bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow" data-accent="red" aria-label="Total Voters">
                 <span class="accent-strip" aria-hidden="true"></span>
-                <div class="flex items-start justify-between">
-                    <div>
-                        <h3 class="text-2xl font-bold text-gray-800 mb-1">Total Voters</h3>
-                        <div class="text-sm text-gray-500">Verified</div>
+                <div class="stat-card-content">
+                    <div class="stat-card-heading">
+                        <div>
+                            <h3 class="stat-label">Total Voters</h3>
+                            <div class="stat-description">Verified</div>
+                        </div>
+                        <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12a3 3 0 100-6 3 3 0 000 6z" fill="currentColor"/><path d="M4 21v-1a7 7 0 0114 0v1H4z" fill="currentColor" opacity="0.9"/></svg></span>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <span class="stat-icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12a3 3 0 100-6 3 3 0 000 6z" fill="currentColor"/><path d="M4 21v-1a7 7 0 0114 0v1H4z" fill="currentColor" opacity="0.9"/></svg></span>
-                        <p class="stat-value text-4xl font-bold text-red-600" data-target="{{ $totalVoters ?? 0 }}" aria-live="polite">0</p>
-                    </div>
+                    <p class="stat-value" data-target="{{ $totalVoters ?? 0 }}" aria-live="polite">0</p>
                 </div>
             </a>
 
             <a href="{{ route('admin.users.index') }}" class="stat-card block bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow" data-accent="purple" aria-label="Total Enrolled Students">
                 <span class="accent-strip" aria-hidden="true"></span>
-                <div class="flex items-start justify-between">
-                    <div>
-                        <h3 class="text-2xl font-bold text-gray-800 mb-1">Total Enrolled Students</h3>
-                        <div class="text-sm text-gray-500">Active</div>
+                <div class="stat-card-content">
+                    <div class="stat-card-heading">
+                        <div>
+                            <h3 class="stat-label">Total Enrolled Students</h3>
+                            <div class="stat-description">Active</div>
+                        </div>
+                        <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3l9 4v6c0 5-4 8-9 8s-9-3-9-8V7l9-4z" fill="currentColor" opacity="0.95"/></svg></span>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <span class="stat-icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3l9 4v6c0 5-4 8-9 8s-9-3-9-8V7l9-4z" fill="currentColor" opacity="0.95"/></svg></span>
-                        <p class="stat-value text-4xl font-bold text-purple-600" data-target="{{ $totalEnrolledStudents ?? 0 }}" aria-live="polite">0</p>
-                    </div>
+                    <p class="stat-value" data-target="{{ $totalEnrolledStudents ?? 0 }}" aria-live="polite">0</p>
                 </div>
             </a>
         </section>
@@ -132,30 +132,14 @@
     </main>
     <style>
         /* Stats card entrance and count styling */
-        :root{ --card-bg:#ffffff; --muted:#6b7280; }
-        .stat-card { position:relative; overflow:visible; transform: translateY(12px) scale(0.98); opacity: 0; will-change: transform, opacity; border-left: 1px solid rgba(0,0,0,0.03); }
         .stat-card.pop-in { animation: popIn 560ms cubic-bezier(.2,.9,.2,1) forwards; }
-        .stat-card:hover { transform: translateY(-6px) scale(1.02); transition: transform 220ms ease, box-shadow 220ms ease; box-shadow: 0 18px 40px rgba(6,12,34,0.12); }
-        .stat-value { display:inline-block; transform-origin:center; min-width:70px; text-align:right; }
-
-        .accent-strip { position:absolute; left:0; top:12px; bottom:12px; width:8px; border-radius:8px; box-shadow:0 6px 18px rgba(2,6,23,0.06) inset; }
-        .stat-card[data-accent="blue"] .accent-strip{ background: linear-gradient(180deg,#3b82f6,#60a5fa); }
-        .stat-card[data-accent="green"] .accent-strip{ background: linear-gradient(180deg,#10b981,#34d399); }
-        .stat-card[data-accent="red"] .accent-strip{ background: linear-gradient(180deg,#ef4444,#f97373); }
-        .stat-card[data-accent="purple"] .accent-strip{ background: linear-gradient(180deg,#8b5cf6,#a78bfa); }
-
-        .stat-icon{ width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; color:rgba(0,0,0,0.75); background:linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6)); box-shadow: 0 6px 18px rgba(2,6,23,0.04); transition: transform 260ms cubic-bezier(.2,.9,.2,1), box-shadow 260ms ease; }
-        .stat-icon svg{ display:block; width:20px; height:20px; color:inherit; }
-
-        /* small pop for the icon when value animates */
-        .icon-pop{ animation: iconPop 560ms cubic-bezier(.2,.9,.2,1) forwards; }
-        @keyframes iconPop { 0%{ transform: translateY(0) scale(1); } 50%{ transform: translateY(-6px) scale(1.12);} 100%{ transform: translateY(0) scale(1); } }
-
         @keyframes popIn {
             0% { opacity: 0; transform: translateY(12px) scale(0.98); }
             60% { opacity: 1; transform: translateY(-6px) scale(1.02); }
             100% { opacity: 1; transform: translateY(0) scale(1); }
         }
+        @keyframes iconPop { 0%{ transform: translateY(0) scale(1); } 50%{ transform: translateY(-6px) scale(1.12);} 100%{ transform: translateY(0) scale(1); } }
+        .icon-pop{ animation: iconPop 560ms cubic-bezier(.2,.9,.2,1) forwards; }
         /* Floating widget visuals */
         #floating-widget .fw-header { -webkit-user-select:none; -moz-user-select:none; user-select:none; }
         #floating-widget .fw-header .fw-title { cursor:move }

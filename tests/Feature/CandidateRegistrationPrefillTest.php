@@ -103,7 +103,7 @@ class CandidateRegistrationPrefillTest extends TestCase
             ->assertSee('id="credential" type="text" placeholder="Scan QR or type student number/email" value="20250001" readonly', false);
     }
 
-    public function test_candidate_registration_shows_pending_voter_verification_indicator(): void
+    public function test_candidate_registration_does_not_show_candidate_pending_notice_for_voter_verification_only(): void
     {
         $user = User::query()->create([
             'name' => 'Test Student',
@@ -116,8 +116,10 @@ class CandidateRegistrationPrefillTest extends TestCase
         $this->actingAs($user)
             ->get('/candidate/register')
             ->assertOk()
-            ->assertSee('Pending Candidate Application')
-            ->assertSee('awaiting administrator review');
+            ->assertDontSee('Pending Candidate Application')
+            ->assertDontSee('Your candidate application has been submitted')
+            ->assertSee('name="position_id"', false)
+            ->assertSee('name="course_id"', false);
     }
 
     public function test_candidate_registration_hides_general_notice_when_application_is_already_pending(): void
@@ -140,7 +142,9 @@ class CandidateRegistrationPrefillTest extends TestCase
             ->get('/candidate/register')
             ->assertOk()
             ->assertDontSee('You have already submitted your application.')
-            ->assertDontSee('After submitting your application, it will be reviewed by the admin');
+            ->assertDontSee('After submitting your application, it will be reviewed by the admin')
+            ->assertSee('Pending Candidate Application')
+            ->assertSee('Your candidate application has been submitted and is awaiting administrator review.');
     }
 
     public function test_candidate_registration_hides_pending_indicator_for_verified_voter(): void
@@ -172,7 +176,11 @@ class CandidateRegistrationPrefillTest extends TestCase
             ->assertSee('id="success-modal"', false)
             ->assertSee('role="dialog"', false)
             ->assertSee('aria-modal="true"', false)
+            ->assertSee('id="success-inline-notice"', false)
+            ->assertSee('id="success-inline-notice" class="candidate-success-inline" role="status" tabindex="-1" hidden', false)
+            ->assertDontSee('Pending Candidate Application')
             ->assertSee('Application submitted')
+            ->assertSee('success-modal-icon', false)
             ->assertSee('What happens next?')
             ->assertSee('id="ok-success-modal"', false);
     }
@@ -316,13 +324,14 @@ class CandidateRegistrationPrefillTest extends TestCase
         $this->get('/candidate/register')
             ->assertOk()
             ->assertSee('id="candidate-error-toast"', false)
-            ->assertDontSee('Pending Voter Verification');
+            ->assertDontSee('Pending Candidate Application');
 
         $this->assertNotNull($user->fresh()->voter_verification_submitted_at);
 
         $this->get('/candidate/register')
             ->assertOk()
-            ->assertSee('Pending Candidate Application');
+            ->assertDontSee('Pending Candidate Application')
+            ->assertSee('name="position_id"', false);
     }
 
     public function test_authenticated_candidate_registration_uses_email_when_student_number_is_missing(): void

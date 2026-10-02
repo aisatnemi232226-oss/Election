@@ -224,6 +224,7 @@ img { max-width: 100%; }
 .avatar-dot { position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border: 2px solid var(--card); border-radius: 50%; }
 .avatar-dot.is-unverified { background: #dc2626; }
 .avatar-dot.is-verified { background: #22c55e; }
+.avatar-dot.is-pending { background: #eab308; }
 .account-trigger-copy { display: none; align-items: center; gap: 8px; }
 .account-short-name { max-width: 7rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .92rem; font-weight: 700; }
 .account-chevron { width: 16px; color: var(--mut); transition: transform .18s; }
@@ -232,6 +233,7 @@ img { max-width: 100%; }
 .status-badge .icon { width: 13px; height: 13px; stroke-width: 3; }
 .badge-ok { background: var(--ok-bg); color: var(--ok); }
 .badge-bad { background: var(--bad-bg); color: var(--bad); }
+.badge-pending { background: var(--wait-bg); color: var(--wait); }
 .account-menu { position: absolute; top: calc(100% + 10px); right: 0; z-index: 50; width: 330px; max-width: calc(100vw - 24px); overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--card); color: var(--ink); font-family: var(--font); font-size: .94rem; line-height: 1.5; box-shadow: 0 18px 44px rgba(15, 27, 51, .25); opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity .15s, transform .15s, visibility .15s; }
 .account-menu.is-open { opacity: 1; visibility: visible; transform: none; }
 .account-menu-head { padding: 20px 20px 16px; }
@@ -561,6 +563,7 @@ img { max-width: 100%; }
 
 .registration-options-grid { grid-template-columns: minmax(0, 1fr); }
 .registration-option { display: flex; min-height: 100%; flex-direction: column; align-items: center; text-align: center; transition: transform .18s, border-color .18s; }
+.registration-options-grid > .registration-option + .registration-option { margin-top: 0; }
 .registration-option:hover { transform: translateY(-3px); border-color: var(--brand); }
 .registration-option h2 { margin: 14px 0 6px; }
 .registration-option p { flex: 1; margin: 0 0 20px; color: var(--mut); }
@@ -602,13 +605,58 @@ img { max-width: 100%; }
 .otp-resend-form button.text-link:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
 .qr-account-card > .text-link { display: inline-block; margin-bottom: 12px; }
 .account-qr-status { margin: 10px 0 0; }
-.qr-account-grid { grid-template-columns: minmax(0, 1fr); margin-top: 20px; }
-.qr-account-item { display: flex; min-width: 0; flex-direction: column; align-items: center; text-align: center; }
-.qr-account-item h2 { margin: 0; }
-.qr-account-item p { color: var(--mut); }
-.qr-account-item form { width: 100%; margin-top: auto; padding-top: 12px; }
-.qr-display { width: 216px; min-height: 216px; display: grid; place-items: center; margin: 14px auto; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
-.qr-display img, .qr-display canvas { max-width: 100%; height: auto; }
+.page-content.auth-content.account-qr-page { width: min(1100px, calc(100% - 2 * clamp(16px, 4vw, 32px))); }
+.account-qr-page .page-intro { max-width: 760px; }
+.account-qr-page .qr-account-card { padding: clamp(20px, 3vw, 32px); }
+.account-qr-page .qr-account-card > .text-link {
+    display: inline-flex;
+    min-height: 42px;
+    align-items: center;
+    margin: 0 0 4px;
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--brand);
+    font-weight: 700;
+}
+.account-qr-page .qr-account-card > .text-link:hover { border-color: var(--brand); background: var(--tint); text-decoration: none; }
+.qr-account-grid { grid-template-columns: minmax(0, 1fr); gap: clamp(16px, 2.5vw, 24px); margin-top: 16px; }
+.qr-account-item {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: clamp(20px, 3vw, 30px);
+    overflow: hidden;
+    background: var(--card);
+    text-align: center;
+}
+.qr-account-item::before { position: absolute; inset: 0 0 auto; height: 4px; background: var(--brand); content: ""; }
+.qr-account-item:nth-child(2)::before { background: var(--ok); }
+.qr-account-item h2 { margin: 0; font-size: clamp(1.3rem, 2.5vw, 1.65rem); line-height: 1.25; }
+.qr-account-item p { max-width: 42ch; margin: 0 auto; color: var(--mut); line-height: 1.55; }
+.qr-account-item form { width: 100%; margin-top: auto; padding-top: 2px; }
+.qr-account-item .button { min-height: 52px; padding: 12px 16px; line-height: 1.35; white-space: normal; overflow-wrap: anywhere; }
+.qr-account-item .button-secondary { border: 1px solid var(--line); background: var(--card); color: var(--brand); }
+.qr-account-item .button-secondary:hover { border-color: var(--brand); background: var(--tint); }
+.qr-display {
+    width: min(100%, 240px);
+    aspect-ratio: 1;
+    min-height: 0;
+    display: grid;
+    place-items: center;
+    align-self: center;
+    margin: 2px auto;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(15, 27, 51, .07);
+}
+.qr-display img, .qr-display canvas { display: block; width: min(100%, 192px); max-width: 100%; height: auto; }
 .recovery-qr-reader { min-height: 260px; margin-top: 20px; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: #080c14; }
 .recovery-qr-reader video { width: 100%; }
 .recovery-scan-status { min-height: 48px; margin: 14px 0 0; color: var(--mut); }
@@ -617,7 +665,8 @@ img { max-width: 100%; }
 .registration-shell .text-center { text-align: center; }
 .registration-shell .text-left { text-align: left; }
 .registration-shell .grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
-.registration-shell .bg-white { padding: clamp(18px, 3vw, 26px); border: 1px solid var(--line); border-radius: 18px; background: var(--card) !important; color: var(--ink); box-shadow: var(--sh); }
+.registration-shell-registerElection .bg-white,
+.registration-shell-candidate-register .candidate-register-card { padding: clamp(18px, 3vw, 26px); border: 1px solid var(--line); border-radius: 18px; background: var(--card) !important; color: var(--ink); box-shadow: var(--sh); }
 .registration-shell .bg-blue-50, .registration-shell .bg-amber-50, .registration-shell .bg-green-50, .registration-shell .bg-red-50 { border: 1px solid var(--line); border-radius: 12px; background: var(--tint) !important; color: var(--ink) !important; }
 .registration-shell .text-gray-800, .registration-shell .text-gray-700, .registration-shell .text-slate-900, .registration-shell .text-blue-950 { color: var(--ink) !important; }
 .registration-shell .text-gray-600, .registration-shell .text-gray-500, .registration-shell .text-slate-600, .registration-shell .text-slate-400 { color: var(--mut) !important; }
@@ -697,4 +746,342 @@ img { max-width: 100%; }
     .party-overview { align-items: flex-start; flex-direction: column; }
     .party-logo-frame { width: 100%; height: 150px; }
     .party-roster-heading .button { width: 100%; }
+}
+
+.registration-shell-candidate-register { padding-block: clamp(24px, 5vw, 56px); }
+.registration-shell-candidate-register > .candidate-register-home-link {
+    min-height: 44px;
+    padding: 10px 16px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--card);
+    color: var(--brand);
+    box-shadow: var(--sh);
+}
+.registration-shell-candidate-register > .candidate-register-home-link:hover { border-color: var(--brand); background: var(--tint); color: var(--brand); }
+.candidate-register-intro { margin: clamp(24px, 4vw, 42px) auto clamp(24px, 4vw, 36px) !important; }
+.candidate-register-title { margin: 0; font-size: clamp(1.8rem, 4.2vw, 2.6rem) !important; line-height: 1.15; letter-spacing: -.03em; }
+.candidate-register-description { max-width: 60ch; margin: 12px auto 0; font-size: clamp(1rem, 1.8vw, 1.12rem); line-height: 1.55; }
+.registration-shell-candidate-register > section.my-8 { margin-block: 0; }
+.candidate-register-card {
+    width: min(100%, 920px);
+    max-width: 920px;
+    margin-inline: auto;
+    padding: clamp(20px, 4vw, 40px) !important;
+    border-top: 4px solid var(--brand) !important;
+    border-radius: 20px !important;
+}
+.candidate-register-card > .mb-4 { padding: 14px 16px; line-height: 1.5; }
+.candidate-register-card > .mb-4[role="status"] { border-color: var(--wait) !important; background: var(--wait-bg) !important; color: var(--wait) !important; }
+.candidate-register-card > .mb-4[role="status"] h3 { margin: 0; line-height: 1.3; }
+.candidate-register-card > .mb-4[role="status"] p { margin-bottom: 0; line-height: 1.5; }
+.candidate-register-card > .mb-4.bg-green-50 { border-color: var(--ok) !important; background: var(--ok-bg) !important; color: var(--ok) !important; }
+.candidate-register-card > .mb-4.bg-red-50 { border-color: var(--bad) !important; background: var(--bad-bg) !important; color: var(--bad) !important; }
+.candidate-registration-form { min-width: 0; }
+.candidate-registration-form .candidate-register-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 235px), 1fr));
+    align-items: start;
+    gap: clamp(14px, 2vw, 20px);
+}
+.candidate-registration-form .candidate-register-grid > div { min-width: 0; }
+.candidate-registration-form .candidate-register-identity-grid { margin-top: clamp(18px, 2.5vw, 24px); }
+.candidate-registration-form .candidate-register-upload-grid { margin-top: clamp(22px, 3vw, 30px); }
+.candidate-registration-form label { margin-bottom: 8px; font-size: .96rem; line-height: 1.4; }
+.candidate-registration-form input:not([type="hidden"]),
+.candidate-registration-form select,
+.candidate-registration-form textarea {
+    min-height: 50px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+}
+.candidate-registration-form select.candidate-register-select {
+    appearance: none;
+    padding-right: 44px;
+    background-color: var(--card);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='m5 7.5 5 5 5-5' stroke='%234a5873' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 18px;
+    line-height: 1.4;
+    cursor: pointer;
+}
+.candidate-registration-form select.candidate-register-select option { background: var(--card); color: var(--ink); }
+@supports not (appearance: base-select) {
+    :root[data-theme="dark"] .candidate-registration-form select.candidate-register-select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='m5 7.5 5 5 5-5' stroke='%23a5b3cd' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    }
+}
+@supports (appearance: base-select) {
+    .candidate-registration-form select.candidate-register-select,
+    .candidate-registration-form select.candidate-register-select::picker(select) {
+        appearance: base-select;
+    }
+    .candidate-registration-form select.candidate-register-select {
+        background-image: none;
+        padding: 10px 14px;
+        text-align: left;
+    }
+    .candidate-registration-form select.candidate-register-select::picker-icon {
+        margin-inline-start: 10px;
+        color: var(--brand);
+        transition: transform .18s ease;
+    }
+    .candidate-registration-form select.candidate-register-select:open::picker-icon { transform: rotate(180deg); }
+    .candidate-registration-form select.candidate-register-select::picker(select) {
+        max-block-size: min(22rem, calc(100vh - 2rem));
+        margin-block-start: 8px;
+        padding: 7px;
+        overflow-y: auto;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--card);
+        color: var(--ink);
+        box-shadow: 0 16px 36px rgba(15, 27, 51, .18), 0 2px 8px rgba(15, 27, 51, .08);
+    }
+    .candidate-registration-form select.candidate-register-select option {
+        min-block-size: 42px;
+        padding: 9px 12px;
+        border: 1px solid transparent;
+        border-radius: 9px;
+        background: var(--card);
+        color: var(--ink);
+        line-height: 1.4;
+        cursor: pointer;
+    }
+    .candidate-registration-form select.candidate-register-select option:hover,
+    .candidate-registration-form select.candidate-register-select option:focus {
+        background: var(--tint);
+        color: var(--brand);
+    }
+    .candidate-registration-form select.candidate-register-select option:checked {
+        border-color: color-mix(in srgb, var(--brand) 22%, var(--line));
+        background: var(--tint);
+        color: var(--brand);
+        font-weight: 700;
+    }
+    .candidate-registration-form select.candidate-register-select option::checkmark {
+        color: var(--brand);
+        font-weight: 800;
+    }
+    .candidate-registration-form select.candidate-register-select:focus-visible {
+        outline-offset: 3px;
+    }
+}
+.candidate-registration-form input:hover:not([readonly]),
+.candidate-registration-form select:hover,
+.candidate-registration-form textarea:hover { border-color: color-mix(in srgb, var(--brand) 55%, var(--line)); }
+.candidate-registration-form input:focus-visible,
+.candidate-registration-form select:focus-visible,
+.candidate-registration-form textarea:focus-visible {
+    border-color: var(--brand);
+    outline: 3px solid color-mix(in srgb, var(--brand) 24%, transparent);
+    outline-offset: 1px;
+    box-shadow: 0 0 0 1px var(--brand);
+}
+.candidate-registration-form input[readonly] { background: var(--bg); color: var(--mut); }
+.candidate-registration-form input[type="file"] {
+    min-height: 54px;
+    padding: 8px;
+    background: var(--bg);
+    font-size: .92rem;
+}
+.candidate-registration-form input[type="file"]::file-selector-button {
+    min-height: 36px;
+    margin-right: 10px;
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--brand);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+.candidate-registration-form input[type="file"]::file-selector-button:hover { border-color: var(--brand); background: var(--tint); }
+.candidate-registration-form textarea { min-height: 132px; line-height: 1.5; }
+.candidate-registration-form p.text-xs { margin: 7px 0 0; line-height: 1.45; }
+.candidate-register-credential .relative { min-width: 0; }
+.candidate-register-credential #credential { padding-right: 14px; }
+.candidate-register-credential #scan-qr-button:not(.hidden) {
+    right: 6px;
+    top: 6px;
+    bottom: 6px;
+    min-height: 0;
+    padding: 8px 14px;
+    border-radius: 9px;
+    background: var(--ok) !important;
+    color: var(--brand-contrast) !important;
+}
+.candidate-register-credential #scan-qr-button:not(.hidden):hover { filter: brightness(.94); }
+.candidate-register-actions { display: flex; justify-content: flex-end; margin-top: clamp(22px, 3vw, 30px) !important; }
+.candidate-register-submit {
+    min-width: min(100%, 220px);
+    min-height: 52px !important;
+    padding: 12px 22px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--brand) 22%, transparent);
+}
+.candidate-register-submit:hover { filter: brightness(.94); transform: translateY(-1px); }
+.registration-shell-candidate-register #qr-reader-container {
+    margin-top: 24px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+}
+.registration-shell-candidate-register #qr-reader-container > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.registration-shell-candidate-register #qr-reader { min-height: 0; overflow: hidden; }
+
+@media (max-width: 600px) {
+    .registration-shell-candidate-register { padding-block: 20px 32px; }
+    .candidate-register-home-link { width: fit-content; }
+    .candidate-register-intro { margin-block: 24px !important; text-align: left !important; }
+    .candidate-register-description { margin-inline: 0; }
+    .candidate-register-card { padding: 18px !important; border-radius: 16px !important; }
+    .candidate-registration-form .candidate-register-grid { grid-template-columns: minmax(0, 1fr); }
+    .candidate-register-actions { display: block; }
+    .candidate-register-submit { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .candidate-registration-form input:not([type="hidden"]),
+    .candidate-registration-form select,
+    .candidate-registration-form textarea,
+    .candidate-register-submit { transition: none; }
+}
+
+.candidate-success-inline {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 0;
+    padding: 16px;
+    border: 1px solid var(--ok);
+    border-radius: 14px;
+    background: var(--ok-bg);
+    color: var(--ok);
+    line-height: 1.5;
+}
+.candidate-success-inline[hidden] { display: none !important; }
+.candidate-success-inline-icon {
+    display: grid;
+    width: 26px;
+    height: 26px;
+    flex: none;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--ok);
+    color: var(--brand-contrast);
+}
+.candidate-success-inline-icon svg { width: 16px; height: 16px; }
+.registration-shell #success-modal:not(.hidden) {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: grid;
+    place-items: center;
+    overflow-y: auto;
+    padding: clamp(16px, 4vw, 32px);
+    background: rgba(7, 17, 36, .68);
+    backdrop-filter: blur(5px);
+}
+.success-modal-backdrop { position: absolute; inset: 0; }
+.success-modal-stage { position: relative; z-index: 1; width: 100%; margin: auto; }
+.success-modal-panel {
+    position: relative;
+    width: min(100%, 460px);
+    max-height: min(760px, calc(100dvh - 32px));
+    margin-inline: auto;
+    overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    background: var(--card);
+    color: var(--ink);
+    box-shadow: 0 28px 80px rgba(5, 13, 29, .32);
+}
+.success-modal-accent {
+    height: 5px;
+    background: linear-gradient(90deg, var(--ok), #14b8a6, var(--brand));
+}
+.success-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: grid;
+    width: 42px;
+    height: 42px;
+    min-height: 42px !important;
+    place-items: center;
+    padding: 0 !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 50% !important;
+    background: var(--bg) !important;
+    color: var(--mut) !important;
+}
+.success-modal-close:hover { border-color: var(--brand) !important; background: var(--tint) !important; color: var(--brand) !important; }
+.success-modal-close svg { width: 19px; height: 19px; }
+.success-modal-content { padding: clamp(28px, 6vw, 42px) clamp(22px, 6vw, 36px) 26px; text-align: center; }
+.success-modal-icon {
+    display: grid;
+    width: 68px;
+    height: 68px;
+    margin: 4px auto 20px;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--ok) 30%, var(--line));
+    border-radius: 22px;
+    background: var(--ok-bg);
+    color: var(--ok);
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--ok-bg) 55%, transparent);
+}
+.success-modal-icon svg { width: 34px; height: 34px; }
+.success-modal-eyebrow { margin: 0 0 8px; color: var(--ok); font-size: .76rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.success-modal-panel h2 { margin: 0; font-size: clamp(1.6rem, 5vw, 2rem); line-height: 1.2; letter-spacing: -.025em; }
+.success-modal-description { max-width: 37ch; margin: 12px auto 0; color: var(--mut); font-size: .98rem; line-height: 1.6; }
+.success-modal-next {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 24px;
+    padding: 15px;
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    background: var(--bg);
+    text-align: left;
+}
+.success-modal-next-icon {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    flex: none;
+    place-items: center;
+    border-radius: 10px;
+    background: var(--tint);
+    color: var(--brand);
+}
+.success-modal-next-icon svg { width: 19px; height: 19px; }
+.success-modal-next p { display: grid; gap: 3px; margin: 0; color: var(--mut); font-size: .9rem; line-height: 1.5; }
+.success-modal-next strong { color: var(--ink); font-size: .94rem; }
+.success-modal-footer { padding: 18px clamp(22px, 6vw, 36px) 24px; border-top: 1px solid var(--line); background: var(--bg); }
+.success-modal-confirm {
+    width: 100%;
+    min-height: 50px !important;
+    border: 1px solid var(--brand) !important;
+    border-radius: 12px !important;
+    background: var(--brand) !important;
+    color: var(--brand-contrast) !important;
+    font-weight: 800 !important;
+}
+.success-modal-confirm:hover { border-color: var(--brand-d) !important; background: var(--brand-d) !important; }
+.success-modal-overlay :focus-visible { outline-offset: 3px; }
+
+@media (max-width: 480px) {
+    .registration-shell #success-modal:not(.hidden) { padding: 12px; }
+    .success-modal-panel { max-height: calc(100dvh - 24px); border-radius: 19px; }
+    .success-modal-content { padding-top: 30px; }
+    .success-modal-close { top: 12px; right: 12px; width: 38px; height: 38px; min-height: 38px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .success-modal-overlay *, .success-modal-overlay *::before, .success-modal-overlay *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }

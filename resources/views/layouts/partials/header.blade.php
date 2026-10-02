@@ -1,7 +1,13 @@
 @php
     $headerUser = Auth::user();
     $isVerifiedStudent = $headerUser && !$headerUser->is_admin && $headerUser->isVerifiedVoter();
-    $verificationPending = $headerUser && $headerUser->voter_verification_submitted_at !== null;
+    $verificationPending = $headerUser
+        && !$headerUser->is_admin
+        && !$isVerifiedStudent
+        && $headerUser->voter_verification_submitted_at !== null;
+    $verificationBadgeClass = $isVerifiedStudent ? 'badge-ok' : ($verificationPending ? 'badge-pending' : 'badge-bad');
+    $verificationBadgeLabel = $isVerifiedStudent ? 'Verified' : ($verificationPending ? 'Pending' : 'Not verified');
+    $verificationBadgeIcon = $isVerifiedStudent ? '#pcu-ok' : ($verificationPending ? '#pcu-clock' : '#pcu-x');
     $headerName = $headerUser
         ? ($headerUser->first_name ?: \Illuminate\Support\Str::before((string) $headerUser->name, ' ') ?: 'Profile')
         : null;
@@ -25,6 +31,7 @@
     <symbol id="pcu-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
     <symbol id="pcu-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></symbol>
     <symbol id="pcu-ok" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="pcu-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
 </svg>
 
 <header class="site-header">
@@ -55,15 +62,15 @@
                             <span class="avatar">
                                 <svg class="icon" aria-hidden="true"><use href="#pcu-user"/></svg>
                                 @unless($headerUser->is_admin)
-                                    <span class="avatar-dot {{ $isVerifiedStudent ? 'is-verified' : 'is-unverified' }}" aria-hidden="true"></span>
+                                    <span class="avatar-dot {{ $isVerifiedStudent ? 'is-verified' : ($verificationPending ? 'is-pending' : 'is-unverified') }}" aria-hidden="true"></span>
                                 @endunless
                             </span>
                             <span class="account-trigger-copy">
                                 <span class="account-short-name">{{ $headerName }}</span>
                                 @unless($headerUser->is_admin)
-                                    <span role="status" class="status-badge {{ $isVerifiedStudent ? 'badge-ok' : 'badge-bad' }}">
-                                        <svg class="icon" aria-hidden="true"><use href="{{ $isVerifiedStudent ? '#pcu-ok' : '#pcu-x' }}"/></svg>
-                                        {{ $isVerifiedStudent ? 'Verified' : 'Not verified' }}
+                                    <span role="status" class="status-badge {{ $verificationBadgeClass }}">
+                                        <svg class="icon" aria-hidden="true"><use href="{{ $verificationBadgeIcon }}"/></svg>
+                                        {{ $verificationBadgeLabel }}
                                     </span>
                                 @endunless
                             </span>
@@ -81,9 +88,9 @@
                                 @unless($headerUser->is_admin)
                                     <div class="account-meta">
                                         <span>Student No: <b>{{ $headerUser->idnumber }}</b></span>
-                                        <span role="status" class="status-badge {{ $isVerifiedStudent ? 'badge-ok' : 'badge-bad' }}">
-                                            <svg class="icon" aria-hidden="true"><use href="{{ $isVerifiedStudent ? '#pcu-ok' : '#pcu-x' }}"/></svg>
-                                            {{ $isVerifiedStudent ? 'Verified' : 'Not verified' }}
+                                        <span role="status" class="status-badge {{ $verificationBadgeClass }}">
+                                            <svg class="icon" aria-hidden="true"><use href="{{ $verificationBadgeIcon }}"/></svg>
+                                            {{ $verificationBadgeLabel }}
                                         </span>
                                     </div>
                                 @endunless
@@ -134,9 +141,9 @@
                         <small>{{ $headerUser->email }}</small>
                         @unless($headerUser->is_admin)
                             <small>Student No: {{ $headerUser->idnumber }}</small>
-                            <span role="status" class="status-badge {{ $isVerifiedStudent ? 'badge-ok' : 'badge-bad' }}">
-                                <svg class="icon" aria-hidden="true"><use href="{{ $isVerifiedStudent ? '#pcu-ok' : '#pcu-x' }}"/></svg>
-                                {{ $isVerifiedStudent ? 'Verified' : 'Not verified' }}
+                            <span role="status" class="status-badge {{ $verificationBadgeClass }}">
+                                <svg class="icon" aria-hidden="true"><use href="{{ $verificationBadgeIcon }}"/></svg>
+                                {{ $verificationBadgeLabel }}
                             </span>
                             @if(!$isVerifiedStudent)
                                 <span class="mobile-verification-note {{ $verificationPending ? 'note-pending' : 'note-unverified' }}">

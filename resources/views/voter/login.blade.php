@@ -22,12 +22,18 @@
         </header>
 
         @if ($errors->any())
-            <div class="auth-alert" role="alert">
+            <div id="login-error-toast" class="auth-alert auth-login-toast" popover="manual" role="alert" aria-live="assertive" aria-atomic="true">
+                <span class="auth-login-toast-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 8v5m0 3h.01M10.3 3.9 2.9 17.1A2 2 0 0 0 4.7 20h14.6a2 2 0 0 0 1.8-2.9L13.7 3.9a2 2 0 0 0-3.4 0Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
                 <ul>
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
                 </ul>
+                <button type="button" class="auth-login-toast-close" id="dismiss-login-error" aria-label="Dismiss error notification">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
             </div>
         @endif
 
@@ -79,6 +85,33 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@if ($errors->any())
+    <script>
+        (() => {
+            const toast = document.getElementById('login-error-toast');
+            const dismissButton = document.getElementById('dismiss-login-error');
+            if (!toast) return;
+
+            let dismissTimer;
+            const dismiss = () => {
+                window.clearTimeout(dismissTimer);
+                if (typeof toast.hidePopover === 'function' && toast.matches(':popover-open')) {
+                    toast.hidePopover();
+                } else {
+                    toast.classList.remove('is-visible');
+                }
+            };
+
+            dismissButton?.addEventListener('click', dismiss);
+            if (typeof toast.showPopover === 'function') {
+                toast.showPopover();
+            } else {
+                toast.classList.add('is-visible');
+            }
+            dismissTimer = window.setTimeout(dismiss, 5000);
+        })();
+    </script>
+@endif
 <script>
     (() => {
         function loadScript(src, onload, onerror) {

@@ -118,6 +118,26 @@ class VoterRegistrationTest extends TestCase
         ])->assertRedirect(route('login'));
     }
 
+    public function test_submitted_voter_application_uses_pending_status_badge(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Pending Student',
+            'email' => 'pending@pcu.edu.ph',
+            'password' => 'student-password',
+            'idnumber' => '20260001',
+        ]);
+        $user->voter_verification_submitted_at = now();
+        $user->save();
+
+        $this->actingAs($user)
+            ->get('/register/verify')
+            ->assertOk()
+            ->assertSee('class="status-badge badge-pending"', false)
+            ->assertSee('Pending')
+            ->assertSee('note-pending', false)
+            ->assertSee('View application');
+    }
+
     public function test_account_registration_rejects_email_addresses_outside_the_pcu_domain(): void
     {
         $this->from('/register')

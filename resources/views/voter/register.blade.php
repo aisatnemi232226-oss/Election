@@ -20,13 +20,17 @@
                 document.head.appendChild(s);
             }
 
-            loadScript(
-                'https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js',
-                function () {},
-                function () {
-                    loadScript('https://cdn.jsdelivr.net/npm/html5-qrcode/minified/html5-qrcode.min.js');
-                }
-            );
+            document.addEventListener('DOMContentLoaded', function () {
+                if (!document.getElementById('scan-qr-button')) return;
+
+                loadScript(
+                    'https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js',
+                    function () {},
+                    function () {
+                        loadScript('https://cdn.jsdelivr.net/npm/html5-qrcode/minified/html5-qrcode.min.js');
+                    }
+                );
+            });
         })();
     </script>
     <section class="auth-card wide" aria-labelledby="verification-title">
@@ -344,7 +348,7 @@
         }
     });
 
-    document.getElementById('scan-qr-button').addEventListener('click', async function() {
+    document.getElementById('scan-qr-button')?.addEventListener('click', async function() {
         if (typeof Html5Qrcode === 'undefined') {
             alert('QR scanner failed to load. Please refresh the page or check your internet connection.');
             return;

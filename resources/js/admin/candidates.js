@@ -87,11 +87,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const container = document.getElementById('candidate-status-filters');
             if (!container) return;
 
+            const updatePressedState = (selectedStatus) => {
+                container.querySelectorAll('[data-status-filter]').forEach((button) => {
+                    button.setAttribute(
+                        'aria-pressed',
+                        String(button.getAttribute('data-status-filter') === selectedStatus)
+                    );
+                });
+            };
+
+            updatePressedState(this.filters.status);
             container.addEventListener('click', (e) => {
                 const btn = e.target.closest('[data-status-filter]');
                 if (!btn) return;
                 const status = btn.getAttribute('data-status-filter') || '';
                 this.filters.status = status;
+                updatePressedState(status);
                 this.syncFilterQuery();
                 this.loadCandidates(1);
             });

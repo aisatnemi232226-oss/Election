@@ -397,6 +397,149 @@
     box-shadow: var(--sh);
 }
 
+.admin-theme main .dashboard-stats .stat-card {
+    --stat-accent: var(--brand);
+    position: relative;
+    display: block;
+    min-width: 0;
+    min-height: 188px;
+    padding: 24px 24px 22px 30px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--card) !important;
+    box-shadow: var(--sh);
+    opacity: 0;
+    text-decoration: none;
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+.admin-theme main .dashboard-stats .stat-card[data-accent="green"] {
+    --stat-accent: var(--ok);
+}
+
+.admin-theme main .dashboard-stats .stat-card[data-accent="red"] {
+    --stat-accent: var(--bad);
+}
+
+.admin-theme main .dashboard-stats .stat-card[data-accent="purple"] {
+    --stat-accent: #7c3aed;
+}
+
+.admin-theme main .dashboard-stats .stat-card:hover {
+    transform: translateY(-4px);
+    border-color: color-mix(in srgb, var(--stat-accent) 36%, var(--line));
+    box-shadow: 0 16px 34px rgba(15, 27, 51, .13);
+}
+
+.admin-theme main .dashboard-stats .stat-card:focus-visible {
+    outline: 3px solid var(--stat-accent);
+    outline-offset: 3px;
+}
+
+.admin-theme main .dashboard-stats .accent-strip {
+    position: absolute;
+    inset: 16px auto 16px 0;
+    width: 5px;
+    border-radius: 0 5px 5px 0;
+    background: var(--stat-accent);
+}
+
+.admin-theme main .dashboard-stats .stat-card-content {
+    display: flex;
+    min-height: 140px;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.admin-theme main .dashboard-stats .stat-card-heading {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.admin-theme main .dashboard-stats .stat-label {
+    margin: 0;
+    color: var(--ink);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.admin-theme main .dashboard-stats .stat-description {
+    margin-top: 5px;
+    color: var(--mut);
+    font-size: .84rem;
+    line-height: 1.4;
+}
+
+.admin-theme main .dashboard-stats .stat-icon {
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid color-mix(in srgb, var(--stat-accent) 16%, transparent);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--stat-accent) 10%, var(--card));
+    color: var(--stat-accent);
+    transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.admin-theme main .dashboard-stats .stat-icon svg {
+    display: block;
+    width: 21px;
+    height: 21px;
+}
+
+.admin-theme main .dashboard-stats .stat-card:hover .stat-icon {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px color-mix(in srgb, var(--stat-accent) 16%, transparent);
+}
+
+.admin-theme main .dashboard-stats .stat-value {
+    display: block;
+    min-width: 0;
+    margin: 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    color: var(--stat-accent);
+    font-size: clamp(2rem, 3vw, 2.5rem);
+    font-weight: 800;
+    line-height: 1;
+    text-align: left;
+    transform-origin: left center;
+    overflow-wrap: anywhere;
+}
+
+:root[data-theme="dark"] .admin-theme main .dashboard-stats .stat-card[data-accent="purple"] {
+    --stat-accent: #c4b5fd;
+}
+
+.admin-theme main .dashboard-stats .stat-card[data-accent="blue"] .stat-value,
+.admin-theme main .dashboard-stats .stat-card[data-accent="green"] .stat-value,
+.admin-theme main .dashboard-stats .stat-card[data-accent="red"] .stat-value,
+.admin-theme main .dashboard-stats .stat-card[data-accent="purple"] .stat-value {
+    color: var(--stat-accent);
+}
+
+.admin-theme main #candidate-status-filters [aria-pressed="true"] {
+    border-color: var(--brand) !important;
+    background-color: var(--brand) !important;
+    color: var(--brand-contrast) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 22%, transparent);
+}
+
+.admin-theme main #candidate-status-filters button:focus-visible {
+    outline: 3px solid var(--brand);
+    outline-offset: 2px;
+}
+
 .admin-theme > div[aria-hidden="true"] {
     opacity: .08 !important;
 }
