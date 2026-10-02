@@ -278,15 +278,40 @@ Route::middleware('auth')->group(function () {
 // =======================
 // 🌍 Public Voter Pages
 // =======================
-Route::get('/', function () {
+$candidateTallyQuery = static function () {
+    $candidateVotes = \Illuminate\Support\Facades\DB::table('position_votes')
+        ->select('candidate_id', 'position_id', \Illuminate\Support\Facades\DB::raw('COUNT(*) as votes_count'))
+        ->groupBy('candidate_id', 'position_id');
+    $positionVoteTotals = \Illuminate\Support\Facades\DB::table('position_votes')
+        ->select('position_id', \Illuminate\Support\Facades\DB::raw('COUNT(*) as position_votes_total'))
+        ->groupBy('position_id');
+
+    return \App\Models\Candidate::query()
+        ->leftJoinSub($candidateVotes, 'candidate_tallies', function ($join) {
+            $join->on('candidate.id', '=', 'candidate_tallies.candidate_id')
+                ->on('candidate.position_id', '=', 'candidate_tallies.position_id');
+        })
+        ->leftJoinSub($positionVoteTotals, 'position_tallies', function ($join) {
+            $join->on('candidate.position_id', '=', 'position_tallies.position_id');
+        })
+        ->select('candidate.*')
+        ->addSelect(
+            \Illuminate\Support\Facades\DB::raw('COALESCE(candidate_tallies.votes_count, 0) as votes_count'),
+            \Illuminate\Support\Facades\DB::raw('COALESCE(position_tallies.position_votes_total, 0) as position_votes_total')
+        )
+        ->where('candidate.status', 'Active')
+        ->whereNotNull('candidate.position_id')
+        ->orderByDesc('votes_count')
+        ->orderBy('candidate.name');
+};
+
+Route::get('/', function () use ($candidateTallyQuery) {
     $elections = \App\Models\Election::query()
         ->orderByDesc('created_at')
         ->get();
 
-    $candidates = \App\Models\Candidate::query()
+    $candidates = $candidateTallyQuery()
         ->with(['course', 'party', 'position'])
-        ->where('status', 'Active')
-        ->orderByDesc('created_at')
         ->get();
 
     $eventSettings = null;
@@ -296,6 +321,18 @@ Route::get('/', function () {
 
     return view('voter.home', compact('elections', 'candidates', 'eventSettings'));
 })->name('home');
+
+Route::get('/candidate-tallies', function () use ($candidateTallyQuery) {
+    $candidates = $candidateTallyQuery()->get();
+
+    return response()->json([
+        'candidates' => $candidates->map(fn ($candidate) => [
+            'id' => (int) $candidate->id,
+            'votes_count' => (int) $candidate->votes_count,
+            'position_votes_total' => (int) $candidate->position_votes_total,
+        ])->values(),
+    ])->header('Cache-Control', 'no-store, private');
+})->name('candidate.tallies');
 
 Route::post('/chatbot', [ChatbotController::class, 'respond'])->name('chatbot.respond');
 

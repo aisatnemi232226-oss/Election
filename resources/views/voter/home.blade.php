@@ -5,6 +5,405 @@
 
 @push('styles')
 <style>
+    body.voter-home-page .candidate-showcase {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        padding-block: clamp(28px, 4.5vw, 52px);
+        background:
+            radial-gradient(ellipse at 0% 100%, rgba(67, 119, 230, .24), transparent 44%),
+            linear-gradient(135deg, #07162f, #102b58 58%, #173a73);
+        color: #f7faff;
+    }
+
+    body.voter-home-page .candidate-showcase::before,
+    body.voter-home-page .candidate-showcase::after {
+        position: absolute;
+        z-index: -1;
+        border: 1px solid rgba(255, 255, 255, .08);
+        border-radius: 50%;
+        content: "";
+        pointer-events: none;
+    }
+
+    body.voter-home-page .candidate-showcase::before {
+        top: -17rem;
+        right: -9rem;
+        width: 38rem;
+        aspect-ratio: 1;
+        box-shadow: 0 0 0 3rem rgba(255, 255, 255, .025), 0 0 0 6rem rgba(255, 255, 255, .018);
+    }
+
+    body.voter-home-page .candidate-showcase::after {
+        bottom: -20rem;
+        left: 16%;
+        width: 30rem;
+        aspect-ratio: 1;
+        border-color: rgba(255, 255, 255, .045);
+    }
+
+    body.voter-home-page .candidate-showcase-inner {
+        width: min(1180px, 100% - 2 * clamp(20px, 5vw, 44px));
+    }
+
+    body.voter-home-page .candidate-showcase-heading {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    body.voter-home-page .candidate-showcase-kicker {
+        margin: 0 0 7px;
+        color: #a9c8ff;
+        font-size: .74rem;
+        font-weight: 800;
+        letter-spacing: .15em;
+    }
+
+    body.voter-home-page .candidate-showcase-heading h1 {
+        margin: 0;
+        color: #fff;
+        font-size: clamp(1.65rem, 3.4vw, 2.45rem);
+        letter-spacing: -.04em;
+        line-height: 1.15;
+        text-wrap: balance;
+    }
+
+    body.voter-home-page .candidate-showcase-heading p:not(.candidate-showcase-kicker) {
+        max-width: 58ch;
+        margin: 9px 0 0;
+        color: rgba(235, 242, 255, .76);
+        font-size: .97rem;
+    }
+
+    body.voter-home-page .candidate-live-badge {
+        display: inline-flex;
+        flex: none;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 13px;
+        border: 1px solid rgba(255, 255, 255, .2);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .08);
+        color: #e7f0ff;
+        font-size: .79rem;
+        font-weight: 700;
+        backdrop-filter: blur(10px);
+    }
+
+    body.voter-home-page .candidate-live-badge::before {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #6ee7a0;
+        box-shadow: 0 0 0 4px rgba(110, 231, 160, .13);
+        content: "";
+    }
+
+    body.voter-home-page .candidate-carousel-stage {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, .19);
+        border-radius: 28px;
+        background: #0b1a35;
+        box-shadow: 0 24px 60px rgba(0, 7, 22, .32), inset 0 1px rgba(255, 255, 255, .1);
+    }
+
+    body.voter-home-page .candidate-carousel-stage:focus-visible {
+        outline-color: #b9d2ff;
+        outline-offset: 5px;
+    }
+
+    body.voter-home-page .candidate-slide {
+        position: relative;
+        isolation: isolate;
+        display: grid;
+        min-height: clamp(390px, 42vw, 500px);
+        grid-template-columns: minmax(0, 1.1fr) minmax(230px, .9fr);
+        align-items: center;
+        gap: clamp(20px, 5vw, 64px);
+        overflow: hidden;
+        padding: clamp(28px, 6vw, 68px);
+        animation: candidate-slide-in .72s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.voter-home-page .candidate-slide[hidden] {
+        display: none;
+    }
+
+    body.voter-home-page .candidate-slide::before,
+    body.voter-home-page .candidate-slide::after {
+        position: absolute;
+        z-index: -1;
+        inset: 0;
+        content: "";
+        pointer-events: none;
+    }
+
+    body.voter-home-page .candidate-slide::before {
+        background: linear-gradient(100deg, rgba(5, 16, 37, .96) 0%, rgba(5, 18, 42, .88) 48%, rgba(5, 18, 42, .52) 100%);
+    }
+
+    body.voter-home-page .candidate-slide::after {
+        background: radial-gradient(ellipse at 78% 50%, rgba(84, 139, 255, .22), transparent 40%);
+    }
+
+    body.voter-home-page .candidate-slide-backdrop {
+        position: absolute;
+        z-index: -2;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: .34;
+        filter: saturate(.8);
+        animation: candidate-backdrop-in 1.1s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.voter-home-page .candidate-slide-copy {
+        min-width: 0;
+    }
+
+    body.voter-home-page .candidate-slide-overline {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        color: #bdd4ff;
+        font-size: .76rem;
+        font-weight: 800;
+        letter-spacing: .13em;
+        text-transform: uppercase;
+        animation: candidate-copy-in .55s .08s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.voter-home-page .candidate-slide-overline::before {
+        width: 22px;
+        height: 2px;
+        background: #8bb3ff;
+        content: "";
+    }
+
+    body.voter-home-page .candidate-slide-position {
+        display: block;
+        margin-bottom: 7px;
+        color: #fff;
+        font-size: clamp(1rem, 1.7vw, 1.2rem);
+        font-weight: 700;
+        animation: candidate-copy-in .58s .14s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.voter-home-page .candidate-slide h3 {
+        max-width: 16ch;
+        margin: 0;
+        color: #fff;
+        font-size: clamp(2rem, 5.2vw, 3.8rem);
+        letter-spacing: -.05em;
+        line-height: 1.02;
+        overflow-wrap: anywhere;
+        text-wrap: balance;
+        animation: candidate-copy-in .62s .2s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.voter-home-page .candidate-vote-share {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        margin-top: clamp(26px, 4vw, 38px);
+        color: rgba(235, 242, 255, .82);
+        font-size: .9rem;
+        font-weight: 650;
+    }
+
+    body.voter-home-page .candidate-vote-share strong {
+        color: #fff;
+        font-size: clamp(1.8rem, 4vw, 2.55rem);
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -.04em;
+        line-height: 1;
+        animation: candidate-number-in .62s .3s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.voter-home-page .candidate-vote-track {
+        height: 10px;
+        overflow: hidden;
+        margin-top: 13px;
+        border: 1px solid rgba(255, 255, 255, .15);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .12);
+    }
+
+    body.voter-home-page .candidate-vote-fill {
+        display: block;
+        width: var(--vote-share, 0%);
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #5f99ff, #a8d2ff);
+        box-shadow: 0 0 18px rgba(101, 157, 255, .45);
+        transition: width .7s cubic-bezier(.2, .75, .25, 1);
+        animation: candidate-progress-in .8s .32s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.voter-home-page .candidate-vote-note {
+        margin: 10px 0 0;
+        color: rgba(235, 242, 255, .65);
+        font-size: .83rem;
+        animation: candidate-copy-in .58s .36s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.voter-home-page .candidate-slide-portrait {
+        position: relative;
+        display: grid;
+        min-width: 0;
+        min-height: 300px;
+        place-items: center;
+    }
+
+    body.voter-home-page .candidate-slide-portrait::before {
+        position: absolute;
+        width: min(100%, 340px);
+        aspect-ratio: 1;
+        border: 1px solid rgba(255, 255, 255, .2);
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(111, 160, 255, .2), rgba(255, 255, 255, .025) 66%, transparent 67%);
+        box-shadow: 0 0 0 22px rgba(255, 255, 255, .025), 0 0 0 46px rgba(255, 255, 255, .018);
+        content: "";
+    }
+
+    body.voter-home-page .candidate-slide-portrait img {
+        position: relative;
+        width: clamp(210px, 25vw, 310px);
+        aspect-ratio: 1;
+        border: 8px solid rgba(255, 255, 255, .88);
+        border-radius: 50%;
+        background: #eaf1ff;
+        box-shadow: 0 24px 50px rgba(0, 6, 22, .38), 0 0 0 1px rgba(255, 255, 255, .2);
+        object-fit: cover;
+        animation: candidate-portrait-in .7s .08s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.voter-home-page .candidate-carousel-controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-top: 17px;
+    }
+
+    body.voter-home-page .candidate-carousel-controls[hidden] {
+        display: none;
+    }
+
+    body.voter-home-page .candidate-carousel-actions,
+    body.voter-home-page .candidate-carousel-pagination {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    body.voter-home-page .candidate-carousel-button {
+        display: inline-flex;
+        min-width: 42px;
+        min-height: 42px;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 12px;
+        border: 1px solid rgba(255, 255, 255, .24);
+        border-radius: 13px;
+        background: rgba(255, 255, 255, .08);
+        color: #f7faff;
+        font: inherit;
+        font-size: .82rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform .18s ease, background-color .18s ease, border-color .18s ease;
+    }
+
+    body.voter-home-page .candidate-carousel-button:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, .5);
+        background: rgba(255, 255, 255, .15);
+    }
+
+    body.voter-home-page .candidate-carousel-button svg {
+        width: 17px;
+        height: 17px;
+        fill: none;
+        stroke: currentColor;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 2;
+    }
+
+    body.voter-home-page .candidate-carousel-dot {
+        width: 9px;
+        height: 9px;
+        padding: 0;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .38);
+        cursor: pointer;
+        transition: width .2s ease, background-color .2s ease;
+    }
+
+    body.voter-home-page .candidate-carousel-dot[aria-current="true"] {
+        width: 25px;
+        background: #a8c9ff;
+    }
+
+    body.voter-home-page .candidate-carousel-empty {
+        padding: clamp(26px, 5vw, 44px);
+        border: 1px dashed rgba(255, 255, 255, .3);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, .07);
+        color: rgba(235, 242, 255, .82);
+        text-align: center;
+    }
+
+    body.voter-home-page .candidate-carousel-empty h3 {
+        margin: 0 0 7px;
+        color: #fff;
+        font-size: 1.25rem;
+    }
+
+    body.voter-home-page .candidate-carousel-empty p {
+        margin: 0;
+    }
+
+    @keyframes candidate-slide-in {
+        from { opacity: 0; filter: blur(4px); transform: translate3d(34px, 0, 0) scale(.985); }
+        to { opacity: 1; filter: blur(0); transform: translate3d(0, 0, 0) scale(1); }
+    }
+
+    @keyframes candidate-backdrop-in {
+        from { transform: scale(1.08); }
+        to { transform: scale(1); }
+    }
+
+    @keyframes candidate-copy-in {
+        from { opacity: 0; transform: translate3d(0, 14px, 0); }
+        to { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+
+    @keyframes candidate-number-in {
+        from { opacity: 0; transform: translate3d(0, 12px, 0) scale(.92); }
+        to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+    }
+
+    @keyframes candidate-progress-in {
+        from { transform: scaleX(.05); transform-origin: left center; }
+        to { transform: scaleX(1); transform-origin: left center; }
+    }
+
+    @keyframes candidate-portrait-in {
+        from { opacity: .65; transform: scale(.96); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
     body.voter-home-page .hero {
         position: relative;
         isolation: isolate;
@@ -71,7 +470,7 @@
         color: #e2e8f0;
     }
 
-    body.voter-home-page .hero h1 {
+    body.voter-home-page .hero h2 {
         max-width: 13ch;
         margin-top: 22px;
         color: #fff;
@@ -351,12 +750,75 @@
     }
 
     @media (max-width: 639px) {
+        body.voter-home-page .candidate-showcase-heading {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        body.voter-home-page .candidate-live-badge {
+            font-size: .75rem;
+        }
+
+        body.voter-home-page .candidate-carousel-stage {
+            border-radius: 22px;
+        }
+
+        body.voter-home-page .candidate-slide {
+            min-height: 0;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 18px;
+            padding: 28px 22px 24px;
+        }
+
+        body.voter-home-page .candidate-slide-copy {
+            order: 2;
+        }
+
+        body.voter-home-page .candidate-slide-portrait {
+            min-height: 0;
+            order: 1;
+            padding: 12px 0 4px;
+        }
+
+        body.voter-home-page .candidate-slide-portrait::before {
+            width: min(70vw, 250px);
+        }
+
+        body.voter-home-page .candidate-slide-portrait img {
+            width: clamp(150px, 45vw, 220px);
+            border-width: 6px;
+        }
+
+        body.voter-home-page .candidate-slide h3 {
+            max-width: 100%;
+            font-size: clamp(2rem, 10vw, 3rem);
+        }
+
+        body.voter-home-page .candidate-vote-share {
+            margin-top: 24px;
+        }
+
+        body.voter-home-page .candidate-carousel-controls {
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        body.voter-home-page .candidate-carousel-actions {
+            order: 2;
+            width: 100%;
+        }
+
+        body.voter-home-page .candidate-carousel-pagination {
+            min-height: 42px;
+            margin-inline: auto;
+        }
+
         body.voter-home-page .hero-inner {
             gap: 30px;
             padding-block: 44px 50px;
         }
 
-        body.voter-home-page .hero h1 {
+        body.voter-home-page .hero h2 {
             max-width: 11ch;
             font-size: clamp(2.65rem, 12vw, 4rem);
         }
@@ -395,6 +857,22 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
+        body.voter-home-page .candidate-slide {
+            animation: candidate-slide-reduced .18s ease-out both !important;
+        }
+
+        body.voter-home-page .candidate-slide *,
+        body.voter-home-page .candidate-slide::before,
+        body.voter-home-page .candidate-slide::after {
+            animation: none !important;
+        }
+
+        body.voter-home-page .candidate-vote-fill,
+        body.voter-home-page .candidate-carousel-button,
+        body.voter-home-page .candidate-carousel-dot {
+            transition: none !important;
+        }
+
         body.voter-home-page .hero-copy,
         body.voter-home-page .steps-card,
         body.voter-home-page .action-card,
@@ -407,6 +885,11 @@
         body.voter-home-page .empty-card {
             animation: none !important;
         }
+    }
+
+    @keyframes candidate-slide-reduced {
+        from { opacity: .82; }
+        to { opacity: 1; }
     }
 </style>
 @endpush
@@ -504,11 +987,137 @@
         ->filter();
 @endphp
 
+<section class="candidate-showcase" aria-labelledby="candidate-showcase-title">
+    <div class="page-wrap candidate-showcase-inner">
+        <div class="candidate-showcase-heading">
+            <div>
+                <p class="candidate-showcase-kicker">MEET THE CANDIDATES</p>
+                <h1 id="candidate-showcase-title">Your next student leaders</h1>
+                <p>See who's running and how each candidate is doing. Vote shares refresh automatically as votes are recorded.</p>
+            </div>
+            <span class="candidate-live-badge">Live vote share</span>
+        </div>
+
+        <div class="candidate-carousel" data-candidate-carousel data-tallies-url="{{ route('candidate.tallies') }}" role="region" aria-roledescription="carousel" aria-label="Candidate vote results carousel">
+            <div class="candidate-carousel-stage" data-candidate-stage tabindex="0" aria-label="Candidate slides">
+                @forelse($candidates as $index => $candidate)
+                    @php
+                        $profileRelative = $candidate->profile_img
+                            ? (\Illuminate\Support\Str::contains($candidate->profile_img, '/') ? $candidate->profile_img : ('profile-picture/' . $candidate->profile_img))
+                            : null;
+                        $bannerRelative = $candidate->banner_img
+                            ? (\Illuminate\Support\Str::contains($candidate->banner_img, '/') ? $candidate->banner_img : ('banner/' . $candidate->banner_img))
+                            : null;
+                        $profileExists = $profileRelative && \Illuminate\Support\Facades\Storage::disk('public')->exists('upload/' . $profileRelative);
+                        $bannerExists = $bannerRelative && \Illuminate\Support\Facades\Storage::disk('public')->exists('upload/' . $bannerRelative);
+                        $profileUrl = $profileExists
+                            ? route('storage.image', ['folder' => 'upload', 'filename' => $profileRelative])
+                            : asset('images/default-profile.jpg');
+                        $bannerUrl = $bannerExists
+                            ? route('storage.image', ['folder' => 'upload', 'filename' => $bannerRelative])
+                            : asset('images/default-banner.png');
+                        $candidateVotes = (int) ($candidate->votes_count ?? 0);
+                        $positionVotes = (int) ($candidate->position_votes_total ?? 0);
+                        $candidateShare = $positionVotes > 0
+                            ? round(($candidateVotes / $positionVotes) * 100, 1)
+                            : 0;
+                    @endphp
+                    <article
+                        class="candidate-slide"
+                        data-candidate-slide
+                        data-candidate-id="{{ $candidate->id }}"
+                        role="group"
+                        aria-roledescription="slide"
+                        aria-label="{{ $index + 1 }} of {{ $candidates->count() }}"
+                        @if($index > 0) hidden aria-hidden="true" @else aria-hidden="false" @endif
+                    >
+                        <img
+                            class="candidate-slide-backdrop"
+                            src="{{ $bannerUrl }}"
+                            alt=""
+                            aria-hidden="true"
+                            loading="{{ $index === 0 ? 'eager' : 'lazy' }}"
+                            onerror="this.onerror=null;this.src='{{ asset('images/default-banner.png') }}';"
+                        >
+                        <div class="candidate-slide-copy">
+                            <span class="candidate-slide-overline">Candidate {{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
+                            <span class="candidate-slide-position">Running for {{ optional($candidate->position)->name ?? 'Student representative' }}</span>
+                            <h3>{{ $candidate->name }}</h3>
+                            <div class="candidate-vote-share">
+                                <span>Share of votes for this position</span>
+                                <strong>{{ number_format($candidateShare, 1) }}%</strong>
+                            </div>
+                            <div
+                                class="candidate-vote-track"
+                                role="progressbar"
+                                aria-label="Vote share for {{ $candidate->name }}"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-valuenow="{{ $candidateShare }}"
+                                style="--vote-share: {{ $candidateShare }}%;"
+                            >
+                                <span class="candidate-vote-fill"></span>
+                            </div>
+                            <p class="candidate-vote-note">
+                                {{ $positionVotes > 0 ? number_format($candidateVotes) . ' of ' . number_format($positionVotes) . ' votes for this position' : 'No votes recorded for this position yet.' }}
+                            </p>
+                        </div>
+                        <div class="candidate-slide-portrait">
+                            <img
+                                src="{{ $profileUrl }}"
+                                alt="{{ $candidate->name }}"
+                                loading="{{ $index === 0 ? 'eager' : 'lazy' }}"
+                                onerror="this.onerror=null;this.src='{{ asset('images/default-profile.jpg') }}';"
+                            >
+                        </div>
+                    </article>
+                @empty
+                    <div class="candidate-carousel-empty">
+                        <h3>Candidate results will appear here</h3>
+                        <p>There are no active candidates to display right now.</p>
+                    </div>
+                @endforelse
+            </div>
+
+            @if($candidates->count() > 1)
+                <div class="candidate-carousel-controls" data-candidate-controls>
+                    <div class="candidate-carousel-actions">
+                        <button class="candidate-carousel-button" type="button" data-candidate-previous aria-label="Previous candidate">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+                            <span>Previous</span>
+                        </button>
+                        <button class="candidate-carousel-button" type="button" data-candidate-pause aria-pressed="false">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5v14M15 5v14"></path></svg>
+                            <span data-candidate-pause-label>Pause</span>
+                        </button>
+                        <button class="candidate-carousel-button" type="button" data-candidate-next aria-label="Next candidate">
+                            <span>Next</span>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+                        </button>
+                    </div>
+                    <div class="candidate-carousel-pagination" aria-label="Choose a candidate">
+                        @foreach($candidates as $index => $candidate)
+                            <button
+                                class="candidate-carousel-dot"
+                                type="button"
+                                data-candidate-goto="{{ $index }}"
+                                aria-label="Show {{ $candidate->name }}"
+                                aria-current="{{ $index === 0 ? 'true' : 'false' }}"
+                            ></button>
+                        @endforeach
+                    </div>
+                </div>
+                <p class="visually-hidden" data-candidate-status aria-live="polite" aria-atomic="true"></p>
+            @endif
+        </div>
+    </div>
+</section>
+
 <section class="hero">
     <div class="page-wrap hero-inner">
         <div class="hero-copy">
             <span class="hero-status {{ $eventStatusClass }}">{{ $eventStatusLabel }}</span>
-            <h1>Vote for your student leaders</h1>
+            <h2>Vote for your student leaders</h2>
             <p class="hero-lead">{{ $heroLead }}</p>
             <div class="button-row">
                 @guest
@@ -787,9 +1396,174 @@
         const articleControls = document.getElementById('article-carousel-controls');
         const articleModal = document.getElementById('article-modal');
         const eventModal = document.getElementById('event-modal');
+        const candidateCarousel = document.querySelector('[data-candidate-carousel]');
         let eventIndex = 0;
         let articleIndex = 0;
         let previouslyFocused = null;
+
+        if (candidateCarousel) {
+            const candidateStage = candidateCarousel.querySelector('[data-candidate-stage]');
+            const candidateSlides = [...candidateCarousel.querySelectorAll('[data-candidate-slide]')];
+            const candidateDots = [...candidateCarousel.querySelectorAll('[data-candidate-goto]')];
+            const candidateStatus = candidateCarousel.querySelector('[data-candidate-status]');
+            const previousCandidate = candidateCarousel.querySelector('[data-candidate-previous]');
+            const nextCandidate = candidateCarousel.querySelector('[data-candidate-next]');
+            const pauseCandidate = candidateCarousel.querySelector('[data-candidate-pause]');
+            const pauseCandidateLabel = candidateCarousel.querySelector('[data-candidate-pause-label]');
+            const pauseCandidateIcon = pauseCandidate?.querySelector('path');
+            let candidateIndex = 0;
+            let candidateTimer = null;
+            let pointerStartX = null;
+            let pointerStartY = null;
+            let pointerType = '';
+            let userPaused = false;
+            let tallyRefreshInFlight = false;
+
+            async function refreshCandidateTallies() {
+                if (!candidateSlides.length || document.hidden || tallyRefreshInFlight) return;
+                tallyRefreshInFlight = true;
+                try {
+                    const response = await fetch(candidateCarousel.dataset.talliesUrl, {
+                        headers: { 'Accept': 'application/json' },
+                        credentials: 'same-origin',
+                        cache: 'no-store'
+                    });
+                    if (!response.ok) throw new Error(`Candidate tally request failed: ${response.status}`);
+                    const result = await response.json();
+                    if (!Array.isArray(result.candidates)) throw new Error('Candidate tally response is invalid');
+
+                    const talliesById = new Map(result.candidates.map((candidate) => [String(candidate.id), candidate]));
+                    const numberFormat = new Intl.NumberFormat();
+                    candidateSlides.forEach((slide) => {
+                        const tally = talliesById.get(slide.dataset.candidateId);
+                        if (!tally) return;
+                        const votes = Math.max(0, Number(tally.votes_count) || 0);
+                        const total = Math.max(0, Number(tally.position_votes_total) || 0);
+                        const share = total > 0 ? Math.min(100, Math.round((votes / total) * 1000) / 10) : 0;
+                        const shareLabel = slide.querySelector('.candidate-vote-share strong');
+                        const progress = slide.querySelector('[role="progressbar"]');
+                        const note = slide.querySelector('.candidate-vote-note');
+                        if (shareLabel) shareLabel.textContent = `${share.toFixed(1)}%`;
+                        if (progress) {
+                            progress.setAttribute('aria-valuenow', String(share));
+                            progress.style.setProperty('--vote-share', `${share}%`);
+                        }
+                        if (note) {
+                            note.textContent = total > 0
+                                ? `${numberFormat.format(votes)} of ${numberFormat.format(total)} votes for this position`
+                                : 'No votes recorded for this position yet.';
+                        }
+                    });
+                } catch (error) {
+                    console.error('Unable to refresh candidate vote tallies.', error);
+                } finally {
+                    tallyRefreshInFlight = false;
+                }
+            }
+
+            function stopCandidateTimer() {
+                if (candidateTimer) {
+                    window.clearInterval(candidateTimer);
+                    candidateTimer = null;
+                }
+            }
+
+            function canAutoAdvance() {
+                return candidateSlides.length > 1
+                    && !userPaused
+                    && !document.hidden;
+            }
+
+            function syncCandidateTimer() {
+                stopCandidateTimer();
+                if (!canAutoAdvance()) return;
+                candidateTimer = window.setInterval(() => {
+                    showCandidate(candidateIndex + 1, false);
+                }, 5000);
+            }
+
+            function showCandidate(index, announce) {
+                if (!candidateSlides.length) return;
+                candidateIndex = (index + candidateSlides.length) % candidateSlides.length;
+                candidateSlides.forEach((slide, slideIndex) => {
+                    const isActive = slideIndex === candidateIndex;
+                    slide.hidden = !isActive;
+                    slide.setAttribute('aria-hidden', String(!isActive));
+                });
+                candidateDots.forEach((dot, dotIndex) => {
+                    dot.setAttribute('aria-current', String(dotIndex === candidateIndex));
+                });
+                if (announce && candidateStatus) {
+                    const activeSlide = candidateSlides[candidateIndex];
+                    const name = activeSlide.querySelector('h3')?.textContent.trim() || 'Candidate';
+                    const position = activeSlide.querySelector('.candidate-slide-position')?.textContent.trim() || '';
+                    const share = activeSlide.querySelector('.candidate-vote-share strong')?.textContent.trim() || '';
+                    candidateStatus.textContent = `${name}, ${position}, ${share} vote share`;
+                }
+            }
+
+            function moveCandidate(direction) {
+                showCandidate(candidateIndex + direction, true);
+                syncCandidateTimer();
+            }
+
+            previousCandidate?.addEventListener('click', () => moveCandidate(-1));
+            nextCandidate?.addEventListener('click', () => moveCandidate(1));
+            candidateDots.forEach((dot) => {
+                dot.addEventListener('click', () => {
+                    showCandidate(Number(dot.dataset.candidateGoto), true);
+                    syncCandidateTimer();
+                });
+            });
+            pauseCandidate?.addEventListener('click', () => {
+                userPaused = !userPaused;
+                pauseCandidate.setAttribute('aria-pressed', String(userPaused));
+                pauseCandidate.setAttribute('aria-label', userPaused ? 'Resume automatic carousel' : 'Pause automatic carousel');
+                if (pauseCandidateIcon) {
+                    pauseCandidateIcon.setAttribute('d', userPaused ? 'm8 5 12 7-12 7z' : 'M9 5v14M15 5v14');
+                }
+                if (pauseCandidateLabel) pauseCandidateLabel.textContent = userPaused ? 'Play' : 'Pause';
+                syncCandidateTimer();
+            });
+            candidateStage?.addEventListener('keydown', (event) => {
+                if (event.target !== candidateStage) return;
+                if (event.key === 'ArrowLeft') {
+                    event.preventDefault();
+                    moveCandidate(-1);
+                } else if (event.key === 'ArrowRight') {
+                    event.preventDefault();
+                    moveCandidate(1);
+                }
+            });
+            candidateStage?.addEventListener('pointerdown', (event) => {
+                pointerType = event.pointerType;
+                pointerStartX = event.clientX;
+                pointerStartY = event.clientY;
+            });
+            candidateStage?.addEventListener('pointerup', (event) => {
+                if (pointerType !== 'touch' || pointerStartX === null || pointerStartY === null) return;
+                const deltaX = event.clientX - pointerStartX;
+                const deltaY = event.clientY - pointerStartY;
+                if (Math.abs(deltaX) > 48 && Math.abs(deltaX) > Math.abs(deltaY)) {
+                    moveCandidate(deltaX < 0 ? 1 : -1);
+                }
+                pointerStartX = null;
+                pointerStartY = null;
+                pointerType = '';
+            });
+            candidateStage?.addEventListener('pointercancel', () => {
+                pointerStartX = null;
+                pointerStartY = null;
+                pointerType = '';
+            });
+            document.addEventListener('visibilitychange', syncCandidateTimer);
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) refreshCandidateTallies();
+            });
+            showCandidate(0, false);
+            syncCandidateTimer();
+            window.setInterval(refreshCandidateTallies, 30000);
+        }
 
         function visibleCount(container) {
             if (!container || window.matchMedia('(min-width: 900px)').matches) return 3;
