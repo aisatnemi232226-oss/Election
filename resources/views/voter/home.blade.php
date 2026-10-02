@@ -1,6 +1,415 @@
 @extends('layouts.voter')
 
 @section('title', 'PCU Online Election System')
+@section('body-class', 'voter-home-page')
+
+@push('styles')
+<style>
+    body.voter-home-page .hero {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        background-color: #07162f;
+        background:
+            linear-gradient(90deg, rgba(5, 17, 42, .88) 0%, rgba(5, 20, 48, .72) 48%, rgba(5, 20, 48, .46) 100%),
+            linear-gradient(0deg, rgba(4, 14, 32, .62) 0%, rgba(4, 14, 32, .08) 58%, rgba(4, 14, 32, .24) 100%),
+            url("{{ asset('images/background1.jpg') }}") center 48% / cover no-repeat;
+        color: #f7faff;
+    }
+
+    body.voter-home-page .hero::before,
+    body.voter-home-page .hero::after {
+        position: absolute;
+        z-index: -1;
+        inset: 0;
+        pointer-events: none;
+        content: "";
+    }
+
+    body.voter-home-page .hero::before {
+        background: radial-gradient(circle, rgba(255, 255, 255, .5) 1px, transparent 1.5px);
+        background-size: 34px 34px;
+        opacity: .12;
+        mask-image: linear-gradient(110deg, #000, transparent 75%);
+    }
+
+    body.voter-home-page .hero::after {
+        inset: auto -9rem -17rem auto;
+        width: 34rem;
+        aspect-ratio: 1;
+        border: 1px solid rgba(255, 255, 255, .12);
+        border-radius: 50%;
+        box-shadow: 0 0 0 3rem rgba(255, 255, 255, .025), 0 0 0 6rem rgba(255, 255, 255, .02);
+    }
+
+    body.voter-home-page .hero-inner {
+        position: relative;
+        z-index: 0;
+        width: min(1180px, 100% - 2 * clamp(20px, 5vw, 44px));
+        gap: clamp(32px, 6vw, 76px);
+        padding-block: clamp(48px, 8vw, 96px);
+    }
+
+    body.voter-home-page .hero-copy {
+        animation: home-intro .7s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.voter-home-page .hero-status {
+        border: 1px solid rgba(255, 255, 255, .24);
+        background: rgba(255, 255, 255, .1);
+        color: #e3edff;
+        backdrop-filter: blur(8px);
+    }
+
+    body.voter-home-page .hero-status.status-open {
+        background: rgba(34, 197, 94, .16);
+        color: #bbf7d0;
+    }
+
+    body.voter-home-page .hero-status.status-ended {
+        background: rgba(255, 255, 255, .12);
+        color: #e2e8f0;
+    }
+
+    body.voter-home-page .hero h1 {
+        max-width: 13ch;
+        margin-top: 22px;
+        color: #fff;
+        font-size: clamp(2.75rem, 6.5vw, 5.35rem);
+        line-height: .99;
+        letter-spacing: -.055em;
+        text-wrap: balance;
+    }
+
+    body.voter-home-page .hero-lead {
+        max-width: 43ch;
+        margin-top: 20px;
+        color: rgba(235, 242, 255, .78);
+        font-size: clamp(1.05rem, 1.7vw, 1.22rem);
+        line-height: 1.7;
+    }
+
+    body.voter-home-page .button-row {
+        gap: 14px;
+        margin-top: 30px;
+    }
+
+    body.voter-home-page .button {
+        min-height: 54px;
+        border-radius: 15px;
+        transition: transform .22s ease, box-shadow .22s ease, background-color .22s ease;
+    }
+
+    body.voter-home-page .button-primary {
+        border-color: #78a7ff;
+        background: linear-gradient(135deg, #4c83f1, #2860dc);
+        box-shadow: 0 10px 28px rgba(25, 82, 197, .38), inset 0 1px rgba(255, 255, 255, .22);
+        color: #fff;
+    }
+
+    body.voter-home-page .button-primary:hover {
+        box-shadow: 0 15px 34px rgba(25, 82, 197, .48), inset 0 1px rgba(255, 255, 255, .28);
+    }
+
+    body.voter-home-page .button-secondary {
+        border-color: rgba(255, 255, 255, .32);
+        background: rgba(255, 255, 255, .08);
+        color: #f7faff;
+    }
+
+    body.voter-home-page .button-secondary:hover {
+        background: rgba(255, 255, 255, .15);
+    }
+
+    body.voter-home-page .steps-card {
+        --bg: #f5f8fd;
+        --card: rgba(255, 255, 255, .97);
+        --ink: #0f1b33;
+        --mut: #4a5873;
+        --line: #dfe6f1;
+        --brand: #2563eb;
+        --brand-contrast: #fff;
+        --tint: #eaf1ff;
+        --ok: #15803d;
+        --ok-bg: #dcfce7;
+        color: var(--ink);
+        padding: clamp(20px, 3vw, 30px);
+        border-color: rgba(255, 255, 255, .72);
+        border-radius: 26px;
+        box-shadow: 0 28px 72px rgba(1, 12, 34, .34), 0 2px 8px rgba(1, 12, 34, .08);
+        animation: home-intro .8s .12s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.voter-home-page .steps-card h2 {
+        font-size: 1.3rem;
+        letter-spacing: -.025em;
+    }
+
+    body.voter-home-page .steps-list {
+        gap: 11px;
+    }
+
+    body.voter-home-page .step-item {
+        min-height: 72px;
+        padding: 13px 15px;
+        border-radius: 16px;
+        transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+
+    body.voter-home-page .step-item:hover {
+        transform: translateX(3px);
+        box-shadow: 0 8px 18px rgba(15, 27, 51, .07);
+    }
+
+    body.voter-home-page .step-item.is-current {
+        box-shadow: inset 3px 0 #2563eb, 0 8px 20px rgba(37, 99, 235, .09);
+    }
+
+    body.voter-home-page .content-section {
+        position: relative;
+        padding-block: clamp(42px, 6vw, 72px);
+        border-bottom: 1px solid color-mix(in srgb, var(--line), transparent 25%);
+    }
+
+    body.voter-home-page #how-it-works,
+    body.voter-home-page #events,
+    body.voter-home-page #guidelines {
+        background:
+            radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--tint), transparent 32%), transparent 50%),
+            var(--tint);
+    }
+
+    body.voter-home-page .section-heading {
+        align-items: flex-end;
+        margin-bottom: 24px;
+    }
+
+    body.voter-home-page .section-heading h2 {
+        letter-spacing: -.035em;
+        text-wrap: balance;
+    }
+
+    body.voter-home-page .section-heading p {
+        max-width: 58ch;
+    }
+
+    body.voter-home-page .action-card,
+    body.voter-home-page .date-card,
+    body.voter-home-page .election-banner,
+    body.voter-home-page .event-card,
+    body.voter-home-page .article-card,
+    body.voter-home-page .faq-item,
+    body.voter-home-page .guidelines-card,
+    body.voter-home-page .empty-card {
+        border-color: color-mix(in srgb, var(--line), transparent 12%);
+        border-radius: 20px;
+        box-shadow: 0 3px 8px rgba(15, 27, 51, .035), 0 16px 36px rgba(15, 27, 51, .065);
+    }
+
+    body.voter-home-page .action-card {
+        position: relative;
+        min-height: 248px;
+        overflow: hidden;
+        padding: clamp(22px, 3vw, 30px);
+        transition: transform .24s cubic-bezier(.2, .75, .25, 1), border-color .24s ease, box-shadow .24s ease;
+    }
+
+    body.voter-home-page .action-card::after {
+        position: absolute;
+        right: -38px;
+        bottom: -66px;
+        width: 145px;
+        aspect-ratio: 1;
+        border: 1px solid color-mix(in srgb, var(--brand), transparent 86%);
+        border-radius: 50%;
+        box-shadow: 0 0 0 18px color-mix(in srgb, var(--brand), transparent 96%);
+        content: "";
+        pointer-events: none;
+        transition: transform .35s ease;
+    }
+
+    body.voter-home-page .action-card:hover {
+        transform: translateY(-6px);
+        border-color: color-mix(in srgb, var(--brand), transparent 40%);
+        box-shadow: 0 9px 18px rgba(15, 27, 51, .06), 0 24px 48px rgba(37, 99, 235, .13);
+    }
+
+    body.voter-home-page .action-card:hover::after {
+        transform: scale(1.12);
+    }
+
+    body.voter-home-page .action-icon {
+        width: 56px;
+        height: 56px;
+        border: 1px solid color-mix(in srgb, var(--brand), transparent 86%);
+        border-radius: 17px;
+        background: linear-gradient(145deg, var(--tint), color-mix(in srgb, var(--card), var(--tint) 55%));
+    }
+
+    body.voter-home-page .action-card h3 {
+        letter-spacing: -.02em;
+    }
+
+    body.voter-home-page .action-link {
+        transition: gap .2s ease;
+    }
+
+    body.voter-home-page .action-card:hover .action-link {
+        gap: 10px;
+    }
+
+    body.voter-home-page .date-card {
+        min-height: 128px;
+        justify-content: center;
+        padding: 20px;
+        transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+
+    body.voter-home-page .date-card:hover {
+        transform: translateY(-3px);
+        border-color: color-mix(in srgb, var(--brand), transparent 55%);
+        box-shadow: var(--sh);
+    }
+
+    body.voter-home-page .date-card .icon {
+        width: 44px;
+        height: 44px;
+        padding: 10px;
+        border-radius: 14px;
+        background: var(--tint);
+    }
+
+    body.voter-home-page .election-banner {
+        background: linear-gradient(120deg, var(--card), color-mix(in srgb, var(--tint), var(--card) 64%));
+    }
+
+    body.voter-home-page .event-card,
+    body.voter-home-page .article-card {
+        transition: transform .24s cubic-bezier(.2, .75, .25, 1), border-color .24s ease, box-shadow .24s ease;
+    }
+
+    body.voter-home-page .event-card:hover,
+    body.voter-home-page .article-card:hover {
+        transform: translateY(-5px);
+        border-color: color-mix(in srgb, var(--brand), transparent 45%);
+        box-shadow: 0 18px 42px rgba(15, 27, 51, .13);
+    }
+
+    body.voter-home-page .event-image,
+    body.voter-home-page .article-image {
+        transition: transform .45s cubic-bezier(.2, .75, .25, 1);
+    }
+
+    body.voter-home-page .event-card:hover .event-image,
+    body.voter-home-page .article-card:hover .article-image {
+        transform: scale(1.035);
+    }
+
+    body.voter-home-page .faq-item {
+        overflow: hidden;
+        transition: border-color .2s ease, box-shadow .2s ease;
+    }
+
+    body.voter-home-page .faq-item[open] {
+        border-color: color-mix(in srgb, var(--brand), transparent 62%);
+        box-shadow: var(--sh);
+    }
+
+    body.voter-home-page .faq-item summary {
+        transition: color .18s ease;
+    }
+
+    body.voter-home-page .faq-item summary:hover {
+        color: var(--brand);
+    }
+
+    @keyframes home-intro {
+        from { opacity: 0; transform: translateY(18px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes home-reveal {
+        from { opacity: 0; transform: translateY(22px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @supports (animation-timeline: view()) and (animation-range: entry 0% cover 25%) {
+        @media (prefers-reduced-motion: no-preference) {
+            body.voter-home-page .action-card,
+            body.voter-home-page .date-card,
+            body.voter-home-page .election-banner,
+            body.voter-home-page .event-card,
+            body.voter-home-page .article-card,
+            body.voter-home-page .faq-item,
+            body.voter-home-page .guidelines-card,
+            body.voter-home-page .empty-card {
+                animation: home-reveal auto linear both;
+                animation-timeline: view();
+                animation-range: entry 0% cover 25%;
+            }
+        }
+    }
+
+    @media (max-width: 639px) {
+        body.voter-home-page .hero-inner {
+            gap: 30px;
+            padding-block: 44px 50px;
+        }
+
+        body.voter-home-page .hero h1 {
+            max-width: 11ch;
+            font-size: clamp(2.65rem, 12vw, 4rem);
+        }
+
+        body.voter-home-page .hero-lead {
+            max-width: 38ch;
+            margin-top: 16px;
+        }
+
+        body.voter-home-page .button-row {
+            margin-top: 24px;
+        }
+
+        body.voter-home-page .button {
+            min-height: 50px;
+            padding-inline: 16px;
+        }
+
+        body.voter-home-page .steps-card {
+            border-radius: 22px;
+        }
+
+        body.voter-home-page .section-heading {
+            align-items: flex-start;
+        }
+
+        body.voter-home-page .action-card {
+            min-height: 220px;
+        }
+
+        body.voter-home-page .date-card {
+            min-height: 104px;
+            flex-direction: row;
+            align-items: center;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        body.voter-home-page .hero-copy,
+        body.voter-home-page .steps-card,
+        body.voter-home-page .action-card,
+        body.voter-home-page .date-card,
+        body.voter-home-page .election-banner,
+        body.voter-home-page .event-card,
+        body.voter-home-page .article-card,
+        body.voter-home-page .faq-item,
+        body.voter-home-page .guidelines-card,
+        body.voter-home-page .empty-card {
+            animation: none !important;
+        }
+    }
+</style>
+@endpush
 
 @section('content')
 @php
