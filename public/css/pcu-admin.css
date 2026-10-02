@@ -47,7 +47,8 @@
     color: var(--ink);
 }
 
-.admin-header #admin-notif-panel button.notif-voter-action {
+.admin-header #admin-notif-panel button.notif-candidate-action,
+.admin-header #admin-notif-panel button.notif-voter-action.text-white {
     color: #fff;
 }
 
