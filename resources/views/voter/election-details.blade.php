@@ -1,6 +1,396 @@
 @extends('layouts.voter')
 
 @section('title', 'Election Details | PCU Online Election')
+@section('body-class', 'election-details-view')
+
+@push('styles')
+<style>
+    body.election-details-view .election-details-page {
+        width: min(1280px, 100% - 2 * clamp(20px, 5vw, 48px));
+        padding-block: clamp(28px, 5vw, 60px) clamp(48px, 7vw, 80px);
+    }
+
+    body.election-details-view .election-details-page > .page-intro {
+        position: relative;
+        isolation: isolate;
+        min-height: clamp(210px, 25vw, 300px);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        overflow: hidden;
+        margin: 0 0 clamp(24px, 4vw, 36px);
+        padding: clamp(26px, 5vw, 54px);
+        border: 1px solid rgba(255, 255, 255, .16);
+        border-radius: 26px;
+        background:
+            linear-gradient(100deg, rgba(5, 17, 42, .88), rgba(5, 20, 48, .68) 58%, rgba(5, 20, 48, .4)),
+            linear-gradient(0deg, rgba(4, 14, 32, .5), transparent 78%),
+            url("{{ asset('images/background1.jpg') }}") center 42% / cover no-repeat;
+        box-shadow: 0 18px 42px rgba(15, 27, 51, .14);
+        color: #f7faff;
+        text-align: left;
+        animation: election-details-intro .55s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.election-details-view .election-details-page > .page-intro::before {
+        margin-bottom: 10px;
+        color: #c9dcff;
+        content: "PCU ONLINE ELECTION";
+        font-size: .76rem;
+        font-weight: 800;
+        letter-spacing: .14em;
+    }
+
+    body.election-details-view .election-details-page > .page-intro h1 {
+        color: #fff;
+        font-size: clamp(2rem, 5vw, 3.25rem);
+        letter-spacing: -.045em;
+        text-wrap: balance;
+    }
+
+    body.election-details-view .election-details-page > .page-intro p {
+        max-width: 56ch;
+        margin: 12px 0 0;
+        color: rgba(239, 245, 255, .86);
+        font-size: clamp(1rem, 1.8vw, 1.15rem);
+    }
+
+    body.election-details-view .candidate-filters {
+        margin: 0;
+        padding: clamp(20px, 3vw, 30px);
+        border-color: color-mix(in srgb, var(--line), transparent 10%);
+        border-radius: 22px;
+        background: var(--card);
+        box-shadow: 0 5px 14px rgba(15, 27, 51, .045), 0 18px 40px rgba(15, 27, 51, .07);
+        animation: election-details-intro .55s .08s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.election-details-view .candidate-filters::before {
+        display: block;
+        margin-bottom: 18px;
+        color: var(--brand);
+        content: "FIND YOUR CANDIDATE";
+        font-size: .75rem;
+        font-weight: 800;
+        letter-spacing: .12em;
+    }
+
+    body.election-details-view .candidate-filter-grid {
+        gap: 14px;
+    }
+
+    body.election-details-view .candidate-filter-grid .field {
+        min-width: 0;
+        gap: 7px;
+    }
+
+    body.election-details-view .candidate-filter-grid .field label {
+        font-size: .9rem;
+    }
+
+    body.election-details-view .candidate-filter-grid input,
+    body.election-details-view .candidate-filter-grid select {
+        min-width: 0;
+        min-height: 48px;
+        border-radius: 12px;
+        transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+    }
+
+    body.election-details-view .candidate-filter-grid input:focus,
+    body.election-details-view .candidate-filter-grid select:focus {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand), transparent 86%);
+    }
+
+    body.election-details-view .candidate-filter-actions {
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    body.election-details-view .candidate-filter-actions .button {
+        min-height: 46px;
+        border-radius: 12px;
+        transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease;
+    }
+
+    body.election-details-view .candidate-filter-actions .button:hover {
+        transform: translateY(-2px);
+    }
+
+    body.election-details-view .election-available-section,
+    body.election-details-view .election-candidates-section {
+        margin-top: clamp(34px, 5vw, 54px);
+    }
+
+    body.election-details-view .election-available-section > h2,
+    body.election-details-view .election-candidates-section > h2 {
+        margin-bottom: 18px;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        letter-spacing: -.035em;
+        text-wrap: balance;
+    }
+
+    body.election-details-view .election-available-section .election-grid {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+        align-items: stretch;
+        gap: 16px;
+    }
+
+    body.election-details-view .available-election-card {
+        position: relative;
+        min-width: 0;
+        margin-top: 0;
+        overflow: hidden;
+        border-radius: 19px;
+        box-shadow: 0 4px 12px rgba(15, 27, 51, .04), 0 14px 30px rgba(15, 27, 51, .06);
+        animation: election-details-intro .4s cubic-bezier(.2, .75, .25, 1) both;
+        transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+
+    body.election-details-view .available-election-card::before {
+        position: absolute;
+        inset: 0 0 auto;
+        height: 4px;
+        background: linear-gradient(90deg, var(--brand), #75a2ff);
+        content: "";
+    }
+
+    body.election-details-view .available-election-card:hover {
+        transform: translateY(-4px);
+        border-color: color-mix(in srgb, var(--brand), transparent 65%);
+        box-shadow: 0 10px 22px rgba(15, 27, 51, .07), 0 20px 38px rgba(37, 99, 235, .1);
+    }
+
+    body.election-details-view .available-election-card h3 {
+        margin: 0 0 14px;
+        font-size: 1.2rem;
+        letter-spacing: -.02em;
+    }
+
+    body.election-details-view .available-election-card p {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 7px;
+        margin: 0;
+        padding-block: 9px;
+        border-top: 1px solid var(--line);
+        color: var(--mut);
+        font-size: .92rem;
+        overflow-wrap: anywhere;
+    }
+
+    body.election-details-view .available-election-card p strong {
+        color: var(--ink);
+    }
+
+    body.election-details-view .election-candidates-section > h2 {
+        margin-bottom: 22px;
+    }
+
+    body.election-details-view .candidate-position-group + .candidate-position-group {
+        margin-top: clamp(26px, 4vw, 38px);
+    }
+
+    body.election-details-view .candidate-position-heading {
+        min-height: 52px;
+        justify-content: space-between;
+        margin: 0 0 16px;
+        padding: 10px 15px;
+        border-color: color-mix(in srgb, var(--brand), transparent 82%);
+        border-radius: 14px;
+        background: linear-gradient(100deg, var(--tint), color-mix(in srgb, var(--card), var(--tint) 44%));
+        color: var(--ink);
+        font-size: 1rem;
+        font-weight: 800;
+    }
+
+    body.election-details-view .candidate-position-heading .tag {
+        min-width: 30px;
+        justify-content: center;
+        border: 1px solid color-mix(in srgb, var(--brand), transparent 82%);
+        font-variant-numeric: tabular-nums;
+    }
+
+    body.election-details-view .candidate-grid {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 285px), 1fr));
+        grid-auto-rows: 1fr;
+        align-items: stretch;
+        gap: clamp(14px, 2vw, 20px);
+    }
+
+    body.election-details-view .candidate-grid > .candidate-card {
+        align-self: stretch;
+        min-width: 0;
+        min-height: 420px;
+        margin: 0;
+        border-radius: 19px;
+        transition: translate .2s ease, filter .2s ease;
+    }
+
+    body.election-details-view .candidate-grid > .candidate-card:hover {
+        translate: 0 -3px;
+    }
+
+    body.election-details-view .candidate-card:focus-visible {
+        outline-offset: 5px;
+    }
+
+    body.election-details-view .candidate-card-inner {
+        min-height: 420px;
+    }
+
+    body.election-details-view .candidate-card-face {
+        border-color: color-mix(in srgb, var(--line), transparent 6%);
+        border-radius: 19px;
+        box-shadow: 0 5px 14px rgba(15, 27, 51, .05), 0 16px 34px rgba(15, 27, 51, .07);
+    }
+
+    body.election-details-view .candidate-card-front {
+        background: linear-gradient(180deg, var(--card), color-mix(in srgb, var(--tint), var(--card) 25%));
+    }
+
+    body.election-details-view .candidate-banner {
+        height: 124px;
+        object-position: center 38%;
+    }
+
+    body.election-details-view .candidate-avatar {
+        width: 88px;
+        height: 88px;
+        box-shadow: 0 4px 14px rgba(15, 27, 51, .14);
+    }
+
+    body.election-details-view .candidate-card-content {
+        min-height: 278px;
+        padding-inline: 20px;
+    }
+
+    body.election-details-view .candidate-card-content h4 {
+        line-height: 1.3;
+        text-wrap: balance;
+    }
+
+    body.election-details-view .candidate-tags {
+        gap: 6px;
+    }
+
+    body.election-details-view .candidate-tags .tag {
+        max-width: 100%;
+        overflow-wrap: anywhere;
+    }
+
+    body.election-details-view .candidate-card-actions {
+        gap: 9px;
+    }
+
+    body.election-details-view .candidate-card-actions .button {
+        border-radius: 11px;
+        transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease;
+    }
+
+    body.election-details-view .candidate-card-actions .button:not(:disabled):hover {
+        transform: translateY(-2px);
+    }
+
+    body.election-details-view .candidate-card-back {
+        padding: clamp(18px, 3vw, 24px);
+    }
+
+    body.election-details-view .candidate-platforms {
+        border-radius: 14px;
+        line-height: 1.65;
+        scrollbar-color: var(--brand) var(--tint);
+        scrollbar-width: thin;
+    }
+
+    body.election-details-view #candidates-container > .notice,
+    body.election-details-view .election-available-section > .notice {
+        border-radius: 16px;
+        box-shadow: var(--sh);
+    }
+
+    body.election-details-view .candidate-modal-panel {
+        animation: candidate-modal-enter .24s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    @keyframes election-details-intro {
+        from { opacity: 0; translate: 0 12px; }
+        to { opacity: 1; translate: 0 0; }
+    }
+
+    @keyframes candidate-modal-enter {
+        from { opacity: 0; scale: .985; }
+        to { opacity: 1; scale: 1; }
+    }
+
+    @media (min-width: 960px) {
+        body.election-details-view .candidate-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 639px) {
+        body.election-details-view .election-details-page {
+            width: min(100% - 32px, 520px);
+            padding-block: 26px 48px;
+        }
+
+        body.election-details-view .election-details-page > .page-intro {
+            min-height: 210px;
+            margin-bottom: 20px;
+            padding: 24px;
+            border-radius: 21px;
+            background-position: 58% center;
+        }
+
+        body.election-details-view .candidate-filters {
+            padding: 19px;
+            border-radius: 18px;
+        }
+
+        body.election-details-view .candidate-filter-actions {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(100px, .55fr);
+        }
+
+        body.election-details-view .candidate-filter-actions .button {
+            min-width: 0;
+            padding-inline: 12px;
+            font-size: .94rem;
+        }
+
+        body.election-details-view .candidate-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        body.election-details-view .candidate-grid > .candidate-card,
+        body.election-details-view .candidate-card-inner {
+            min-height: 410px;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        body.election-details-view .election-details-page > .page-intro,
+        body.election-details-view .candidate-filters,
+        body.election-details-view .available-election-card {
+            animation: none;
+        }
+
+        body.election-details-view .available-election-card,
+        body.election-details-view .candidate-grid > .candidate-card,
+        body.election-details-view .candidate-filter-grid input,
+        body.election-details-view .candidate-filter-grid select,
+        body.election-details-view .candidate-filter-actions .button,
+        body.election-details-view .candidate-card-actions .button {
+            transition: none;
+        }
+
+        body.election-details-view .candidate-modal-panel {
+            animation: none;
+        }
+    }
+</style>
+@endpush
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
