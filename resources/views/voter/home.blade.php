@@ -31,6 +31,21 @@
         transition: background-color .25s ease, color .25s ease;
     }
 
+    :root[data-theme="dark"] body.voter-home-page .step-item {
+        background: rgba(255, 255, 255, .025);
+    }
+
+    :root[data-theme="dark"] body.voter-home-page .step-item:not(.is-current):hover {
+        border-color: #47618b;
+        background: rgba(255, 255, 255, .07);
+    }
+
+    :root[data-theme="dark"] body.voter-home-page .step-item.is-current {
+        border-color: rgba(120, 167, 255, .62);
+        background: linear-gradient(100deg, rgba(43, 79, 135, .62), rgba(30, 53, 88, .56));
+        box-shadow: inset 3px 0 #78a7ff, 0 8px 20px rgba(0, 0, 0, .16);
+    }
+
     :root[data-theme="dark"] body.voter-home-page .candidate-showcase {
         --candidate-section-start: #07162f;
         --candidate-section-mid: #102b58;
@@ -64,6 +79,7 @@
         width: 38rem;
         aspect-ratio: 1;
         box-shadow: 0 0 0 3rem color-mix(in srgb, var(--candidate-section-text), transparent 96%), 0 0 0 6rem color-mix(in srgb, var(--candidate-section-text), transparent 97%);
+        animation: candidate-orbit-drift 34s ease-in-out infinite alternate;
     }
 
     body.voter-home-page .candidate-showcase::after {
@@ -72,6 +88,7 @@
         width: 30rem;
         aspect-ratio: 1;
         border-color: color-mix(in srgb, var(--candidate-section-text), transparent 92%);
+        animation: candidate-orbit-drift 27s 1s ease-in-out infinite alternate-reverse;
     }
 
     body.voter-home-page .candidate-showcase-inner {
@@ -132,6 +149,7 @@
         background: #6ee7a0;
         box-shadow: 0 0 0 4px rgba(110, 231, 160, .13);
         content: "";
+        animation: candidate-live-pulse 2.4s ease-in-out infinite;
     }
 
     body.voter-home-page .candidate-carousel-stage {
@@ -144,11 +162,37 @@
         --candidate-slide-overlay: linear-gradient(100deg, rgba(247, 250, 255, .97) 0%, rgba(241, 247, 255, .9) 48%, rgba(230, 240, 255, .68) 100%);
         --candidate-slide-backdrop-opacity: .12;
         position: relative;
+        isolation: isolate;
         overflow: hidden;
         border: 1px solid var(--candidate-slide-border);
         border-radius: 28px;
         background: var(--candidate-slide-stage);
         box-shadow: 0 20px 48px rgba(22, 55, 105, .18), inset 0 1px rgba(255, 255, 255, .76);
+    }
+
+    body.voter-home-page .candidate-carousel-stage::after {
+        position: absolute;
+        z-index: 0;
+        inset: 0;
+        background: radial-gradient(ellipse at 78% 50%, rgba(59, 130, 246, .24), transparent 44%);
+        content: "";
+        opacity: .28;
+        pointer-events: none;
+        animation: candidate-stage-aura 7s ease-in-out infinite alternate;
+    }
+
+    body.voter-home-page .candidate-carousel-stage::before {
+        position: absolute;
+        z-index: 3;
+        top: 0;
+        bottom: 0;
+        left: -42%;
+        width: 28%;
+        background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .2), transparent);
+        content: "";
+        pointer-events: none;
+        transform: skewX(-18deg);
+        animation: candidate-stage-sheen 11s 1.5s ease-in-out infinite;
     }
 
     :root[data-theme="dark"] body.voter-home-page .candidate-carousel-stage {
@@ -170,6 +214,7 @@
 
     body.voter-home-page .candidate-slide {
         position: relative;
+        z-index: 1;
         isolation: isolate;
         display: grid;
         min-height: clamp(390px, 42vw, 500px);
@@ -319,10 +364,25 @@
         width: min(100%, 340px);
         aspect-ratio: 1;
         border: 1px solid color-mix(in srgb, var(--candidate-slide-text), transparent 82%);
+        border-top-color: color-mix(in srgb, var(--candidate-slide-accent), transparent 12%);
+        border-right-color: color-mix(in srgb, var(--candidate-slide-accent), transparent 48%);
         border-radius: 50%;
         background: radial-gradient(circle, rgba(111, 160, 255, .2), color-mix(in srgb, var(--candidate-slide-text), transparent 97%) 66%, transparent 67%);
         box-shadow: 0 0 0 22px color-mix(in srgb, var(--candidate-slide-text), transparent 97%), 0 0 0 46px color-mix(in srgb, var(--candidate-slide-text), transparent 98%);
         content: "";
+        animation: candidate-halo-spin 28s linear infinite;
+    }
+
+    body.voter-home-page .candidate-slide-portrait::after {
+        position: absolute;
+        width: min(82%, 278px);
+        aspect-ratio: 1;
+        border: 1px dashed color-mix(in srgb, var(--candidate-slide-accent), transparent 68%);
+        border-radius: 50%;
+        content: "";
+        opacity: .58;
+        pointer-events: none;
+        animation: candidate-halo-spin 42s linear infinite reverse;
     }
 
     body.voter-home-page .candidate-slide-portrait img {
@@ -334,7 +394,7 @@
         background: #eaf1ff;
         box-shadow: 0 24px 50px rgba(0, 6, 22, .38), 0 0 0 1px rgba(255, 255, 255, .2);
         object-fit: cover;
-        animation: candidate-portrait-in .7s .08s cubic-bezier(.2, .75, .25, 1) both;
+        animation: candidate-portrait-in .7s .08s cubic-bezier(.2, .75, .25, 1) both, candidate-portrait-float 6s 1s ease-in-out infinite;
     }
 
     body.voter-home-page .candidate-carousel-controls {
@@ -379,6 +439,10 @@
         transform: translateY(-2px);
         border-color: color-mix(in srgb, var(--candidate-control-text), transparent 45%);
         background: color-mix(in srgb, var(--candidate-control-text), transparent 88%);
+    }
+
+    body.voter-home-page .candidate-carousel-button:active {
+        transform: translateY(0) scale(.96);
     }
 
     body.voter-home-page .candidate-carousel-button svg {
@@ -456,23 +520,54 @@
         to { opacity: 1; transform: scale(1); }
     }
 
+    @keyframes candidate-orbit-drift {
+        from { transform: translate3d(0, 0, 0) rotate(-5deg); }
+        to { transform: translate3d(22px, -16px, 0) rotate(5deg); }
+    }
+
+    @keyframes candidate-live-pulse {
+        0%, 100% { box-shadow: 0 0 0 4px rgba(110, 231, 160, .13); }
+        50% { box-shadow: 0 0 0 8px rgba(110, 231, 160, .05); }
+    }
+
+    @keyframes candidate-stage-aura {
+        from { opacity: .18; }
+        to { opacity: .52; }
+    }
+
+    @keyframes candidate-stage-sheen {
+        0%, 52%, 100% { transform: translate3d(0, 0, 0) skewX(-18deg); opacity: 0; }
+        58% { opacity: .8; }
+        72% { transform: translate3d(620%, 0, 0) skewX(-18deg); opacity: 0; }
+    }
+
+    @keyframes candidate-halo-spin {
+        to { transform: rotate(1turn); }
+    }
+
+    @keyframes candidate-portrait-float {
+        0%, 100% { translate: 0 0; }
+        50% { translate: 0 -7px; }
+    }
+
     body.voter-home-page .hero {
-        --hero-text: #142746;
-        --hero-muted: #405776;
-        --hero-status-text: #24466f;
-        --hero-secondary-text: #173b69;
-        --hero-overlay-left: rgba(242, 247, 255, .94);
-        --hero-overlay-mid: rgba(235, 243, 255, .83);
-        --hero-overlay-right: rgba(223, 236, 255, .58);
-        --hero-overlay-bottom: rgba(220, 233, 251, .52);
-        --hero-overlay-top: rgba(240, 246, 255, .08);
-        --hero-pattern: rgba(28, 70, 132, .42);
+        --hero-text: #f8fbff;
+        --hero-muted: rgba(232, 241, 255, .82);
+        --hero-status-text: #f3f7ff;
+        --hero-secondary-text: #f8fbff;
+        --hero-overlay-left: rgba(5, 17, 40, .97);
+        --hero-overlay-mid: rgba(8, 29, 64, .91);
+        --hero-overlay-right: rgba(12, 48, 101, .78);
+        --hero-overlay-bottom: rgba(4, 15, 35, .5);
+        --hero-overlay-top: rgba(7, 26, 58, .12);
+        --hero-pattern: rgba(205, 225, 255, .62);
         position: relative;
         isolation: isolate;
         overflow: hidden;
-        background-color: #d9e8ff;
+        background-color: #081a37;
         background:
-            linear-gradient(90deg, var(--hero-overlay-left) 0%, var(--hero-overlay-mid) 48%, var(--hero-overlay-right) 100%),
+            radial-gradient(ellipse at 77% 42%, rgba(52, 127, 255, .3), transparent 38%),
+            linear-gradient(108deg, var(--hero-overlay-left) 0%, var(--hero-overlay-mid) 52%, var(--hero-overlay-right) 100%),
             linear-gradient(0deg, var(--hero-overlay-bottom) 0%, transparent 58%, var(--hero-overlay-top) 100%),
             url("{{ asset('images/background1.jpg') }}") center 48% / cover no-repeat;
         color: var(--hero-text);
@@ -484,12 +579,12 @@
         --hero-muted: rgba(235, 242, 255, .78);
         --hero-status-text: #e3edff;
         --hero-secondary-text: #f7faff;
-        --hero-overlay-left: rgba(5, 17, 42, .88);
-        --hero-overlay-mid: rgba(5, 20, 48, .72);
-        --hero-overlay-right: rgba(5, 20, 48, .46);
-        --hero-overlay-bottom: rgba(4, 14, 32, .62);
-        --hero-overlay-top: rgba(4, 14, 32, .24);
-        --hero-pattern: rgba(255, 255, 255, .5);
+        --hero-overlay-left: rgba(2, 10, 25, .98);
+        --hero-overlay-mid: rgba(4, 17, 39, .94);
+        --hero-overlay-right: rgba(5, 24, 54, .86);
+        --hero-overlay-bottom: rgba(2, 9, 22, .7);
+        --hero-overlay-top: rgba(4, 14, 32, .34);
+        --hero-pattern: rgba(219, 232, 255, .56);
         background-color: #07162f;
     }
 
@@ -505,46 +600,56 @@
     body.voter-home-page .hero::before {
         background: radial-gradient(circle, var(--hero-pattern) 1px, transparent 1.5px);
         background-size: 34px 34px;
-        opacity: .12;
+        opacity: .14;
         mask-image: linear-gradient(110deg, #000, transparent 75%);
+        animation: hero-pattern-drift 34s linear infinite;
     }
 
     body.voter-home-page .hero::after {
         inset: auto -9rem -17rem auto;
         width: 34rem;
         aspect-ratio: 1;
-        border: 1px solid color-mix(in srgb, var(--hero-text), transparent 88%);
+        border: 1px solid color-mix(in srgb, #bcd6ff, transparent 70%);
         border-radius: 50%;
-        box-shadow: 0 0 0 3rem color-mix(in srgb, var(--hero-text), transparent 96%), 0 0 0 6rem color-mix(in srgb, var(--hero-text), transparent 97%);
+        box-shadow: 0 0 0 3rem color-mix(in srgb, #bcd6ff, transparent 93%), 0 0 0 6rem color-mix(in srgb, #bcd6ff, transparent 95%), 0 0 90px rgba(56, 129, 255, .12);
+        animation: hero-orbit-float 24s ease-in-out infinite alternate;
     }
 
     body.voter-home-page .hero-inner {
         position: relative;
         z-index: 0;
         width: min(1180px, 100% - 2 * clamp(20px, 5vw, 44px));
+        align-items: center;
         gap: clamp(32px, 6vw, 76px);
-        padding-block: clamp(48px, 8vw, 96px);
+        padding-block: clamp(54px, 7vw, 88px);
     }
 
     body.voter-home-page .hero-copy {
+        max-width: 620px;
         animation: home-intro .7s cubic-bezier(.2, .75, .25, 1) both;
     }
 
     body.voter-home-page .hero-status {
-        border: 1px solid color-mix(in srgb, var(--hero-text), transparent 76%);
-        background: color-mix(in srgb, var(--hero-text), transparent 92%);
+        border: 1px solid rgba(184, 211, 255, .32);
+        background: rgba(255, 255, 255, .1);
         color: var(--hero-status-text);
         backdrop-filter: blur(8px);
+        box-shadow: inset 0 1px rgba(255, 255, 255, .12);
+    }
+
+    body.voter-home-page .hero-status::before {
+        animation: hero-status-pulse 2.6s ease-in-out infinite;
     }
 
     body.voter-home-page .hero-status.status-open {
-        background: rgba(34, 197, 94, .16);
-        color: #166534;
+        border-color: rgba(134, 239, 172, .42);
+        background: rgba(22, 101, 52, .38);
+        color: #bbf7d0;
     }
 
     body.voter-home-page .hero-status.status-ended {
-        background: rgba(71, 85, 105, .12);
-        color: #334155;
+        background: rgba(148, 163, 184, .2);
+        color: #e2e8f0;
     }
 
     :root[data-theme="dark"] body.voter-home-page .hero-status.status-open {
@@ -560,10 +665,11 @@
         max-width: 13ch;
         margin-top: 22px;
         color: var(--hero-text);
-        font-size: clamp(2.75rem, 6.5vw, 5.35rem);
+        font-size: clamp(2.8rem, 6.2vw, 5.15rem);
         line-height: .99;
         letter-spacing: -.055em;
         text-wrap: balance;
+        text-shadow: 0 3px 24px rgba(0, 9, 28, .18);
     }
 
     body.voter-home-page .hero-lead {
@@ -572,38 +678,58 @@
         color: var(--hero-muted);
         font-size: clamp(1.05rem, 1.7vw, 1.22rem);
         line-height: 1.7;
+        text-wrap: pretty;
     }
 
     body.voter-home-page .button-row {
         gap: 14px;
         margin-top: 30px;
+        animation: home-intro .7s .18s cubic-bezier(.2, .75, .25, 1) both;
     }
 
     body.voter-home-page .button {
+        position: relative;
         min-height: 54px;
         border-radius: 15px;
-        transition: transform .22s ease, box-shadow .22s ease, background-color .22s ease;
+        transition: transform .22s ease, box-shadow .22s ease, background-color .22s ease, border-color .22s ease;
     }
 
     body.voter-home-page .button-primary {
-        border-color: #78a7ff;
-        background: linear-gradient(135deg, #4c83f1, #2860dc);
-        box-shadow: 0 10px 28px rgba(25, 82, 197, .38), inset 0 1px rgba(255, 255, 255, .22);
+        overflow: hidden;
+        border-color: rgba(191, 219, 254, .55);
+        background: linear-gradient(120deg, #77aaff, #3478f6 48%, #2455d8);
+        background-size: 180% 100%;
+        box-shadow: 0 12px 30px rgba(21, 76, 190, .38), inset 0 1px rgba(255, 255, 255, .28);
         color: #fff;
     }
 
     body.voter-home-page .button-primary:hover {
-        box-shadow: 0 15px 34px rgba(25, 82, 197, .48), inset 0 1px rgba(255, 255, 255, .28);
+        transform: translateY(-3px);
+        background-position: 100% 50%;
+        box-shadow: 0 17px 36px rgba(25, 82, 197, .48), inset 0 1px rgba(255, 255, 255, .32);
+    }
+
+    body.voter-home-page .button-primary:active {
+        transform: translateY(-1px) scale(.98);
+    }
+
+    body.voter-home-page .button-primary:focus-visible,
+    body.voter-home-page .button-secondary:focus-visible {
+        outline: 3px solid #bfdbfe;
+        outline-offset: 4px;
     }
 
     body.voter-home-page .button-secondary {
-        border-color: color-mix(in srgb, var(--hero-text), transparent 68%);
-        background: color-mix(in srgb, var(--hero-text), transparent 92%);
+        border-color: rgba(205, 224, 255, .42);
+        background: rgba(255, 255, 255, .08);
         color: var(--hero-secondary-text);
+        backdrop-filter: blur(8px);
     }
 
     body.voter-home-page .button-secondary:hover {
-        background: color-mix(in srgb, var(--hero-text), transparent 86%);
+        transform: translateY(-3px);
+        border-color: rgba(205, 224, 255, .72);
+        background: rgba(255, 255, 255, .15);
     }
 
     body.voter-home-page .steps-card {
@@ -617,12 +743,45 @@
         --tint: #eaf1ff;
         --ok: #15803d;
         --ok-bg: #dcfce7;
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
         color: var(--ink);
         padding: clamp(20px, 3vw, 30px);
-        border-color: rgba(255, 255, 255, .72);
-        border-radius: 26px;
-        box-shadow: 0 28px 72px rgba(1, 12, 34, .34), 0 2px 8px rgba(1, 12, 34, .08);
+        border: 1px solid rgba(255, 255, 255, .78);
+        border-radius: 28px;
+        background: linear-gradient(145deg, rgba(255, 255, 255, .98), rgba(239, 246, 255, .96));
+        box-shadow: 0 30px 76px rgba(0, 9, 28, .38), 0 2px 8px rgba(1, 12, 34, .08), inset 0 1px rgba(255, 255, 255, .95);
         animation: home-intro .8s .12s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.voter-home-page .steps-card::before,
+    body.voter-home-page .steps-card::after {
+        position: absolute;
+        z-index: 0;
+        pointer-events: none;
+        content: "";
+    }
+
+    body.voter-home-page .steps-card::before {
+        inset: 0 0 auto;
+        height: 4px;
+        background: linear-gradient(90deg, #4f8cff, #62d4f2 55%, #8dafff);
+    }
+
+    body.voter-home-page .steps-card::after {
+        top: -110px;
+        right: -92px;
+        width: 240px;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(84, 145, 255, .13), transparent 70%);
+        animation: hero-card-glow 8s ease-in-out infinite alternate;
+    }
+
+    body.voter-home-page .steps-card > * {
+        position: relative;
+        z-index: 1;
     }
 
     :root[data-theme="dark"] body.voter-home-page .steps-card {
@@ -637,10 +796,12 @@
         --ok: #86efac;
         --ok-bg: #12351f;
         border-color: rgba(199, 218, 255, .2);
-        box-shadow: 0 28px 72px rgba(1, 12, 34, .46), 0 2px 8px rgba(1, 12, 34, .18);
+        background: linear-gradient(145deg, rgba(18, 31, 52, .98), rgba(14, 27, 48, .97));
+        box-shadow: 0 30px 76px rgba(0, 4, 15, .56), 0 2px 8px rgba(1, 12, 34, .24), inset 0 1px rgba(255, 255, 255, .06);
     }
 
     body.voter-home-page .steps-card h2 {
+        color: var(--ink);
         font-size: 1.3rem;
         letter-spacing: -.025em;
     }
@@ -653,16 +814,31 @@
         min-height: 72px;
         padding: 13px 15px;
         border-radius: 16px;
-        transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+        background: rgba(255, 255, 255, .8);
+        transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+        animation: hero-step-in .55s both;
+    }
+
+    body.voter-home-page .step-item:nth-child(1) { animation-delay: .2s; }
+    body.voter-home-page .step-item:nth-child(2) { animation-delay: .3s; }
+    body.voter-home-page .step-item:nth-child(3) { animation-delay: .4s; }
+    body.voter-home-page .step-item:nth-child(4) { animation-delay: .5s; }
+
+    body.voter-home-page .step-item:not(.is-current):hover {
+        transform: translateX(4px);
+        border-color: #b8cdf0;
+        background: #fff;
+        box-shadow: 0 9px 20px rgba(24, 52, 94, .09);
     }
 
     body.voter-home-page .step-item:hover {
-        transform: translateX(3px);
-        box-shadow: 0 8px 18px rgba(15, 27, 51, .07);
+        box-shadow: 0 9px 20px rgba(24, 52, 94, .1);
     }
 
     body.voter-home-page .step-item.is-current {
-        box-shadow: inset 3px 0 #2563eb, 0 8px 20px rgba(37, 99, 235, .09);
+        border-color: #9bbcff;
+        background: linear-gradient(100deg, #eaf2ff, #f7faff);
+        box-shadow: inset 3px 0 #3478f6, 0 8px 20px rgba(37, 99, 235, .1);
     }
 
     body.voter-home-page .content-section {
@@ -699,6 +875,34 @@
         transition: background-color .25s ease, color .25s ease;
     }
 
+    body.voter-home-page #how-it-works::before,
+    body.voter-home-page #how-it-works::after {
+        position: absolute;
+        z-index: 0;
+        pointer-events: none;
+        content: "";
+    }
+
+    body.voter-home-page #how-it-works::before {
+        inset: 0;
+        background-image: radial-gradient(rgba(40, 87, 158, .17) .8px, transparent .8px);
+        background-size: 26px 26px;
+        opacity: .34;
+        mask-image: linear-gradient(125deg, #000, transparent 64%);
+        animation: action-pattern-drift 42s linear infinite;
+    }
+
+    body.voter-home-page #how-it-works::after {
+        top: -10rem;
+        right: -8rem;
+        width: 30rem;
+        aspect-ratio: 1;
+        border: 1px solid rgba(255, 255, 255, .42);
+        border-radius: 50%;
+        box-shadow: 0 0 0 2.5rem rgba(255, 255, 255, .14), 0 0 0 5rem rgba(255, 255, 255, .1);
+        animation: action-orbit-drift 28s ease-in-out infinite alternate;
+    }
+
     :root[data-theme="dark"] body.voter-home-page #how-it-works {
         --action-section-start: #17396b;
         --action-section-mid: #24508c;
@@ -713,6 +917,15 @@
         --action-card-line: rgba(199, 218, 255, .2);
     }
 
+    :root[data-theme="dark"] body.voter-home-page #how-it-works::before {
+        opacity: .22;
+    }
+
+    :root[data-theme="dark"] body.voter-home-page #how-it-works::after {
+        border-color: rgba(201, 220, 255, .2);
+        box-shadow: 0 0 0 2.5rem rgba(201, 220, 255, .06), 0 0 0 5rem rgba(201, 220, 255, .035);
+    }
+
     body.voter-home-page #how-it-works .page-wrap {
         position: relative;
         z-index: 1;
@@ -722,12 +935,29 @@
         margin-bottom: clamp(26px, 4vw, 38px);
     }
 
+    body.voter-home-page #how-it-works .section-heading > div {
+        max-width: 760px;
+    }
+
     body.voter-home-page .action-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
         margin: 0 0 8px;
         color: var(--action-section-kicker);
         font-size: .76rem;
         font-weight: 800;
         letter-spacing: .16em;
+    }
+
+    body.voter-home-page .action-kicker::before {
+        width: 24px;
+        height: 2px;
+        border-radius: 99px;
+        background: currentColor;
+        content: "";
+        transform-origin: left center;
+        animation: action-kicker-line .8s .2s cubic-bezier(.2, .75, .25, 1) both;
     }
 
     body.voter-home-page #how-it-works .section-heading h2 {
@@ -785,13 +1015,14 @@
         border-radius: 24px;
         background: linear-gradient(150deg, var(--action-card-start), var(--action-card-end));
         color: var(--action-card-text);
-        box-shadow: 0 8px 18px rgba(0, 7, 22, .12), 0 22px 42px rgba(0, 7, 22, .16);
+        box-shadow: 0 8px 18px rgba(0, 7, 22, .1), 0 22px 42px rgba(0, 7, 22, .13), inset 0 1px rgba(255, 255, 255, .72);
         cursor: pointer;
         transition: transform .28s cubic-bezier(.2, .75, .25, 1), border-color .24s ease, box-shadow .28s ease, background-color .24s ease;
     }
 
     body.voter-home-page .action-card::after {
         position: absolute;
+        z-index: 0;
         right: -48px;
         bottom: -76px;
         width: 176px;
@@ -802,6 +1033,14 @@
         content: "";
         pointer-events: none;
         transition: transform .45s cubic-bezier(.2, .75, .25, 1);
+    }
+
+    body.voter-home-page .action-card::before {
+        z-index: 1;
+        height: 4px;
+        transform: scaleX(0);
+        transform-origin: left center;
+        transition: transform .4s cubic-bezier(.2, .75, .25, 1), height .2s ease;
     }
 
     body.voter-home-page .action-card:nth-child(2) {
@@ -823,8 +1062,13 @@
 
     body.voter-home-page .action-card:hover {
         transform: translateY(-8px);
-        border-color: #fff;
-        box-shadow: 0 15px 28px rgba(0, 7, 22, .17), 0 30px 54px color-mix(in srgb, var(--action-accent), transparent 78%);
+        border-color: color-mix(in srgb, var(--action-accent), white 45%);
+        box-shadow: 0 15px 28px rgba(0, 7, 22, .14), 0 30px 54px color-mix(in srgb, var(--action-accent), transparent 76%), inset 0 1px rgba(255, 255, 255, .8);
+    }
+
+    body.voter-home-page .action-card:hover::before {
+        height: 5px;
+        transform: scaleX(1);
     }
 
     body.voter-home-page .action-card:active {
@@ -852,6 +1096,8 @@
     }
 
     body.voter-home-page .action-icon {
+        position: relative;
+        z-index: 1;
         width: 66px;
         height: 66px;
         border: 1px solid color-mix(in srgb, var(--action-accent), transparent 80%);
@@ -864,6 +1110,13 @@
     body.voter-home-page .action-icon .icon {
         width: 30px;
         height: 30px;
+    }
+
+    body.voter-home-page .action-card > h3,
+    body.voter-home-page .action-card > p,
+    body.voter-home-page .action-card > .action-link {
+        position: relative;
+        z-index: 1;
     }
 
     body.voter-home-page .action-card h3 {
@@ -908,34 +1161,81 @@
         transition: transform .2s ease;
     }
 
+    @keyframes action-pattern-drift {
+        to { background-position: 52px 52px; }
+    }
+
+    @keyframes action-orbit-drift {
+        from { transform: translate3d(0, 0, 0) rotate(-4deg); }
+        to { transform: translate3d(-18px, 14px, 0) rotate(4deg); }
+    }
+
+    @keyframes action-kicker-line {
+        from { transform: scaleX(0); opacity: .35; }
+        to { transform: scaleX(1); opacity: 1; }
+    }
+
     body.voter-home-page .date-card {
         --date-accent: #315fbd;
         position: relative;
-        min-height: 174px;
-        align-items: flex-start;
-        gap: 18px;
+        min-height: 190px;
+        align-items: center;
+        flex-direction: row;
+        gap: clamp(16px, 2.2vw, 24px);
         overflow: hidden;
-        padding: clamp(20px, 3vw, 28px);
-        border: 1px solid var(--date-card-border, #d7e2f2);
-        border-radius: 22px;
+        padding: clamp(22px, 3vw, 32px);
+        border: 1px solid color-mix(in srgb, var(--date-card-border, #d7e2f2), white 10%);
+        border-radius: 26px;
         background:
-            radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--date-accent), transparent 92%), transparent 48%),
-            linear-gradient(145deg, var(--date-card-start, #fff), var(--date-card-end, #f6f9ff));
-        box-shadow: 0 8px 22px rgba(15, 27, 51, .055), 0 20px 38px rgba(15, 27, 51, .045);
-        transition: transform .24s cubic-bezier(.2, .75, .25, 1), border-color .24s ease, box-shadow .24s ease;
+            radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--date-accent), transparent 91%), transparent 46%),
+            linear-gradient(145deg, color-mix(in srgb, var(--date-card-start, #fff), white 8%), var(--date-card-end, #f6f9ff));
+        box-shadow: 0 8px 20px rgba(15, 27, 51, .065), 0 22px 42px rgba(15, 27, 51, .075), inset 0 1px rgba(255, 255, 255, .86);
+        transition: transform .28s cubic-bezier(.2, .75, .25, 1), border-color .24s ease, box-shadow .28s ease;
     }
 
     body.voter-home-page #dates {
         --date-section-start: #f5f8fd;
-        --date-section-end: #eaf1fb;
+        --date-section-end: #e4edfb;
         --date-section-text: #142746;
         --date-section-muted: #536680;
         --date-card-start: #fff;
         --date-card-end: #f6f9ff;
         --date-card-border: #d7e2f2;
+        --date-section-accent: #315fbd;
+        isolation: isolate;
+        overflow: clip;
         background:
-            radial-gradient(ellipse at 100% 0%, rgba(67, 119, 230, .11), transparent 42%),
+            radial-gradient(ellipse at 100% 0%, rgba(67, 119, 230, .15), transparent 42%),
+            radial-gradient(ellipse at 0% 100%, rgba(58, 114, 214, .12), transparent 38%),
             linear-gradient(145deg, var(--date-section-start), var(--date-section-end));
+    }
+
+    body.voter-home-page #dates::before,
+    body.voter-home-page #dates::after {
+        position: absolute;
+        z-index: -1;
+        pointer-events: none;
+        content: "";
+    }
+
+    body.voter-home-page #dates::before {
+        inset: 0;
+        background-image: radial-gradient(rgba(49, 95, 189, .13) .8px, transparent .8px);
+        background-size: 28px 28px;
+        opacity: .42;
+        mask-image: linear-gradient(135deg, #000, transparent 68%);
+        animation: date-pattern-drift 44s linear infinite;
+    }
+
+    body.voter-home-page #dates::after {
+        top: -12rem;
+        right: -7rem;
+        width: 32rem;
+        aspect-ratio: 1;
+        border: 1px solid rgba(255, 255, 255, .56);
+        border-radius: 50%;
+        box-shadow: 0 0 0 2.6rem rgba(255, 255, 255, .18), 0 0 0 5.2rem rgba(255, 255, 255, .12);
+        animation: date-orbit-drift 30s ease-in-out infinite alternate;
     }
 
     :root[data-theme="dark"] body.voter-home-page #dates {
@@ -943,14 +1243,32 @@
         --date-section-end: #172743;
         --date-section-text: #edf4ff;
         --date-section-muted: #b7c5dc;
+        --date-section-accent: #a8c6ff;
         --date-card-start: #1a2a43;
         --date-card-end: #142139;
         --date-card-border: #2c4161;
+        background:
+            radial-gradient(ellipse at 100% 0%, rgba(67, 119, 230, .16), transparent 42%),
+            radial-gradient(ellipse at 0% 100%, rgba(58, 114, 214, .1), transparent 38%),
+            linear-gradient(145deg, var(--date-section-start), var(--date-section-end));
+    }
+
+    :root[data-theme="dark"] body.voter-home-page #dates::before {
+        opacity: .25;
+    }
+
+    :root[data-theme="dark"] body.voter-home-page #dates::after {
+        border-color: rgba(201, 220, 255, .2);
+        box-shadow: 0 0 0 2.6rem rgba(201, 220, 255, .06), 0 0 0 5.2rem rgba(201, 220, 255, .035);
     }
 
     body.voter-home-page #dates .section-heading {
         align-items: flex-end;
-        margin-bottom: clamp(22px, 3vw, 30px);
+        margin-bottom: clamp(26px, 3.5vw, 38px);
+    }
+
+    body.voter-home-page #dates .section-heading > div {
+        max-width: 760px;
     }
 
     body.voter-home-page #dates .section-heading h2 {
@@ -963,11 +1281,24 @@
     }
 
     body.voter-home-page .dates-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
         margin: 0 0 7px;
-        color: var(--brand);
+        color: var(--date-section-accent);
         font-size: .74rem;
         font-weight: 800;
         letter-spacing: .15em;
+    }
+
+    body.voter-home-page .dates-kicker::before {
+        width: 24px;
+        height: 2px;
+        border-radius: 999px;
+        background: currentColor;
+        content: "";
+        transform-origin: left center;
+        animation: date-kicker-in .65s .12s cubic-bezier(.2, .75, .25, 1) both;
     }
 
     body.voter-home-page .date-grid {
@@ -986,16 +1317,42 @@
 
     body.voter-home-page .date-card::before {
         position: absolute;
-        inset: 0 auto 0 0;
+        inset: 22px auto 22px 0;
         width: 4px;
-        background: var(--date-accent);
+        border-radius: 0 999px 999px 0;
+        background: linear-gradient(180deg, color-mix(in srgb, var(--date-accent), white 16%), var(--date-accent));
         content: "";
+        transform: scaleY(.42);
+        transform-origin: center;
+        transition: transform .32s cubic-bezier(.2, .75, .25, 1);
+    }
+
+    body.voter-home-page .date-card::after {
+        position: absolute;
+        right: -54px;
+        bottom: -82px;
+        width: 168px;
+        aspect-ratio: 1;
+        border: 1px solid color-mix(in srgb, var(--date-accent), transparent 83%);
+        border-radius: 50%;
+        box-shadow: 0 0 0 18px color-mix(in srgb, var(--date-accent), transparent 95%);
+        content: "";
+        pointer-events: none;
+        transition: transform .42s cubic-bezier(.2, .75, .25, 1);
     }
 
     body.voter-home-page .date-card:hover {
-        transform: translateY(-4px);
-        border-color: color-mix(in srgb, var(--date-accent), transparent 62%);
-        box-shadow: 0 14px 30px color-mix(in srgb, var(--date-accent), transparent 88%), 0 24px 42px rgba(15, 27, 51, .08);
+        transform: translateY(-5px);
+        border-color: color-mix(in srgb, var(--date-accent), transparent 55%);
+        box-shadow: 0 14px 30px color-mix(in srgb, var(--date-accent), transparent 89%), 0 28px 48px rgba(15, 27, 51, .12), inset 0 1px rgba(255, 255, 255, .9);
+    }
+
+    body.voter-home-page .date-card:hover::before {
+        transform: scaleY(1);
+    }
+
+    body.voter-home-page .date-card:hover::after {
+        transform: scale(1.12) translate(-8px, -8px);
     }
 
     body.voter-home-page .date-card-icon {
@@ -1004,10 +1361,17 @@
         height: 54px;
         flex: none;
         place-items: center;
-        border: 1px solid color-mix(in srgb, var(--date-accent), transparent 82%);
-        border-radius: 17px;
-        background: color-mix(in srgb, var(--date-accent), var(--date-card-start) 91%);
+        border: 1px solid color-mix(in srgb, var(--date-accent), transparent 78%);
+        border-radius: 19px;
+        background: linear-gradient(145deg, color-mix(in srgb, var(--date-accent), white 92%), color-mix(in srgb, var(--date-accent), white 96%));
         color: var(--date-accent);
+        box-shadow: inset 0 1px rgba(255, 255, 255, .8), 0 7px 16px color-mix(in srgb, var(--date-accent), transparent 92%);
+        transition: transform .28s cubic-bezier(.2, .75, .25, 1), box-shadow .28s ease;
+    }
+
+    body.voter-home-page .date-card:hover .date-card-icon {
+        transform: translateY(-3px) rotate(-4deg);
+        box-shadow: inset 0 1px rgba(255, 255, 255, .85), 0 10px 22px color-mix(in srgb, var(--date-accent), transparent 86%);
     }
 
     body.voter-home-page .date-card-icon .icon {
@@ -1020,20 +1384,28 @@
     }
 
     body.voter-home-page .date-card-phase {
-        display: block;
-        margin: 1px 0 9px;
+        display: inline-flex;
+        width: fit-content;
+        align-items: center;
+        margin: 1px 0 10px;
+        padding: 5px 9px;
+        border: 1px solid color-mix(in srgb, var(--date-accent), transparent 84%);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--date-accent), white 94%);
         color: var(--date-accent);
-        font-size: .7rem;
+        font-size: .67rem;
         font-weight: 800;
-        letter-spacing: .13em;
+        letter-spacing: .12em;
     }
 
     body.voter-home-page .date-card strong {
-        margin-bottom: 8px;
+        display: block;
+        margin: 0 0 8px;
         color: var(--date-section-text);
         font-size: clamp(1.08rem, 1.8vw, 1.28rem);
         font-weight: 800;
         letter-spacing: -.02em;
+        line-height: 1.3;
     }
 
     body.voter-home-page .date-card span:last-child {
@@ -1045,7 +1417,18 @@
     }
 
     :root[data-theme="dark"] body.voter-home-page .date-card {
-        box-shadow: 0 8px 22px rgba(0, 0, 0, .14), 0 20px 38px rgba(0, 0, 0, .12);
+        border-color: var(--date-card-border);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, .2), 0 20px 38px rgba(0, 0, 0, .18), inset 0 1px rgba(255, 255, 255, .05);
+    }
+
+    :root[data-theme="dark"] body.voter-home-page .date-card-icon {
+        background: linear-gradient(145deg, color-mix(in srgb, var(--date-accent), #17253c 84%), color-mix(in srgb, var(--date-accent), #142139 91%));
+        box-shadow: inset 0 1px rgba(255, 255, 255, .07), 0 7px 16px rgba(0, 0, 0, .12);
+    }
+
+    :root[data-theme="dark"] body.voter-home-page .date-card-phase {
+        border-color: color-mix(in srgb, var(--date-accent), transparent 78%);
+        background: color-mix(in srgb, var(--date-accent), #111c30 88%);
     }
 
     body.voter-home-page #dates .empty-card {
@@ -1054,18 +1437,64 @@
         color: var(--date-section-muted);
     }
 
+    @keyframes date-pattern-drift {
+        to { background-position: 56px 56px; }
+    }
+
+    @keyframes date-orbit-drift {
+        from { transform: translate3d(0, 0, 0) rotate(-4deg); }
+        to { transform: translate3d(-18px, 16px, 0) rotate(4deg); }
+    }
+
+    @keyframes date-kicker-in {
+        from { opacity: .35; transform: scaleX(0); }
+        to { opacity: 1; transform: scaleX(1); }
+    }
+
     body.voter-home-page #events {
         --events-start: #f6f9ff;
-        --events-end: #eaf1fb;
+        --events-end: #e5eefb;
         --events-text: #142746;
         --events-muted: #536680;
         --events-card: #fff;
         --events-card-soft: #f5f8ff;
         --events-border: #d7e2f2;
         --events-brand: #315fbd;
+        position: relative;
+        isolation: isolate;
+        overflow: clip;
         background:
-            radial-gradient(ellipse at 100% 0%, rgba(67, 119, 230, .1), transparent 42%),
+            radial-gradient(ellipse at 100% 0%, rgba(67, 119, 230, .15), transparent 42%),
+            radial-gradient(ellipse at 0% 100%, rgba(58, 114, 214, .1), transparent 38%),
             linear-gradient(145deg, var(--events-start), var(--events-end));
+    }
+
+    body.voter-home-page #events::before,
+    body.voter-home-page #events::after {
+        position: absolute;
+        z-index: -1;
+        pointer-events: none;
+        content: "";
+    }
+
+    body.voter-home-page #events::before {
+        inset: 0;
+        background-image: radial-gradient(rgba(49, 95, 189, .12) .8px, transparent .8px);
+        background-size: 28px 28px;
+        opacity: .36;
+        mask-image: linear-gradient(135deg, transparent, #000 38%, transparent 90%);
+        animation: events-pattern-drift 46s linear infinite;
+    }
+
+    body.voter-home-page #events::after {
+        top: -12rem;
+        left: -9rem;
+        width: 31rem;
+        aspect-ratio: 1;
+        border: 1px solid rgba(255, 255, 255, .56);
+        border-radius: 50%;
+        box-shadow: 0 0 0 2.6rem rgba(255, 255, 255, .17), 0 0 0 5.2rem rgba(255, 255, 255, .1);
+        animation: events-orbit-drift 32s ease-in-out infinite alternate;
     }
 
     :root[data-theme="dark"] body.voter-home-page #events {
@@ -1079,17 +1508,44 @@
         --events-brand: #8db4ff;
     }
 
+    :root[data-theme="dark"] body.voter-home-page #events::before {
+        opacity: .2;
+    }
+
+    :root[data-theme="dark"] body.voter-home-page #events::after {
+        border-color: rgba(201, 220, 255, .2);
+        box-shadow: 0 0 0 2.6rem rgba(201, 220, 255, .06), 0 0 0 5.2rem rgba(201, 220, 255, .035);
+    }
+
+    body.voter-home-page #events .page-wrap {
+        position: relative;
+        z-index: 1;
+    }
+
     body.voter-home-page #events .section-heading {
         align-items: flex-end;
-        margin-bottom: 24px;
+        margin-bottom: clamp(24px, 3vw, 34px);
     }
 
     body.voter-home-page .events-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
         margin: 0 0 7px;
         color: var(--events-brand);
         font-size: .74rem;
         font-weight: 800;
         letter-spacing: .15em;
+    }
+
+    body.voter-home-page .events-kicker::before {
+        width: 24px;
+        height: 2px;
+        border-radius: 999px;
+        background: currentColor;
+        content: "";
+        transform-origin: left center;
+        animation: events-kicker-in .65s .12s cubic-bezier(.2, .75, .25, 1) both;
     }
 
     body.voter-home-page #events .section-heading h2 {
@@ -1106,9 +1562,10 @@
         height: 46px;
         border: 1px solid color-mix(in srgb, var(--events-brand), transparent 75%);
         border-radius: 15px;
-        background: var(--events-card);
+        background: color-mix(in srgb, var(--events-card), transparent 5%);
         color: var(--events-brand);
         box-shadow: 0 5px 14px rgba(15, 27, 51, .08);
+        backdrop-filter: blur(10px);
         transition: transform .2s ease, background-color .2s ease, color .2s ease, box-shadow .2s ease;
     }
 
@@ -1119,25 +1576,69 @@
         box-shadow: 0 9px 20px color-mix(in srgb, var(--events-brand), transparent 76%);
     }
 
+    body.voter-home-page #events .carousel-controls .icon-button:focus-visible {
+        outline: 3px solid var(--events-brand);
+        outline-offset: 4px;
+    }
+
     body.voter-home-page .election-banner {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
         min-height: 156px;
         gap: clamp(18px, 3vw, 32px);
         margin-bottom: clamp(18px, 2.5vw, 26px);
         padding: clamp(18px, 3vw, 28px);
         border: 1px solid var(--events-border);
-        border-radius: 24px;
+        border-radius: 26px;
         background:
-            radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--events-brand), transparent 91%), transparent 44%),
+            radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--events-brand), transparent 88%), transparent 44%),
             linear-gradient(125deg, var(--events-card), var(--events-card-soft));
-        box-shadow: 0 9px 24px rgba(15, 27, 51, .055), 0 20px 42px rgba(15, 27, 51, .045);
+        box-shadow: 0 9px 24px rgba(15, 27, 51, .055), 0 20px 42px rgba(15, 27, 51, .065), inset 0 1px rgba(255, 255, 255, .8);
+        animation: home-intro .7s .08s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.voter-home-page .election-banner::before {
+        position: absolute;
+        z-index: 0;
+        inset: 0 0 auto;
+        height: 4px;
+        background: linear-gradient(90deg, color-mix(in srgb, var(--events-brand), white 35%), var(--events-brand), color-mix(in srgb, var(--events-brand), transparent 20%));
+        content: "";
+    }
+
+    body.voter-home-page .election-banner::after {
+        position: absolute;
+        z-index: 0;
+        top: -70px;
+        right: -55px;
+        width: 190px;
+        aspect-ratio: 1;
+        border: 1px solid color-mix(in srgb, var(--events-brand), transparent 84%);
+        border-radius: 50%;
+        box-shadow: 0 0 0 18px color-mix(in srgb, var(--events-brand), transparent 96%);
+        content: "";
+        pointer-events: none;
+        animation: events-banner-orbit 12s ease-in-out infinite alternate;
     }
 
     body.voter-home-page .election-banner img {
         width: min(34%, 250px);
         max-height: 112px;
         flex: none;
-        border-radius: 14px;
+        padding: 9px 14px;
+        border: 1px solid color-mix(in srgb, var(--events-brand), transparent 88%);
+        border-radius: 18px;
+        background: color-mix(in srgb, var(--events-card), transparent 9%);
         object-fit: contain;
+        position: relative;
+        z-index: 1;
+    }
+
+    body.voter-home-page .election-banner-copy {
+        position: relative;
+        z-index: 1;
+        min-width: 0;
     }
 
     body.voter-home-page .election-banner-copy span {
@@ -1170,37 +1671,81 @@
     }
 
     body.voter-home-page .event-card {
+        --event-accent: #315fbd;
         position: relative;
+        isolation: isolate;
         display: flex;
         min-height: 340px;
         flex-direction: column;
+        overflow: hidden;
         border: 1px solid var(--events-border);
-        border-radius: 22px;
-        background: var(--events-card);
+        border-radius: 24px;
+        background:
+            radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--event-accent), transparent 94%), transparent 38%),
+            var(--events-card);
         color: var(--events-text);
         text-align: left;
-        box-shadow: 0 8px 20px rgba(15, 27, 51, .055), 0 18px 36px rgba(15, 27, 51, .05);
+        box-shadow: 0 8px 20px rgba(15, 27, 51, .055), 0 18px 36px rgba(15, 27, 51, .065), inset 0 1px rgba(255, 255, 255, .78);
         cursor: pointer;
         transition: transform .24s cubic-bezier(.2, .75, .25, 1), border-color .24s ease, box-shadow .24s ease;
     }
 
+    body.voter-home-page .event-card::before {
+        position: absolute;
+        z-index: 3;
+        inset: 0 0 auto;
+        height: 4px;
+        background: linear-gradient(90deg, color-mix(in srgb, var(--event-accent), white 18%), var(--event-accent));
+        content: "";
+        pointer-events: none;
+        transform: scaleX(0);
+        transform-origin: left center;
+        transition: transform .38s cubic-bezier(.2, .75, .25, 1);
+    }
+
+    body.voter-home-page .event-card::after {
+        position: absolute;
+        z-index: 0;
+        right: -48px;
+        bottom: -80px;
+        width: 170px;
+        aspect-ratio: 1;
+        border: 1px solid color-mix(in srgb, var(--event-accent), transparent 87%);
+        border-radius: 50%;
+        box-shadow: 0 0 0 18px color-mix(in srgb, var(--event-accent), transparent 96%);
+        content: "";
+        pointer-events: none;
+        transition: transform .42s cubic-bezier(.2, .75, .25, 1);
+    }
+
     body.voter-home-page .event-card:hover {
         transform: translateY(-5px);
-        border-color: color-mix(in srgb, var(--events-brand), transparent 52%);
-        box-shadow: 0 16px 32px color-mix(in srgb, var(--events-brand), transparent 88%), 0 24px 42px rgba(15, 27, 51, .09);
+        border-color: color-mix(in srgb, var(--event-accent), transparent 52%);
+        box-shadow: 0 16px 32px color-mix(in srgb, var(--event-accent), transparent 89%), 0 24px 42px rgba(15, 27, 51, .1), inset 0 1px rgba(255, 255, 255, .9);
+    }
+
+    body.voter-home-page .event-card:hover::before,
+    body.voter-home-page .event-card:focus-visible::before {
+        transform: scaleX(1);
+    }
+
+    body.voter-home-page .event-card:hover::after {
+        transform: scale(1.12) translate(-7px, -7px);
     }
 
     body.voter-home-page .event-card:focus-visible {
-        outline: 3px solid var(--events-brand);
+        outline: 3px solid var(--event-accent);
         outline-offset: 4px;
     }
 
     body.voter-home-page .event-image,
     body.voter-home-page .event-placeholder {
+        position: relative;
+        z-index: 1;
         height: clamp(150px, 17vw, 205px);
         flex: none;
         overflow: hidden;
-        border-radius: 21px 21px 0 0;
+        border-radius: 23px 23px 0 0;
         background:
             radial-gradient(circle at 80% 0%, color-mix(in srgb, var(--events-brand), transparent 84%), transparent 46%),
             linear-gradient(145deg, var(--events-card-soft), color-mix(in srgb, var(--events-brand), var(--events-card-soft) 12%));
@@ -1220,12 +1765,21 @@
         width: 48px;
         height: 48px;
         padding: 11px;
-        border: 1px solid color-mix(in srgb, var(--events-brand), transparent 78%);
+        border: 1px solid color-mix(in srgb, var(--event-accent), transparent 78%);
         border-radius: 16px;
         background: color-mix(in srgb, var(--events-card), transparent 18%);
+        color: var(--event-accent);
+        transition: transform .32s cubic-bezier(.2, .75, .25, 1), box-shadow .32s ease;
+    }
+
+    body.voter-home-page .event-card:hover .event-placeholder .icon {
+        transform: translateY(-4px) rotate(-4deg);
+        box-shadow: 0 10px 24px color-mix(in srgb, var(--event-accent), transparent 84%);
     }
 
     body.voter-home-page .event-card-copy {
+        position: relative;
+        z-index: 1;
         display: flex;
         min-height: 0;
         flex: 1;
@@ -1247,7 +1801,7 @@
         display: inline-flex;
         align-items: center;
         gap: 7px;
-        color: var(--events-brand);
+        color: var(--event-accent);
         font-size: .84rem;
         font-variant-numeric: tabular-nums;
         font-weight: 750;
@@ -1259,6 +1813,7 @@
         border-radius: 50%;
         background: currentColor;
         content: "";
+        box-shadow: 0 0 0 4px color-mix(in srgb, currentColor, transparent 91%);
     }
 
     body.voter-home-page .event-description {
@@ -1278,7 +1833,7 @@
         gap: 7px;
         margin-top: auto;
         padding-top: 16px;
-        color: var(--events-brand);
+        color: var(--event-accent);
         font-size: .84rem;
         font-weight: 800;
     }
@@ -1293,6 +1848,25 @@
         transform: translateX(4px);
     }
 
+    @keyframes events-pattern-drift {
+        to { background-position: 56px 56px; }
+    }
+
+    @keyframes events-orbit-drift {
+        from { transform: translate3d(0, 0, 0) rotate(-4deg); }
+        to { transform: translate3d(18px, 14px, 0) rotate(4deg); }
+    }
+
+    @keyframes events-kicker-in {
+        from { opacity: .35; transform: scaleX(0); }
+        to { opacity: 1; transform: scaleX(1); }
+    }
+
+    @keyframes events-banner-orbit {
+        from { transform: translate3d(0, 4px, 0) rotate(-3deg); }
+        to { transform: translate3d(-8px, -5px, 0) rotate(3deg); }
+    }
+
     body.voter-home-page #events .empty-card {
         border-color: var(--events-border);
         background: var(--events-card);
@@ -1301,16 +1875,48 @@
 
     body.voter-home-page #articles {
         --articles-start: #f6f9ff;
-        --articles-end: #eaf0fa;
+        --articles-end: #e5eefb;
         --articles-text: #142746;
         --articles-muted: #536680;
         --articles-card: #fff;
         --articles-card-soft: #f2f6ff;
         --articles-border: #d7e2f2;
         --articles-brand: #315fbd;
+        position: relative;
+        isolation: isolate;
+        overflow: clip;
         background:
+            radial-gradient(ellipse at 100% 0%, rgba(67, 119, 230, .14), transparent 42%),
             radial-gradient(ellipse at 0% 100%, rgba(67, 119, 230, .1), transparent 44%),
             linear-gradient(145deg, var(--articles-start), var(--articles-end));
+    }
+
+    body.voter-home-page #articles::before,
+    body.voter-home-page #articles::after {
+        position: absolute;
+        z-index: -1;
+        pointer-events: none;
+        content: "";
+    }
+
+    body.voter-home-page #articles::before {
+        inset: 0;
+        background-image: radial-gradient(rgba(49, 95, 189, .12) .8px, transparent .8px);
+        background-size: 28px 28px;
+        opacity: .34;
+        mask-image: linear-gradient(35deg, transparent, #000 38%, transparent 92%);
+        animation: articles-pattern-drift 48s linear infinite;
+    }
+
+    body.voter-home-page #articles::after {
+        right: -12rem;
+        bottom: -20rem;
+        width: 35rem;
+        aspect-ratio: 1;
+        border: 1px solid rgba(255, 255, 255, .58);
+        border-radius: 50%;
+        box-shadow: 0 0 0 2.8rem rgba(255, 255, 255, .16), 0 0 0 5.6rem rgba(255, 255, 255, .09);
+        animation: articles-orbit-drift 34s ease-in-out infinite alternate;
     }
 
     :root[data-theme="dark"] body.voter-home-page #articles {
@@ -1324,17 +1930,44 @@
         --articles-brand: #8db4ff;
     }
 
+    :root[data-theme="dark"] body.voter-home-page #articles::before {
+        opacity: .2;
+    }
+
+    :root[data-theme="dark"] body.voter-home-page #articles::after {
+        border-color: rgba(201, 220, 255, .2);
+        box-shadow: 0 0 0 2.8rem rgba(201, 220, 255, .06), 0 0 0 5.6rem rgba(201, 220, 255, .035);
+    }
+
+    body.voter-home-page #articles .page-wrap {
+        position: relative;
+        z-index: 1;
+    }
+
     body.voter-home-page #articles .section-heading {
         align-items: flex-end;
-        margin-bottom: 24px;
+        margin-bottom: clamp(24px, 3vw, 34px);
     }
 
     body.voter-home-page .articles-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
         margin: 0 0 7px;
         color: var(--articles-brand);
         font-size: .74rem;
         font-weight: 800;
         letter-spacing: .15em;
+    }
+
+    body.voter-home-page .articles-kicker::before {
+        width: 24px;
+        height: 2px;
+        border-radius: 999px;
+        background: currentColor;
+        content: "";
+        transform-origin: left center;
+        animation: articles-kicker-in .65s .12s cubic-bezier(.2, .75, .25, 1) both;
     }
 
     body.voter-home-page #articles .section-heading h2 {
@@ -1351,9 +1984,10 @@
         height: 46px;
         border: 1px solid color-mix(in srgb, var(--articles-brand), transparent 75%);
         border-radius: 15px;
-        background: var(--articles-card);
+        background: color-mix(in srgb, var(--articles-card), transparent 5%);
         color: var(--articles-brand);
         box-shadow: 0 5px 14px rgba(15, 27, 51, .08);
+        backdrop-filter: blur(10px);
         transition: transform .2s ease, background-color .2s ease, color .2s ease, box-shadow .2s ease;
     }
 
@@ -1369,17 +2003,26 @@
         outline-offset: 3px;
     }
 
+    body.voter-home-page #articles .carousel-controls .icon-button:active {
+        transform: translateY(0) scale(.95);
+    }
+
     body.voter-home-page #articles .article-grid {
         grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
         gap: clamp(14px, 2vw, 22px);
     }
 
     body.voter-home-page .article-card {
+        --article-accent: #315fbd;
+        position: relative;
+        isolation: isolate;
         overflow: hidden;
         border: 1px solid var(--articles-border);
-        border-radius: 22px;
-        background: var(--articles-card);
-        box-shadow: 0 8px 20px rgba(15, 27, 51, .055), 0 18px 36px rgba(15, 27, 51, .05);
+        border-radius: 24px;
+        background:
+            radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--article-accent), transparent 94%), transparent 42%),
+            var(--articles-card);
+        box-shadow: 0 8px 20px rgba(15, 27, 51, .055), 0 18px 36px rgba(15, 27, 51, .065), inset 0 1px rgba(255, 255, 255, .78);
         transition: transform .24s cubic-bezier(.2, .75, .25, 1), border-color .24s ease, box-shadow .24s ease;
     }
 
@@ -1387,45 +2030,93 @@
         display: none !important;
     }
 
+    body.voter-home-page .article-card::before,
+    body.voter-home-page .article-card::after {
+        position: absolute;
+        z-index: 2;
+        content: "";
+        pointer-events: none;
+    }
+
+    body.voter-home-page .article-card::before {
+        inset: 0 0 auto;
+        height: 4px;
+        background: linear-gradient(90deg, color-mix(in srgb, var(--article-accent), white 18%), var(--article-accent));
+        transform: scaleX(0);
+        transform-origin: left center;
+        transition: transform .38s cubic-bezier(.2, .75, .25, 1);
+    }
+
+    body.voter-home-page .article-card::after {
+        inset: 0;
+        background: linear-gradient(112deg, transparent 28%, rgba(255, 255, 255, .2) 46%, transparent 63%);
+        opacity: 0;
+        transform: translateX(-65%);
+        transition: opacity .2s ease, transform .72s cubic-bezier(.2, .75, .25, 1);
+    }
+
     body.voter-home-page .article-card:hover {
         transform: translateY(-5px);
-        border-color: color-mix(in srgb, var(--articles-brand), transparent 52%);
-        box-shadow: 0 16px 32px color-mix(in srgb, var(--articles-brand), transparent 88%), 0 24px 42px rgba(15, 27, 51, .09);
+        border-color: color-mix(in srgb, var(--article-accent), transparent 52%);
+        box-shadow: 0 16px 32px color-mix(in srgb, var(--article-accent), transparent 89%), 0 24px 42px rgba(15, 27, 51, .1), inset 0 1px rgba(255, 255, 255, .9);
+    }
+
+    body.voter-home-page .article-card:hover::before,
+    body.voter-home-page .article-card:focus-within::before {
+        transform: scaleX(1);
+    }
+
+    body.voter-home-page .article-card:hover::after {
+        opacity: 1;
+        transform: translateX(65%);
     }
 
     body.voter-home-page .article-open {
         display: flex;
+        width: 100%;
         min-height: 100%;
         flex-direction: column;
+        padding: 0;
+        border: 0;
+        background: transparent;
         color: var(--articles-text);
         cursor: pointer;
+        text-align: left;
     }
 
     body.voter-home-page .article-open:focus-visible {
-        outline: 3px solid var(--articles-brand);
+        outline: 3px solid var(--article-accent);
         outline-offset: -4px;
     }
 
     body.voter-home-page .article-image {
-        height: clamp(165px, 17vw, 205px);
+        position: relative;
+        z-index: 1;
+        display: block;
+        width: 100%;
+        height: clamp(165px, 18vw, 216px);
         flex: none;
+        object-fit: cover;
+        object-position: center;
         background:
-            radial-gradient(circle at 80% 0%, color-mix(in srgb, var(--articles-brand), transparent 84%), transparent 46%),
-            linear-gradient(145deg, var(--articles-card-soft), color-mix(in srgb, var(--articles-brand), var(--articles-card-soft) 12%));
+            radial-gradient(circle at 80% 0%, color-mix(in srgb, var(--article-accent), transparent 84%), transparent 46%),
+            linear-gradient(145deg, var(--articles-card-soft), color-mix(in srgb, var(--article-accent), var(--articles-card-soft) 12%));
         transition: transform .45s cubic-bezier(.2, .75, .25, 1);
     }
 
     body.voter-home-page .article-card:hover .article-image {
-        transform: scale(1.035);
+        transform: scale(1.045);
     }
 
     body.voter-home-page .article-copy {
+        position: relative;
+        z-index: 1;
         display: flex;
-        min-height: 226px;
+        min-height: 236px;
         flex: 1;
         flex-direction: column;
         align-items: flex-start;
-        padding: 20px clamp(18px, 2vw, 24px) 22px;
+        padding: 21px clamp(18px, 2vw, 24px) 22px;
     }
 
     body.voter-home-page .article-title {
@@ -1435,6 +2126,16 @@
         font-weight: 800;
         letter-spacing: -.02em;
         line-height: 1.28;
+        text-decoration: underline;
+        text-decoration-color: transparent;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 4px;
+        transition: text-decoration-color .2s ease;
+    }
+
+    body.voter-home-page .article-card:hover .article-title,
+    body.voter-home-page .article-open:focus-visible .article-title {
+        text-decoration-color: var(--article-accent);
     }
 
     body.voter-home-page .article-copy time {
@@ -1442,7 +2143,7 @@
         align-items: center;
         gap: 7px;
         margin-top: 10px;
-        color: var(--articles-brand);
+        color: var(--article-accent);
         font-size: .84rem;
         font-variant-numeric: tabular-nums;
         font-weight: 750;
@@ -1454,6 +2155,7 @@
         border-radius: 50%;
         background: currentColor;
         content: "";
+        box-shadow: 0 0 0 4px color-mix(in srgb, currentColor, transparent 91%);
     }
 
     body.voter-home-page .article-excerpt {
@@ -1473,7 +2175,7 @@
         gap: 7px;
         margin-top: auto;
         padding-top: 16px;
-        color: var(--articles-brand);
+        color: var(--article-accent);
         font-size: .84rem;
         font-weight: 800;
     }
@@ -1488,6 +2190,24 @@
         transform: translateX(4px);
     }
 
+    body.voter-home-page .article-open:focus-visible .article-read-more .icon {
+        transform: translateX(4px);
+    }
+
+    @keyframes articles-pattern-drift {
+        to { background-position: 56px 56px; }
+    }
+
+    @keyframes articles-orbit-drift {
+        from { transform: translate3d(0, 0, 0) rotate(-3deg); }
+        to { transform: translate3d(-16px, -12px, 0) rotate(4deg); }
+    }
+
+    @keyframes articles-kicker-in {
+        from { opacity: .35; transform: scaleX(0); }
+        to { opacity: 1; transform: scaleX(1); }
+    }
+
     body.voter-home-page #articles .empty-card {
         border-color: var(--articles-border);
         background: var(--articles-card);
@@ -1496,16 +2216,48 @@
 
     body.voter-home-page #faq {
         --faq-start: #f6f9ff;
-        --faq-end: #eaf0fa;
+        --faq-end: #e5eefb;
         --faq-text: #142746;
         --faq-muted: #536680;
         --faq-card: #fff;
         --faq-card-soft: #f2f6ff;
         --faq-border: #d7e2f2;
         --faq-brand: #315fbd;
+        position: relative;
+        isolation: isolate;
+        overflow: clip;
         background:
-            radial-gradient(ellipse at 100% 0%, rgba(67, 119, 230, .1), transparent 42%),
+            radial-gradient(ellipse at 0% 0%, rgba(67, 119, 230, .14), transparent 42%),
+            radial-gradient(ellipse at 100% 100%, rgba(67, 119, 230, .09), transparent 40%),
             linear-gradient(145deg, var(--faq-start), var(--faq-end));
+    }
+
+    body.voter-home-page #faq::before,
+    body.voter-home-page #faq::after {
+        position: absolute;
+        z-index: -1;
+        pointer-events: none;
+        content: "";
+    }
+
+    body.voter-home-page #faq::before {
+        inset: 0;
+        background-image: radial-gradient(rgba(49, 95, 189, .12) .8px, transparent .8px);
+        background-size: 28px 28px;
+        opacity: .3;
+        mask-image: linear-gradient(145deg, transparent, #000 34%, transparent 92%);
+        animation: faq-pattern-drift 48s linear infinite;
+    }
+
+    body.voter-home-page #faq::after {
+        top: -15rem;
+        right: -14rem;
+        width: 34rem;
+        aspect-ratio: 1;
+        border: 1px solid rgba(255, 255, 255, .58);
+        border-radius: 50%;
+        box-shadow: 0 0 0 2.8rem rgba(255, 255, 255, .16), 0 0 0 5.6rem rgba(255, 255, 255, .09);
+        animation: faq-orbit-drift 32s ease-in-out infinite alternate;
     }
 
     :root[data-theme="dark"] body.voter-home-page #faq {
@@ -1519,16 +2271,43 @@
         --faq-brand: #8db4ff;
     }
 
+    :root[data-theme="dark"] body.voter-home-page #faq::before {
+        opacity: .18;
+    }
+
+    :root[data-theme="dark"] body.voter-home-page #faq::after {
+        border-color: rgba(201, 220, 255, .2);
+        box-shadow: 0 0 0 2.8rem rgba(201, 220, 255, .06), 0 0 0 5.6rem rgba(201, 220, 255, .035);
+    }
+
+    body.voter-home-page #faq .page-wrap {
+        position: relative;
+        z-index: 1;
+    }
+
     body.voter-home-page #faq .section-heading {
-        margin-bottom: clamp(22px, 3vw, 32px);
+        margin-bottom: clamp(24px, 3vw, 34px);
     }
 
     body.voter-home-page .faq-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
         margin: 0 0 7px;
         color: var(--faq-brand);
         font-size: .74rem;
         font-weight: 800;
         letter-spacing: .15em;
+    }
+
+    body.voter-home-page .faq-kicker::before {
+        width: 24px;
+        height: 2px;
+        border-radius: 999px;
+        background: currentColor;
+        content: "";
+        transform-origin: left center;
+        animation: faq-kicker-in .65s .12s cubic-bezier(.2, .75, .25, 1) both;
     }
 
     body.voter-home-page #faq .section-heading h2 {
@@ -1542,40 +2321,99 @@
     }
 
     body.voter-home-page #guidelines {
-        --guidelines-start: #eff7ff;
-        --guidelines-end: #e7f2f6;
+        --guidelines-start: #f6f9ff;
+        --guidelines-end: #e5eefb;
         --guidelines-text: #142746;
         --guidelines-muted: #536680;
         --guidelines-card: #fff;
-        --guidelines-card-soft: #f4f8fc;
-        --guidelines-border: #d5e3ee;
-        --guidelines-brand: #256b83;
+        --guidelines-card-soft: #f2f6ff;
+        --guidelines-border: #d7e2f2;
+        --guidelines-brand: #315fbd;
+        position: relative;
+        isolation: isolate;
+        overflow: clip;
         background:
-            radial-gradient(ellipse at 0% 100%, rgba(53, 144, 168, .13), transparent 46%),
+            radial-gradient(ellipse at 100% 0%, rgba(67, 119, 230, .14), transparent 42%),
+            radial-gradient(ellipse at 0% 100%, rgba(67, 119, 230, .1), transparent 44%),
             linear-gradient(145deg, var(--guidelines-start), var(--guidelines-end));
     }
 
+    body.voter-home-page #guidelines::before,
+    body.voter-home-page #guidelines::after {
+        position: absolute;
+        z-index: -1;
+        pointer-events: none;
+        content: "";
+    }
+
+    body.voter-home-page #guidelines::before {
+        inset: 0;
+        background-image: radial-gradient(rgba(49, 95, 189, .12) .8px, transparent .8px);
+        background-size: 28px 28px;
+        opacity: .3;
+        mask-image: linear-gradient(35deg, transparent, #000 38%, transparent 92%);
+        animation: guidelines-pattern-drift 48s linear infinite;
+    }
+
+    body.voter-home-page #guidelines::after {
+        right: -13rem;
+        bottom: -22rem;
+        width: 36rem;
+        aspect-ratio: 1;
+        border: 1px solid rgba(255, 255, 255, .58);
+        border-radius: 50%;
+        box-shadow: 0 0 0 2.8rem rgba(255, 255, 255, .16), 0 0 0 5.6rem rgba(255, 255, 255, .09);
+        animation: guidelines-orbit-drift 34s ease-in-out infinite alternate;
+    }
+
     :root[data-theme="dark"] body.voter-home-page #guidelines {
-        --guidelines-start: #101d2c;
-        --guidelines-end: #142b38;
-        --guidelines-text: #edf5fb;
-        --guidelines-muted: #b8cad7;
-        --guidelines-card: #1a2d3b;
-        --guidelines-card-soft: #203846;
-        --guidelines-border: #304d5c;
-        --guidelines-brand: #7bc4d1;
+        --guidelines-start: #101b2d;
+        --guidelines-end: #172743;
+        --guidelines-text: #edf4ff;
+        --guidelines-muted: #b7c5dc;
+        --guidelines-card: #1a2a43;
+        --guidelines-card-soft: #142139;
+        --guidelines-border: #2c4161;
+        --guidelines-brand: #8db4ff;
+    }
+
+    :root[data-theme="dark"] body.voter-home-page #guidelines::before {
+        opacity: .18;
+    }
+
+    :root[data-theme="dark"] body.voter-home-page #guidelines::after {
+        border-color: rgba(201, 220, 255, .2);
+        box-shadow: 0 0 0 2.8rem rgba(201, 220, 255, .06), 0 0 0 5.6rem rgba(201, 220, 255, .035);
+    }
+
+    body.voter-home-page #guidelines .page-wrap {
+        position: relative;
+        z-index: 1;
     }
 
     body.voter-home-page #guidelines .section-heading {
-        margin-bottom: clamp(22px, 3vw, 32px);
+        margin-bottom: clamp(24px, 3vw, 34px);
     }
 
     body.voter-home-page .guidelines-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
         margin: 0 0 7px;
         color: var(--guidelines-brand);
         font-size: .74rem;
         font-weight: 800;
         letter-spacing: .15em;
+    }
+
+    body.voter-home-page .guidelines-kicker::before {
+        width: 24px;
+        height: 2px;
+        border-radius: 999px;
+        background: currentColor;
+        content: "";
+        transform-origin: left center;
+        animation: guidelines-kicker-in .65s .12s cubic-bezier(.2, .75, .25, 1) both;
     }
 
     body.voter-home-page #guidelines .section-heading h2 {
@@ -1590,21 +2428,55 @@
     }
 
     body.voter-home-page .guidelines-card {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
         padding: clamp(20px, 3vw, 30px);
         border: 1px solid var(--guidelines-border);
-        border-radius: 24px;
+        border-radius: 26px;
         background:
-            radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--guidelines-brand), transparent 94%), transparent 42%),
+            radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--guidelines-brand), transparent 90%), transparent 42%),
+            linear-gradient(145deg, color-mix(in srgb, var(--guidelines-card), transparent 0%), color-mix(in srgb, var(--guidelines-card-soft), transparent 15%)),
             var(--guidelines-card);
-        box-shadow: 0 9px 24px rgba(15, 27, 51, .055), 0 20px 42px rgba(15, 27, 51, .045);
+        box-shadow: 0 9px 24px rgba(15, 27, 51, .055), 0 20px 42px rgba(15, 27, 51, .06), inset 0 1px rgba(255, 255, 255, .8);
+        animation: home-intro .7s .08s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.voter-home-page .guidelines-card::before {
+        position: absolute;
+        z-index: 0;
+        inset: 0 0 auto;
+        height: 4px;
+        background: linear-gradient(90deg, color-mix(in srgb, var(--guidelines-brand), white 35%), var(--guidelines-brand), color-mix(in srgb, var(--guidelines-brand), transparent 18%));
+        content: "";
+        pointer-events: none;
+    }
+
+    body.voter-home-page .guidelines-card::after {
+        position: absolute;
+        z-index: -1;
+        top: -86px;
+        right: -70px;
+        width: 205px;
+        aspect-ratio: 1;
+        border: 1px solid color-mix(in srgb, var(--guidelines-brand), transparent 86%);
+        border-radius: 50%;
+        box-shadow: 0 0 0 18px color-mix(in srgb, var(--guidelines-brand), transparent 96%);
+        content: "";
+        pointer-events: none;
+        animation: guidelines-card-orbit 13s ease-in-out infinite alternate;
     }
 
     body.voter-home-page .guidelines-card-head {
+        position: relative;
+        z-index: 1;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 16px;
         margin-bottom: 22px;
+        padding-bottom: 19px;
+        border-bottom: 1px solid color-mix(in srgb, var(--guidelines-border), transparent 12%);
     }
 
     body.voter-home-page .guidelines-card-intro {
@@ -1624,11 +2496,23 @@
         border-radius: 16px;
         background: var(--guidelines-card-soft);
         color: var(--guidelines-brand);
+        box-shadow: 0 6px 16px color-mix(in srgb, var(--guidelines-brand), transparent 92%);
+        animation: guidelines-icon-float 4.8s ease-in-out infinite;
     }
 
     body.voter-home-page .guidelines-card-icon .icon {
         width: 24px;
         height: 24px;
+        transition: transform .25s cubic-bezier(.2, .75, .25, 1);
+    }
+
+    body.voter-home-page .guidelines-card:hover .guidelines-card-icon .icon {
+        transform: rotate(-8deg) scale(1.08);
+    }
+
+    body.voter-home-page .guidelines-card-intro {
+        position: relative;
+        z-index: 1;
     }
 
     body.voter-home-page .guidelines-card-intro strong {
@@ -1646,6 +2530,8 @@
     }
 
     body.voter-home-page .guidelines-count {
+        position: relative;
+        z-index: 1;
         display: inline-flex;
         flex: none;
         align-items: center;
@@ -1657,6 +2543,7 @@
         color: var(--guidelines-brand);
         font-size: .78rem;
         font-weight: 800;
+        box-shadow: 0 5px 14px color-mix(in srgb, var(--guidelines-brand), transparent 94%);
     }
 
     body.voter-home-page .guidelines-count .icon {
@@ -1665,32 +2552,56 @@
     }
 
     body.voter-home-page .guidelines-list {
+        position: relative;
+        z-index: 1;
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 12px;
         margin: 0;
         padding: 0;
         list-style: none;
+        counter-reset: guideline-item;
     }
 
     body.voter-home-page .guideline-item {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
         display: flex;
         min-height: 76px;
         align-items: flex-start;
         gap: 13px;
-        padding: 16px;
+        padding: 16px 17px;
         border: 1px solid color-mix(in srgb, var(--guidelines-border), transparent 18%);
         border-radius: 17px;
-        background: color-mix(in srgb, var(--guidelines-card-soft), transparent 12%);
+        background:
+            linear-gradient(120deg, color-mix(in srgb, var(--guidelines-card), transparent 12%), color-mix(in srgb, var(--guidelines-card-soft), transparent 2%));
         color: var(--guidelines-text);
+        counter-increment: guideline-item;
         transition: transform .22s cubic-bezier(.2, .75, .25, 1), border-color .2s ease, background-color .2s ease, box-shadow .22s ease;
     }
 
+    body.voter-home-page .guideline-item::before {
+        position: absolute;
+        z-index: -1;
+        inset: 0 auto 0 0;
+        width: 3px;
+        background: var(--guidelines-brand);
+        content: "";
+        transform: scaleY(0);
+        transform-origin: center bottom;
+        transition: transform .28s cubic-bezier(.2, .75, .25, 1);
+    }
+
     body.voter-home-page .guideline-item:hover {
-        transform: translateY(-2px);
-        border-color: color-mix(in srgb, var(--guidelines-brand), transparent 62%);
+        transform: translateY(-3px);
+        border-color: color-mix(in srgb, var(--guidelines-brand), transparent 58%);
         background: var(--guidelines-card);
-        box-shadow: 0 10px 20px color-mix(in srgb, var(--guidelines-brand), transparent 92%);
+        box-shadow: 0 11px 22px color-mix(in srgb, var(--guidelines-brand), transparent 91%);
+    }
+
+    body.voter-home-page .guideline-item:hover::before {
+        transform: scaleY(1);
     }
 
     body.voter-home-page .guideline-check {
@@ -1703,6 +2614,15 @@
         border-radius: 9px;
         background: color-mix(in srgb, var(--guidelines-brand), transparent 91%);
         color: var(--guidelines-brand);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--guidelines-brand), transparent 96%);
+        transition: transform .22s cubic-bezier(.2, .75, .25, 1), background-color .2s ease, color .2s ease, box-shadow .2s ease;
+    }
+
+    body.voter-home-page .guideline-item:hover .guideline-check {
+        transform: scale(1.06) rotate(-5deg);
+        background: var(--guidelines-brand);
+        color: #fff;
+        box-shadow: 0 5px 13px color-mix(in srgb, var(--guidelines-brand), transparent 82%);
     }
 
     body.voter-home-page .guideline-check .icon {
@@ -1719,36 +2639,85 @@
         line-height: 1.5;
     }
 
+    body.voter-home-page .guideline-item:last-child {
+        grid-column: 1 / -1;
+    }
+
+    @keyframes guidelines-pattern-drift {
+        to { background-position: 56px 56px; }
+    }
+
+    @keyframes guidelines-orbit-drift {
+        from { transform: translate3d(0, 0, 0) rotate(-3deg); }
+        to { transform: translate3d(-16px, -12px, 0) rotate(4deg); }
+    }
+
+    @keyframes guidelines-kicker-in {
+        from { opacity: .35; transform: scaleX(0); }
+        to { opacity: 1; transform: scaleX(1); }
+    }
+
+    @keyframes guidelines-card-orbit {
+        from { transform: translate3d(0, 4px, 0) rotate(-3deg); }
+        to { transform: translate3d(-8px, -5px, 0) rotate(3deg); }
+    }
+
+    @keyframes guidelines-icon-float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-3px); }
+    }
+
     body.voter-home-page .faq-grid {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
-        gap: 13px;
+        gap: clamp(12px, 1.5vw, 16px);
         counter-reset: faq-item;
     }
 
     body.voter-home-page .faq-item {
+        --faq-accent: #315fbd;
+        position: relative;
+        isolation: isolate;
         overflow: hidden;
         margin: 0;
         border: 1px solid var(--faq-border);
-        border-radius: 20px;
+        border-radius: 22px;
         background:
-            radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--faq-brand), transparent 95%), transparent 44%),
+            radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--faq-accent), transparent 94%), transparent 44%),
             var(--faq-card);
         color: var(--faq-text);
-        box-shadow: 0 6px 16px rgba(15, 27, 51, .045), 0 15px 30px rgba(15, 27, 51, .035);
+        box-shadow: 0 6px 16px rgba(15, 27, 51, .045), 0 15px 30px rgba(15, 27, 51, .045), inset 0 1px rgba(255, 255, 255, .78);
         counter-increment: faq-item;
         transition: transform .22s cubic-bezier(.2, .75, .25, 1), border-color .2s ease, box-shadow .22s ease, background-color .2s ease;
     }
 
+    body.voter-home-page .faq-item::before {
+        position: absolute;
+        z-index: 1;
+        inset: 0 0 auto;
+        height: 3px;
+        background: linear-gradient(90deg, color-mix(in srgb, var(--faq-accent), white 18%), var(--faq-accent));
+        content: "";
+        pointer-events: none;
+        transform: scaleX(0);
+        transform-origin: left center;
+        transition: transform .38s cubic-bezier(.2, .75, .25, 1);
+    }
+
     body.voter-home-page .faq-item:hover {
-        transform: translateY(-2px);
-        border-color: color-mix(in srgb, var(--faq-brand), transparent 58%);
-        box-shadow: 0 12px 24px color-mix(in srgb, var(--faq-brand), transparent 91%), 0 18px 34px rgba(15, 27, 51, .07);
+        transform: translateY(-3px);
+        border-color: color-mix(in srgb, var(--faq-accent), transparent 58%);
+        box-shadow: 0 12px 24px color-mix(in srgb, var(--faq-accent), transparent 91%), 0 18px 34px rgba(15, 27, 51, .075);
+    }
+
+    body.voter-home-page .faq-item:hover::before,
+    body.voter-home-page .faq-item[open]::before {
+        transform: scaleX(1);
     }
 
     body.voter-home-page .faq-item[open] {
-        border-color: color-mix(in srgb, var(--faq-brand), transparent 48%);
-        box-shadow: 0 12px 28px color-mix(in srgb, var(--faq-brand), transparent 91%), 0 18px 34px rgba(15, 27, 51, .07);
+        border-color: color-mix(in srgb, var(--faq-accent), transparent 48%);
+        box-shadow: 0 12px 28px color-mix(in srgb, var(--faq-accent), transparent 91%), 0 18px 34px rgba(15, 27, 51, .075);
     }
 
     body.voter-home-page .faq-item summary {
@@ -1767,35 +2736,52 @@
         transition: color .18s ease;
     }
 
+    body.voter-home-page .faq-item summary,
+    body.voter-home-page .faq-item summary::before,
+    body.voter-home-page .faq-item summary .icon {
+        box-sizing: border-box;
+    }
+
+    body.voter-home-page .faq-item summary::marker {
+        content: "";
+    }
+
     body.voter-home-page .faq-item summary::-webkit-details-marker {
         display: none;
     }
 
     body.voter-home-page .faq-item summary::before {
+        position: relative;
         display: grid;
         width: 38px;
         height: 38px;
         place-items: center;
-        border: 1px solid color-mix(in srgb, var(--faq-brand), transparent 82%);
+        border: 1px solid color-mix(in srgb, var(--faq-accent), transparent 82%);
         border-radius: 13px;
         background: var(--faq-card-soft);
-        color: var(--faq-brand);
+        color: var(--faq-accent);
         content: counter(faq-item, decimal-leading-zero);
         font-size: .76rem;
         font-variant-numeric: tabular-nums;
         font-weight: 850;
-        transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+        transition: background-color .2s ease, color .2s ease, border-color .2s ease, transform .24s cubic-bezier(.2, .75, .25, 1), box-shadow .2s ease;
     }
 
     body.voter-home-page .faq-item summary:hover,
     body.voter-home-page .faq-item[open] summary {
-        color: var(--faq-brand);
+        color: var(--faq-accent);
+    }
+
+    body.voter-home-page .faq-item summary:hover::before {
+        transform: translateY(-1px) rotate(-4deg);
+        box-shadow: 0 5px 12px color-mix(in srgb, var(--faq-accent), transparent 88%);
     }
 
     body.voter-home-page .faq-item[open] summary::before {
-        border-color: var(--faq-brand);
-        background: var(--faq-brand);
+        border-color: var(--faq-accent);
+        background: var(--faq-accent);
         color: #fff;
+        box-shadow: 0 5px 14px color-mix(in srgb, var(--faq-accent), transparent 82%);
     }
 
     body.voter-home-page .faq-item summary:focus-visible {
@@ -1811,13 +2797,18 @@
         border: 1px solid var(--faq-border);
         border-radius: 13px;
         background: var(--faq-card);
-        color: var(--faq-brand);
+        color: var(--faq-accent);
         transition: transform .22s cubic-bezier(.2, .75, .25, 1), background-color .2s ease, border-color .2s ease;
+    }
+
+    body.voter-home-page .faq-item summary:hover .icon {
+        border-color: color-mix(in srgb, var(--faq-accent), transparent 66%);
+        background: var(--faq-card-soft);
     }
 
     body.voter-home-page .faq-item[open] summary .icon {
         transform: rotate(180deg);
-        border-color: color-mix(in srgb, var(--faq-brand), transparent 68%);
+        border-color: color-mix(in srgb, var(--faq-accent), transparent 68%);
         background: var(--faq-card-soft);
     }
 
@@ -1829,6 +2820,10 @@
         line-height: 1.65;
     }
 
+    body.voter-home-page .faq-item[open] .faq-answer {
+        animation: faq-answer-enter .28s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
     @media (min-width: 760px) {
         body.voter-home-page .faq-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1836,8 +2831,51 @@
         }
     }
 
+    @keyframes faq-pattern-drift {
+        to { background-position: 56px 56px; }
+    }
+
+    @keyframes faq-orbit-drift {
+        from { transform: translate3d(0, 0, 0) rotate(-4deg); }
+        to { transform: translate3d(-16px, 12px, 0) rotate(4deg); }
+    }
+
+    @keyframes faq-kicker-in {
+        from { opacity: .35; transform: scaleX(0); }
+        to { opacity: 1; transform: scaleX(1); }
+    }
+
+    @keyframes faq-answer-enter {
+        from { opacity: .35; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
     @keyframes home-intro {
         from { opacity: 0; transform: translateY(18px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes hero-pattern-drift {
+        to { background-position: 34px 34px; }
+    }
+
+    @keyframes hero-orbit-float {
+        from { transform: translate3d(0, 0, 0) rotate(-4deg); }
+        to { transform: translate3d(-18px, -14px, 0) rotate(4deg); }
+    }
+
+    @keyframes hero-status-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor, transparent 78%); }
+        50% { box-shadow: 0 0 0 5px color-mix(in srgb, currentColor, transparent 94%); }
+    }
+
+    @keyframes hero-card-glow {
+        from { transform: translate3d(-6px, 4px, 0) scale(.92); opacity: .62; }
+        to { transform: translate3d(8px, -5px, 0) scale(1.08); opacity: 1; }
+    }
+
+    @keyframes hero-step-in {
+        from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
     }
 
@@ -1901,6 +2939,27 @@
         body.voter-home-page .event-image,
         body.voter-home-page .event-placeholder {
             height: 176px;
+        }
+
+        body.voter-home-page #articles .section-heading {
+            gap: 14px;
+        }
+
+        body.voter-home-page #articles .carousel-controls {
+            flex: none;
+        }
+
+        body.voter-home-page #articles .carousel-controls .icon-button {
+            width: 42px;
+            height: 42px;
+        }
+
+        body.voter-home-page .article-image {
+            height: 176px;
+        }
+
+        body.voter-home-page .article-copy {
+            min-height: 218px;
         }
 
         body.voter-home-page #how-it-works .action-card:nth-child(3) {
@@ -2018,6 +3077,10 @@
             padding-block: 44px 50px;
         }
 
+        body.voter-home-page .hero {
+            background-position: center, center, center, 58% center;
+        }
+
         body.voter-home-page .hero h2 {
             max-width: 11ch;
             font-size: clamp(2.65rem, 12vw, 4rem);
@@ -2039,6 +3102,15 @@
 
         body.voter-home-page .steps-card {
             border-radius: 22px;
+        }
+
+        body.voter-home-page .step-item {
+            gap: 11px;
+            padding-inline: 12px;
+        }
+
+        body.voter-home-page .step-tag {
+            font-size: .68rem;
         }
 
         body.voter-home-page .section-heading {
@@ -2082,6 +3154,55 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
+        body.voter-home-page .hero::before,
+        body.voter-home-page .hero::after,
+        body.voter-home-page .hero-status::before,
+        body.voter-home-page .steps-card::after,
+        body.voter-home-page #how-it-works::before,
+        body.voter-home-page #how-it-works::after,
+        body.voter-home-page #dates::before,
+        body.voter-home-page #dates::after,
+        body.voter-home-page #events::before,
+        body.voter-home-page #events::after,
+        body.voter-home-page .events-kicker::before,
+        body.voter-home-page .election-banner::after,
+        body.voter-home-page #articles::before,
+        body.voter-home-page #articles::after,
+        body.voter-home-page .articles-kicker::before,
+        body.voter-home-page #faq::before,
+        body.voter-home-page #faq::after,
+        body.voter-home-page .faq-kicker::before,
+        body.voter-home-page #guidelines::before,
+        body.voter-home-page #guidelines::after,
+        body.voter-home-page .guidelines-kicker::before,
+        body.voter-home-page .guidelines-card::after,
+        body.voter-home-page .guidelines-card-icon,
+        body.voter-home-page .action-kicker::before {
+            animation: none !important;
+        }
+
+        body.voter-home-page .button-row,
+        body.voter-home-page .button,
+        body.voter-home-page .step-item,
+        body.voter-home-page .step-item:hover,
+        body.voter-home-page .action-kicker::before,
+        body.voter-home-page .action-card::before,
+        body.voter-home-page .dates-kicker::before {
+            animation: none !important;
+            transition: none !important;
+        }
+
+        body.voter-home-page .candidate-showcase::before,
+        body.voter-home-page .candidate-showcase::after,
+        body.voter-home-page .candidate-live-badge::before,
+        body.voter-home-page .candidate-carousel-stage::before,
+        body.voter-home-page .candidate-carousel-stage::after,
+        body.voter-home-page .candidate-slide-portrait::before,
+        body.voter-home-page .candidate-slide-portrait::after,
+        body.voter-home-page .candidate-slide-portrait img {
+            animation: none !important;
+        }
+
         body.voter-home-page .candidate-slide {
             animation: candidate-slide-reduced .18s ease-out both !important;
         }
@@ -2095,21 +3216,41 @@
         body.voter-home-page .candidate-vote-fill,
         body.voter-home-page .candidate-carousel-button,
         body.voter-home-page .candidate-carousel-dot,
+        body.voter-home-page .hero-status,
+        body.voter-home-page .button,
+        body.voter-home-page .step-item,
         body.voter-home-page #events .carousel-controls .icon-button,
         body.voter-home-page #articles .carousel-controls .icon-button,
         body.voter-home-page .event-card,
+        body.voter-home-page .event-card::before,
+        body.voter-home-page .event-card::after,
         body.voter-home-page .event-image,
+        body.voter-home-page .event-placeholder .icon,
         body.voter-home-page .event-card-hint .icon,
+        body.voter-home-page .election-banner img,
         body.voter-home-page .article-card,
+        body.voter-home-page .article-card::before,
+        body.voter-home-page .article-card::after,
         body.voter-home-page .article-image,
+        body.voter-home-page .article-title,
         body.voter-home-page .article-read-more .icon,
         body.voter-home-page .faq-item,
+        body.voter-home-page .faq-item::before,
         body.voter-home-page .faq-item summary,
         body.voter-home-page .faq-item summary::before,
         body.voter-home-page .faq-item summary .icon,
+        body.voter-home-page .faq-answer,
+        body.voter-home-page .guidelines-card,
+        body.voter-home-page .guidelines-card-icon .icon,
         body.voter-home-page .guideline-item,
+        body.voter-home-page .guideline-item::before,
+        body.voter-home-page .guideline-check,
         body.voter-home-page .action-card,
+        body.voter-home-page .action-card::before,
         body.voter-home-page .date-card,
+        body.voter-home-page .date-card::before,
+        body.voter-home-page .date-card::after,
+        body.voter-home-page .date-card-icon,
         body.voter-home-page .action-card::after,
         body.voter-home-page .action-icon,
         body.voter-home-page .action-link,
@@ -2238,12 +3379,18 @@
             <div>
                 <p class="candidate-showcase-kicker">MEET THE CANDIDATES</p>
                 <h1 id="candidate-showcase-title">Your next student leaders</h1>
-                <p>See who's running and how each candidate is doing. Vote shares refresh automatically as votes are recorded.</p>
+                @if($candidateProfilesUnlinked)
+                    <p>Explore the active candidate profiles currently available.</p>
+                @elseif($candidateResultsVisible)
+                    <p>See who's running and how each candidate is doing. Published vote shares refresh automatically.</p>
+                @else
+                    <p>Explore the candidates running in the current student election.</p>
+                @endif
             </div>
-            <span class="candidate-live-badge">Live vote share</span>
+            <span class="candidate-live-badge">{{ $candidateProfilesUnlinked ? 'Candidate profiles' : ($candidateResultsVisible ? 'Published results' : 'Results not published') }}</span>
         </div>
 
-        <div class="candidate-carousel" data-candidate-carousel data-tallies-url="{{ route('candidate.tallies') }}" role="region" aria-roledescription="carousel" aria-label="Candidate vote results carousel">
+        <div class="candidate-carousel" data-candidate-carousel @if($candidateResultsVisible && !$candidateProfilesUnlinked) data-tallies-url="{{ route('candidate.tallies') }}" @endif role="region" aria-roledescription="carousel" aria-label="Candidate showcase">
             <div class="candidate-carousel-stage" data-candidate-stage tabindex="0" aria-label="Candidate slides">
                 @forelse($candidates as $index => $candidate)
                     @php
@@ -2288,24 +3435,26 @@
                             <span class="candidate-slide-overline">Candidate {{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
                             <span class="candidate-slide-position">Running for {{ optional($candidate->position)->name ?? 'Student representative' }}</span>
                             <h3>{{ $candidate->name }}</h3>
-                            <div class="candidate-vote-share">
-                                <span>Share of votes for this position</span>
-                                <strong>{{ number_format($candidateShare, 1) }}%</strong>
-                            </div>
-                            <div
-                                class="candidate-vote-track"
-                                role="progressbar"
-                                aria-label="Vote share for {{ $candidate->name }}"
-                                aria-valuemin="0"
-                                aria-valuemax="100"
-                                aria-valuenow="{{ $candidateShare }}"
-                                style="--vote-share: {{ $candidateShare }}%;"
-                            >
-                                <span class="candidate-vote-fill"></span>
-                            </div>
-                            <p class="candidate-vote-note">
-                                {{ $positionVotes > 0 ? number_format($candidateVotes) . ' of ' . number_format($positionVotes) . ' votes for this position' : 'No votes recorded for this position yet.' }}
-                            </p>
+                            @if($candidateResultsVisible && !$candidateProfilesUnlinked)
+                                <div class="candidate-vote-share">
+                                    <span>Share of votes for this position</span>
+                                    <strong>{{ number_format($candidateShare, 1) }}%</strong>
+                                </div>
+                                <div
+                                    class="candidate-vote-track"
+                                    role="progressbar"
+                                    aria-label="Vote share for {{ $candidate->name }}"
+                                    aria-valuemin="0"
+                                    aria-valuemax="100"
+                                    aria-valuenow="{{ $candidateShare }}"
+                                    style="--vote-share: {{ $candidateShare }}%;"
+                                >
+                                    <span class="candidate-vote-fill"></span>
+                                </div>
+                                <p class="candidate-vote-note">
+                                    {{ $positionVotes > 0 ? number_format($candidateVotes) . ' of ' . number_format($positionVotes) . ' votes for this position' : 'No votes recorded for this position yet.' }}
+                                </p>
+                            @endif
                         </div>
                         <div class="candidate-slide-portrait">
                             <img
@@ -2318,7 +3467,7 @@
                     </article>
                 @empty
                     <div class="candidate-carousel-empty">
-                        <h3>Candidate results will appear here</h3>
+                        <h3>Candidate profiles will appear here</h3>
                         <p>There are no active candidates to display right now.</p>
                     </div>
                 @endforelse
@@ -2466,24 +3615,28 @@
                 @endif
             </div>
         </div>
-        @if(count($dateRows))
-            <ol class="date-grid" aria-label="Election schedule">
-                @foreach($dateRows as $dateIndex => [$dateTitle, $dateValue, $dateIcon])
-                    <li class="date-card">
-                        <span class="date-card-icon"><svg class="icon" aria-hidden="true"><use href="#{{ $dateIcon }}"/></svg></span>
-                        <div class="date-card-copy">
-                            <span class="date-card-phase">PHASE {{ str_pad((string) ($dateIndex + 1), 2, '0', STR_PAD_LEFT) }}</span>
-                            <strong>{{ $dateTitle }}</strong>
-                            <span>{{ $dateValue }}</span>
-                        </div>
-                    </li>
-                @endforeach
-            </ol>
-        @else
-            <div class="empty-card">Election dates have not been published yet.</div>
-        @endif
+        <div class="election-dashboard-dates">
+            @if(count($dateRows))
+                <ol class="date-grid" aria-label="Election schedule">
+                    @foreach($dateRows as $dateIndex => [$dateTitle, $dateValue, $dateIcon])
+                        <li class="date-card">
+                            <span class="date-card-icon"><svg class="icon" aria-hidden="true"><use href="#{{ $dateIcon }}"/></svg></span>
+                            <div class="date-card-copy">
+                                <span class="date-card-phase">PHASE {{ str_pad((string) ($dateIndex + 1), 2, '0', STR_PAD_LEFT) }}</span>
+                                <strong>{{ $dateTitle }}</strong>
+                                <span>{{ $dateValue }}</span>
+                            </div>
+                        </li>
+                    @endforeach
+                </ol>
+            @else
+                <div class="empty-card">Election dates have not been published yet.</div>
+            @endif
+        </div>
     </div>
 </section>
+
+@include('voter.partials.election-widget')
 
 <section class="content-section" id="events">
     <div class="page-wrap">
@@ -2697,7 +3850,7 @@
             let tallyRefreshInFlight = false;
 
             async function refreshCandidateTallies() {
-                if (!candidateSlides.length || document.hidden || tallyRefreshInFlight) return;
+                if (!candidateSlides.length || !candidateCarousel.dataset.talliesUrl || document.hidden || tallyRefreshInFlight) return;
                 tallyRefreshInFlight = true;
                 try {
                     const response = await fetch(candidateCarousel.dataset.talliesUrl, {
@@ -2707,6 +3860,15 @@
                     });
                     if (!response.ok) throw new Error(`Candidate tally request failed: ${response.status}`);
                     const result = await response.json();
+                    if (result.results?.visible !== true) {
+                        candidateCarousel.removeAttribute('data-tallies-url');
+                        candidateSlides.forEach((slide) => {
+                            slide.querySelector('.candidate-vote-share')?.remove();
+                            slide.querySelector('.candidate-vote-track')?.remove();
+                            slide.querySelector('.candidate-vote-note')?.remove();
+                        });
+                        return;
+                    }
                     if (!Array.isArray(result.candidates)) throw new Error('Candidate tally response is invalid');
 
                     const talliesById = new Map(result.candidates.map((candidate) => [String(candidate.id), candidate]));

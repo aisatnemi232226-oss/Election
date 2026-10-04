@@ -433,6 +433,14 @@ document.addEventListener('DOMContentLoaded', function () {
     <section class="surface-card candidate-filters">
         <form id="filter-form" method="GET" action="{{ route('election.details') }}">
             <div class="candidate-filter-grid">
+                <div class="field">
+                    <label for="candidate-election">Election</label>
+                    <select id="candidate-election" name="election_id">
+                        @foreach($pageElections as $election)
+                            <option value="{{ $election->id }}" @selected((string) $selectedElectionId === (string) $election->id)>{{ $election->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="field"><label for="candidate-search">Search candidate</label><input id="candidate-search" type="search" name="q" value="{{ $q }}" placeholder="Search name..."></div>
                 <div class="field">
                     <label for="candidate-party">Party</label>
@@ -461,12 +469,12 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
             <div class="candidate-filter-actions">
                 <button type="submit" class="button button-primary">Apply filters</button>
-                <a href="{{ route('election.details') }}" class="button button-secondary">Reset</a>
+                <a href="{{ route('election.details', $selectedElectionId ? ['election_id' => $selectedElectionId] : []) }}" class="button button-secondary">Reset</a>
             </div>
         </form>
     </section>
 
-    @if(empty($selectedId))
+    @if(!$selectedElection)
         <section class="election-available-section">
             <h2>Available Elections</h2>
             @if($pageElections->isEmpty())
@@ -487,7 +495,7 @@ document.addEventListener('DOMContentLoaded', function () {
     @endif
 
     <section class="election-candidates-section">
-        <h2>Candidates</h2>
+        <h2>{{ $selectedElection ? 'Candidates for ' . $selectedElection->name : 'Candidates' }}</h2>
         <div id="candidates-container" aria-live="polite">
             @if($pageCandidates->isEmpty())
                 <div class="notice">No candidates available.</div>
@@ -682,13 +690,28 @@ candidateModalBackdrop.addEventListener('click', closeCandidateModal);
     const form = document.getElementById('filter-form');
     const container = document.getElementById('candidates-container');
     if (!form || !container) return;
-    form.addEventListener('submit', async function (event) {
-        event.preventDefault();
+
+    const searchInput = document.getElementById('candidate-search');
+    const electionSelect = document.getElementById('candidate-election');
+    let debounceTimer;
+    let activeRequest;
+
+    async function updateResults() {
+        window.clearTimeout(debounceTimer);
         const query = new URLSearchParams(new FormData(form));
         const target = new URL(form.action, window.location.origin);
         target.search = query.toString();
+
+        if (activeRequest) activeRequest.abort();
+        const request = new AbortController();
+        activeRequest = request;
+        container.setAttribute('aria-busy', 'true');
+
         try {
-            const response = await fetch(target.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const response = await fetch(target.toString(), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                signal: request.signal
+            });
             if (!response.ok) throw new Error(`Candidate filters request failed (${response.status})`);
             const html = await response.text();
             const documentFromResponse = new DOMParser().parseFromString(html, 'text/html');
@@ -697,9 +720,44 @@ candidateModalBackdrop.addEventListener('click', closeCandidateModal);
             container.innerHTML = updated.innerHTML;
             history.replaceState({}, '', target.toString());
         } catch (error) {
+            if (error.name === 'AbortError') return;
             console.error('Could not update candidate results.', error);
-            form.submit();
+            window.location.assign(target.toString());
+        } finally {
+            if (activeRequest === request) {
+                container.removeAttribute('aria-busy');
+                activeRequest = null;
+            }
         }
+    }
+
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        updateResults();
+    });
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function (event) {
+            if (event.isComposing) return;
+            window.clearTimeout(debounceTimer);
+            debounceTimer = window.setTimeout(updateResults, 250);
+        });
+    }
+
+    form.querySelectorAll('select').forEach(function (select) {
+        select.addEventListener('change', function () {
+            if (select === electionSelect) {
+                form.querySelectorAll('select').forEach(function (filter) {
+                    if (filter !== electionSelect) filter.value = '';
+                });
+                if (searchInput) searchInput.value = '';
+                const target = new URL(form.action, window.location.origin);
+                target.search = new URLSearchParams(new FormData(form)).toString();
+                window.location.assign(target.toString());
+                return;
+            }
+            updateResults();
+        });
     });
 })();
 </script>

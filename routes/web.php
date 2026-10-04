@@ -10,6 +10,7 @@ use App\Http\Controllers\{DashboardController, ElectionsController, CandidateCon
     AuditLogController, AcademicYearController, CourseController, ElectionPartyController, ElectionEventSettingsController, VoteController, RegisterElectionController, CandidateRegistrationController, CandidateApprovalController, NotificationController};
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\ElectionWidgetController;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 
@@ -278,15 +279,26 @@ Route::middleware('auth')->group(function () {
 // =======================
 // 🌍 Public Voter Pages
 // =======================
-$candidateTallyQuery = static function () {
+$candidateTallyQuery = static function (int $electionId, bool $includeResults = true) {
+    $candidates = \App\Models\Candidate::query()
+        ->where('candidate.election_id', $electionId)
+        ->where('candidate.status', 'Active')
+        ->whereNotNull('candidate.position_id');
+
+    if (! $includeResults) {
+        return $candidates->orderBy('candidate.name');
+    }
+
     $candidateVotes = \Illuminate\Support\Facades\DB::table('position_votes')
         ->select('candidate_id', 'position_id', \Illuminate\Support\Facades\DB::raw('COUNT(*) as votes_count'))
+        ->where('election_id', $electionId)
         ->groupBy('candidate_id', 'position_id');
     $positionVoteTotals = \Illuminate\Support\Facades\DB::table('position_votes')
         ->select('position_id', \Illuminate\Support\Facades\DB::raw('COUNT(*) as position_votes_total'))
+        ->where('election_id', $electionId)
         ->groupBy('position_id');
 
-    return \App\Models\Candidate::query()
+    return $candidates
         ->leftJoinSub($candidateVotes, 'candidate_tallies', function ($join) {
             $join->on('candidate.id', '=', 'candidate_tallies.candidate_id')
                 ->on('candidate.position_id', '=', 'candidate_tallies.position_id');
@@ -299,40 +311,70 @@ $candidateTallyQuery = static function () {
             \Illuminate\Support\Facades\DB::raw('COALESCE(candidate_tallies.votes_count, 0) as votes_count'),
             \Illuminate\Support\Facades\DB::raw('COALESCE(position_tallies.position_votes_total, 0) as position_votes_total')
         )
-        ->where('candidate.status', 'Active')
-        ->whereNotNull('candidate.position_id')
         ->orderByDesc('votes_count')
         ->orderBy('candidate.name');
 };
 
 Route::get('/', function () use ($candidateTallyQuery) {
+    $widgetService = app(\App\Services\ElectionWidgetService::class);
     $elections = \App\Models\Election::query()
         ->orderByDesc('created_at')
+        ->orderByDesc('id')
         ->get();
+    $homeElection = $elections->first();
+    $candidateResultsVisible = $widgetService->resultsVisible($homeElection);
 
-    $candidates = $candidateTallyQuery()
-        ->with(['course', 'party', 'position'])
-        ->get();
+    $candidates = $homeElection
+        ? $candidateTallyQuery((int) $homeElection->id, $candidateResultsVisible)
+            ->with(['course', 'party', 'position'])
+            ->get()
+        : collect();
+    $candidateProfilesUnlinked = false;
+
+    if ($homeElection && $candidates->isEmpty()) {
+        $candidates = \App\Models\Candidate::query()
+            ->with(['course', 'party', 'position'])
+            ->whereNull('election_id')
+            ->where('status', 'Active')
+            ->whereNotNull('position_id')
+            ->orderBy('name')
+            ->get();
+        $candidateProfilesUnlinked = $candidates->isNotEmpty();
+    }
 
     $eventSettings = null;
     if (Schema::hasTable('election_event_settings')) {
         $eventSettings = \App\Models\ElectionEventSetting::query()->first();
     }
 
-    return view('voter.home', compact('elections', 'candidates', 'eventSettings'));
+    return view('voter.home', compact('elections', 'candidates', 'eventSettings', 'candidateResultsVisible', 'candidateProfilesUnlinked'));
 })->name('home');
 
+Route::get('/api/election/widget', ElectionWidgetController::class)
+    ->middleware('throttle:60,1')
+    ->name('election.widget');
+
 Route::get('/candidate-tallies', function () use ($candidateTallyQuery) {
-    $candidates = $candidateTallyQuery()->get();
+    $widgetService = app(\App\Services\ElectionWidgetService::class);
+    $election = $widgetService->currentElection();
+
+    if (! $widgetService->resultsVisible($election)) {
+        return response()->json([
+            'results' => ['visible' => false],
+        ])->header('Cache-Control', 'no-store, private');
+    }
+
+    $candidates = $candidateTallyQuery((int) $election->id)->get();
 
     return response()->json([
+        'results' => ['visible' => true],
         'candidates' => $candidates->map(fn ($candidate) => [
             'id' => (int) $candidate->id,
             'votes_count' => (int) $candidate->votes_count,
             'position_votes_total' => (int) $candidate->position_votes_total,
         ])->values(),
     ])->header('Cache-Control', 'no-store, private');
-})->name('candidate.tallies');
+})->middleware('throttle:60,1')->name('candidate.tallies');
 
 Route::post('/chatbot', [ChatbotController::class, 'respond'])
     ->middleware('throttle:30,1')
@@ -341,7 +383,13 @@ Route::post('/chatbot', [ChatbotController::class, 'respond'])
 Route::get('/election-details', function () {
     $elections = \App\Models\Election::query()
         ->orderByDesc('created_at')
+        ->orderByDesc('id')
         ->get();
+    $selectedElectionId = request()->query('election_id');
+    $selectedElection = $selectedElectionId
+        ? \App\Models\Election::query()->findOrFail($selectedElectionId)
+        : $elections->first();
+    $selectedElectionId = $selectedElection?->id;
 
     $positionOrder = [
         'President',
@@ -359,10 +407,11 @@ Route::get('/election-details', function () {
     ];
 
     $positions = \App\Models\Position::query()
-        ->whereIn('id', function ($q) {
+        ->whereIn('id', function ($q) use ($selectedElectionId) {
             $q->select('position_id')
                 ->from('candidate')
                 ->where('status', 'Active')
+                ->where('election_id', $selectedElectionId ?? 0)
                 ->whereNotNull('position_id')
                 ->groupBy('position_id');
         })
@@ -381,6 +430,7 @@ Route::get('/election-details', function () {
     $candidatesQuery = \App\Models\Candidate::query()
         ->with(['course', 'party', 'position'])
         ->where('status', 'Active')
+        ->when($selectedElectionId, fn ($q) => $q->where('election_id', $selectedElectionId), fn ($q) => $q->whereRaw('1 = 0'))
         ->when($selectedPositionId, function ($q) use ($selectedPositionId) {
             $q->where('position_id', $selectedPositionId);
         })
@@ -398,22 +448,24 @@ Route::get('/election-details', function () {
     $candidates = $candidatesQuery->get();
 
     $parties = \App\Models\ElectionParty::query()
-        ->whereIn('id', function ($q) {
+        ->whereIn('id', function ($q) use ($selectedElectionId) {
             $q->select('electionparty_id')
                 ->from('candidate')
                 ->where('status', 'Active')
-                ->whereNotNull('electionparty_id')
+            ->where('election_id', $selectedElectionId ?? 0)
+            ->whereNotNull('electionparty_id')
                 ->groupBy('electionparty_id');
         })
         ->orderBy('name')
         ->get();
 
     $courses = \App\Models\Course::query()
-        ->whereIn('id', function ($q) {
+        ->whereIn('id', function ($q) use ($selectedElectionId) {
             $q->select('course_id')
                 ->from('candidate')
                 ->where('status', 'Active')
-                ->whereNotNull('course_id')
+            ->where('election_id', $selectedElectionId ?? 0)
+            ->whereNotNull('course_id')
                 ->groupBy('course_id');
         })
         ->orderBy('name')
@@ -423,12 +475,15 @@ Route::get('/election-details', function () {
     if (auth()->check() && Schema::hasTable('position_votes')) {
         $userVotesByPosition = \App\Models\PositionVote::query()
             ->where('user_id', auth()->id())
+            ->where('election_id', $selectedElectionId ?? 0)
             ->pluck('candidate_id', 'position_id')
             ->toArray();
     }
 
     return view('voter.election-details', compact(
         'elections',
+        'selectedElection',
+        'selectedElectionId',
         'candidates',
         'positions',
         'parties',
@@ -513,6 +568,11 @@ Route::get('/party/{party}/roster', function (\App\Models\ElectionParty $party) 
 
 Route::get('/vote', fn () => redirect()->route('election.details'))->name('vote');
 Route::get('/result', function () {
+    $widgetService = app(\App\Services\ElectionWidgetService::class);
+    $election = request()->query('election_id')
+        ? \App\Models\Election::query()->findOrFail(request()->query('election_id'))
+        : $widgetService->currentElection();
+    $resultsVisible = $widgetService->resultsVisible($election);
     $positionOrder = [
         'President',
         'Presidential',
@@ -529,6 +589,13 @@ Route::get('/result', function () {
     ];
 
     $positions = \App\Models\Position::query()
+        ->whereIn('id', function ($query) use ($election) {
+            $query->select('position_id')
+                ->from('candidate')
+                ->where('election_id', $election?->id ?? 0)
+                ->where('status', 'Active')
+                ->whereNotNull('position_id');
+        })
         ->orderByRaw(
             'CASE ' . implode(' ', array_map(fn ($i) => 'WHEN name = ? THEN ' . ($i + 1), array_keys($positionOrder))) . ' ELSE 999 END',
             $positionOrder
@@ -542,6 +609,10 @@ Route::get('/result', function () {
         'overall' => null,
     ];
 
+    if (! $election || ! $resultsVisible) {
+        return view('voter.result', compact('positions', 'pollCards', 'resultsVisible', 'election'));
+    }
+
     if (
         \Illuminate\Support\Facades\Schema::hasTable('position_votes')
         && \Illuminate\Support\Facades\Schema::hasTable('candidate')
@@ -549,6 +620,7 @@ Route::get('/result', function () {
     ) {
         $votesByCandidateId = \Illuminate\Support\Facades\DB::table('position_votes')
             ->select('candidate_id', \Illuminate\Support\Facades\DB::raw('COUNT(*) as votes'))
+            ->where('election_id', $election->id)
             ->groupBy('candidate_id');
 
         $baseCandidates = \Illuminate\Support\Facades\DB::table('candidate')
@@ -556,6 +628,7 @@ Route::get('/result', function () {
                 $join->on('candidate.id', '=', 'vc.candidate_id');
             })
             ->leftJoin('positions', 'positions.id', '=', 'candidate.position_id')
+            ->where('candidate.election_id', $election->id)
             ->select(
                 'candidate.id',
                 'candidate.name',
@@ -619,9 +692,31 @@ Route::get('/result', function () {
         }
     }
 
-    return view('voter.result', compact('positions', 'pollCards'));
+    return view('voter.result', compact('positions', 'pollCards', 'resultsVisible', 'election'));
 })->name('result');
 Route::get('/resultTally', function (\Illuminate\Http\Request $request) {
+    $widgetService = app(\App\Services\ElectionWidgetService::class);
+    $election = $request->query('election_id')
+        ? \App\Models\Election::query()->findOrFail($request->query('election_id'))
+        : $widgetService->currentElection();
+    $resultsVisible = $widgetService->resultsVisible($election);
+    if (! $election || ! $resultsVisible) {
+        return view('voter.resultTally', [
+            'resultsVisible' => false,
+            'election' => $election,
+            'selectedPositionId' => null,
+            'selectedPosition' => null,
+            'candidatesByPositionId' => collect(),
+            'votesTotalByPositionId' => [],
+            'courseStats' => collect(),
+            'yearLevelTurnout' => collect(),
+            'genderStats' => null,
+            'partyTallyLabels' => [],
+            'partyTallyData' => [],
+        ]);
+    }
+
+    $electionId = (int) $election->id;
     $positionOrder = [
         'President',
         'Presidential',
@@ -638,6 +733,13 @@ Route::get('/resultTally', function (\Illuminate\Http\Request $request) {
     ];
 
     $positions = \App\Models\Position::query()
+        ->whereIn('id', function ($query) use ($electionId) {
+            $query->select('position_id')
+                ->from('candidate')
+                ->where('election_id', $electionId)
+                ->where('status', 'Active')
+                ->whereNotNull('position_id');
+        })
         ->orderByRaw(
             'CASE ' . implode(' ', array_map(fn ($i) => 'WHEN name = ? THEN ' . ($i + 1), array_keys($positionOrder))) . ' ELSE 999 END',
             $positionOrder
@@ -649,9 +751,6 @@ Route::get('/resultTally', function (\Illuminate\Http\Request $request) {
     $selectedPosition = null;
     if ($selectedPositionId) {
         $selectedPosition = $positions->firstWhere('id', (int) $selectedPositionId);
-        if (!$selectedPosition) {
-            $selectedPosition = \App\Models\Position::query()->where('id', $selectedPositionId)->first();
-        }
     }
 
     $votesByCandidateId = [];
@@ -660,12 +759,14 @@ Route::get('/resultTally', function (\Illuminate\Http\Request $request) {
     if (\Illuminate\Support\Facades\Schema::hasTable('position_votes')) {
         $votesByCandidateId = \Illuminate\Support\Facades\DB::table('position_votes')
             ->select('candidate_id', \Illuminate\Support\Facades\DB::raw('COUNT(*) as votes_count'))
+            ->where('election_id', $electionId)
             ->groupBy('candidate_id')
             ->pluck('votes_count', 'candidate_id')
             ->toArray();
 
         $votesTotalByPositionId = \Illuminate\Support\Facades\DB::table('position_votes')
             ->select('position_id', \Illuminate\Support\Facades\DB::raw('COUNT(*) as votes_total'))
+            ->where('election_id', $electionId)
             ->groupBy('position_id')
             ->pluck('votes_total', 'position_id')
             ->toArray();
@@ -674,6 +775,7 @@ Route::get('/resultTally', function (\Illuminate\Http\Request $request) {
     $candidatesQuery = \App\Models\Candidate::query()
         ->with(['course', 'party', 'position'])
         ->where('status', 'Active')
+        ->where('election_id', $electionId)
         ->when($selectedPositionId, function ($q) use ($selectedPositionId) {
             $q->where('position_id', $selectedPositionId);
         })
@@ -713,6 +815,7 @@ Route::get('/resultTally', function (\Illuminate\Http\Request $request) {
             ->join('candidate', 'candidate.id', '=', 'position_votes.candidate_id')
             ->join('electionparty', 'electionparty.id', '=', 'candidate.electionparty_id')
             ->select('electionparty.name', \Illuminate\Support\Facades\DB::raw('COUNT(*) as votes'))
+            ->where('position_votes.election_id', $electionId)
             ->when($selectedPositionId, function ($q) use ($selectedPositionId) {
                 $q->where('position_votes.position_id', $selectedPositionId);
             })
@@ -741,6 +844,7 @@ Route::get('/resultTally', function (\Illuminate\Http\Request $request) {
         if (\Illuminate\Support\Facades\Schema::hasTable('position_votes')) {
             $votedByCourseId = \Illuminate\Support\Facades\DB::table('position_votes')
                 ->join('verified_voters', 'verified_voters.users_id', '=', 'position_votes.user_id')
+                ->where('position_votes.election_id', $electionId)
                 ->whereNotNull('verified_voters.course_id')
                 ->select('verified_voters.course_id', \Illuminate\Support\Facades\DB::raw('COUNT(DISTINCT position_votes.user_id) as voted_count'))
                 ->groupBy('verified_voters.course_id')
@@ -775,6 +879,7 @@ Route::get('/resultTally', function (\Illuminate\Http\Request $request) {
             if (\Illuminate\Support\Facades\Schema::hasTable('position_votes')) {
                 $votedByYearId = \Illuminate\Support\Facades\DB::table('position_votes')
                     ->join('verified_voters', 'verified_voters.users_id', '=', 'position_votes.user_id')
+                    ->where('position_votes.election_id', $electionId)
                     ->whereNotNull('verified_voters.yrlvl_id')
                     ->select('verified_voters.yrlvl_id', \Illuminate\Support\Facades\DB::raw('COUNT(DISTINCT position_votes.user_id) as voted_count'))
                     ->groupBy('verified_voters.yrlvl_id')
@@ -809,7 +914,9 @@ Route::get('/resultTally', function (\Illuminate\Http\Request $request) {
         'yearLevelTurnout',
         'genderStats',
         'partyTallyLabels',
-        'partyTallyData'
+        'partyTallyData',
+        'resultsVisible',
+        'election'
     ));
 })->name('resultTally');
 Route::view('/contact', 'voter.contact')->name('contact');

@@ -114,6 +114,17 @@
 
                         <div class="candidate-register-grid grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
+                                <label class="block text-gray-700 font-bold mb-2" for="election_id">Election</label>
+                                <select class="candidate-register-select w-full p-3 border border-gray-300 rounded-lg" id="election_id" name="election_id" required>
+                                    <option value="">Select an election</option>
+                                    @foreach ($elections as $election)
+                                        <option value="{{ $election->id }}" @selected((string) old('election_id', $prefillElectionId ?? '') === (string) $election->id)>
+                                            {{ $election->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
                                 <label class="block text-gray-700 font-bold mb-2" for="position_id">Position</label>
                                 <select class="candidate-register-select w-full p-3 border border-gray-300 rounded-lg" id="position_id" name="position_id" required>
                                     <option value="">Select Position</option>

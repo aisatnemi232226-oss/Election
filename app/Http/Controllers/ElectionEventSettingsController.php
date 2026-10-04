@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ElectionEventSetting;
+use App\Services\ElectionWidgetService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -89,6 +90,8 @@ class ElectionEventSettingsController extends Controller
         }
 
         $settings->save();
+        $widget = app(ElectionWidgetService::class);
+        $widget->forget($widget->currentElection()?->id);
 
         return redirect()->route('admin.election-events-settings.edit')->with('success', 'Manage Election Events updated successfully.');
     }

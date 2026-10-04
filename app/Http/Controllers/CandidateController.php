@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Models\Candidate;
+use App\Models\Election;
+use App\Models\PositionVote;
 use App\Models\User;
 use App\Models\Course;
 use App\Models\VerifiedVoter;
@@ -68,6 +70,7 @@ class CandidateController extends Controller
             $courses = Course::all();
             $parties = ElectionParty::all();
             $positions = Position::all();
+            $elections = Election::query()->orderByDesc('created_at')->orderByDesc('id')->get();
             
             Log::info('CandidateController@index - Success');
             return view('admin.candidates', compact(
@@ -75,6 +78,7 @@ class CandidateController extends Controller
                 'courses',
                 'parties',
                 'positions',
+                'elections',
                 'isArchived',
                 'status',
                 'courseFilter',
@@ -114,6 +118,7 @@ class CandidateController extends Controller
         // Validate the request
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'election_id' => 'required|integer|exists:election,id',
             'profile_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             'banner_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             'description' => 'required|string',
@@ -157,6 +162,7 @@ class CandidateController extends Controller
         // Create new candidate instance
         $candidate = new Candidate();
         $candidate->name = $validated['name'];
+        $candidate->election_id = (int) $validated['election_id'];
         $candidate->description = $validated['description'];
         $candidate->course_id = $course->id;
         $candidate->position_id = $validated['position_id'] ?? null;
@@ -276,6 +282,7 @@ public function update(Request $request, $id)
             'profile_img' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'banner_img' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'name' => 'required|string|max:255',
+            'election_id' => 'nullable|integer|exists:election,id',
             'id_number' => 'required|string|max:255|unique:candidate,id_number,' . $id,
             'course_id' => 'required|exists:courses,id',
             'position_id' => 'nullable|exists:positions,id',
@@ -286,6 +293,17 @@ public function update(Request $request, $id)
             'related_events' => 'nullable|string',
             'joined_elections' => 'nullable|string',
         ]);
+
+        if (
+            $request->has('election_id')
+            && $candidate->election_id
+            && (int) $candidate->election_id !== (int) $request->input('election_id')
+            && PositionVote::query()->where('candidate_id', $candidate->id)->exists()
+        ) {
+            return back()->withInput()->withErrors([
+                'election_id' => 'This candidate already has recorded votes and cannot be reassigned.',
+            ]);
+        }
         
         // Verify course exists
         if ($request->has('course_id')) {
@@ -301,6 +319,10 @@ public function update(Request $request, $id)
 
         if ($request->has('position_id')) {
             $candidate->position_id = $request->position_id ?: null;
+        }
+
+        if ($request->has('election_id')) {
+            $candidate->election_id = $request->input('election_id') ?: null;
         }
         
         // Verify party exists if provided

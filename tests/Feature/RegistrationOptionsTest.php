@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
@@ -21,7 +22,7 @@ class RegistrationOptionsTest extends TestCase
             ->assertSee('object-cover object-bottom', false);
     }
 
-    public function test_registration_options_link_to_candidate_and_voter_flows(): void
+    public function test_guest_registration_options_require_login_before_continuing(): void
     {
         config(['app.url' => 'http://localhost']);
         URL::forceRootUrl('http://localhost');
@@ -29,10 +30,16 @@ class RegistrationOptionsTest extends TestCase
         $this->get('/register/options')
             ->assertOk()
             ->assertSee('Candidate Registration')
-            ->assertSee(route('candidate.register'), false)
-            ->assertSee('Voter Registration')
             ->assertSee(route('login'), false)
+            ->assertSee('Log In to Apply')
+            ->assertSee('Voter Registration')
             ->assertSee('Log In to Verify');
+    }
+
+    public function test_account_registration_page_prefills_registration_details(): void
+    {
+        config(['app.url' => 'http://localhost']);
+        URL::forceRootUrl('http://localhost');
 
         $this->get('/register')
             ->assertOk()
@@ -51,5 +58,18 @@ class RegistrationOptionsTest extends TestCase
             ->assertSee('value="Jamie"', false)
             ->assertSee('value="R."', false)
             ->assertSee('value="Student"', false);
+    }
+
+    public function test_authenticated_registration_options_can_continue_to_candidate_application(): void
+    {
+        config(['app.url' => 'http://localhost']);
+        URL::forceRootUrl('http://localhost');
+
+        $this->actingAs(new User())
+            ->get('/register/options')
+            ->assertOk()
+            ->assertSee(route('candidate.register'), false)
+            ->assertSee('Continue as Candidate')
+            ->assertSee('Continue to Verification');
     }
 }

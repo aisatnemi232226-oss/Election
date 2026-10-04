@@ -101,6 +101,16 @@
                                 <label for="election_candidates_result_announcements" class="block text-sm font-medium text-gray-700">Candidates Result Announcements</label>
                                 <textarea id="election_candidates_result_announcements" name="candidates_result_announcements" rows="3" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Announcement text for results"></textarea>
                             </div>
+                            <div>
+                                <label for="election_result_visibility" class="block text-sm font-medium text-gray-700">Candidate result visibility</label>
+                                <select id="election_result_visibility" name="result_visibility" required class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="hidden" selected>Hidden</option>
+                                    <option value="turnout_only">Turnout only</option>
+                                    <option value="live_candidate_results">Publish candidate results immediately</option>
+                                    <option value="after_close">Publish after voting closes</option>
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500">Candidate vote totals are hidden unless this election explicitly permits publication.</p>
+                            </div>
                         </div>
 
                         <div class="mt-6 flex justify-end gap-2">

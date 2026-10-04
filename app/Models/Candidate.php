@@ -16,7 +16,7 @@ class Candidate extends Model
     const UPDATED_AT = null;
 
     protected $fillable = [
-        'users_id', 'name', 'id_number', 'course_id', 'position_id', 'electionparty_id', 'platforms',
+        'users_id', 'election_id', 'name', 'id_number', 'course_id', 'position_id', 'electionparty_id', 'platforms',
         'related_events', 'joined_elections', 'description', 'status', 'profile_img', 'banner_img',
     ];
 
@@ -25,6 +25,11 @@ class Candidate extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'users_id');
+    }
+
+    public function election()
+    {
+        return $this->belongsTo(Election::class, 'election_id');
     }
 
     public function course()
@@ -42,4 +47,3 @@ class Candidate extends Model
         return $this->belongsTo(Position::class, 'position_id');
     }
 }
-

@@ -250,6 +250,26 @@
     });
     profileMenu?.addEventListener('click', (event) => event.stopPropagation());
     mobileToggle?.addEventListener('click', () => setMobileOpen(mobileToggle.getAttribute('aria-expanded') !== 'true'));
+    mobileMenu?.addEventListener('click', (event) => {
+        if (event.target.closest('a')) setMobileOpen(false);
+    });
+    window.matchMedia('(min-width: 900px)').addEventListener('change', (event) => {
+        if (event.matches) setMobileOpen(false);
+    });
+
+    const siteHeader = document.querySelector('.site-header');
+    let scrollUpdateScheduled = false;
+    function updateHeaderScrollState() {
+        if (!siteHeader) return;
+        siteHeader.classList.toggle('is-scrolled', window.scrollY > 8);
+        scrollUpdateScheduled = false;
+    }
+    window.addEventListener('scroll', () => {
+        if (scrollUpdateScheduled) return;
+        scrollUpdateScheduled = true;
+        window.requestAnimationFrame(updateHeaderScrollState);
+    }, { passive: true });
+    updateHeaderScrollState();
     helpToggle?.addEventListener('click', (event) => {
         event.stopPropagation();
         setHelpOpen(helpPanel.hidden);
@@ -264,6 +284,9 @@
         if (profileMenu && !profileMenu.contains(event.target) && !profileToggle?.contains(event.target)) {
             setProfileOpen(false);
         }
+        if (mobileMenu && !mobileMenu.contains(event.target) && !mobileToggle?.contains(event.target)) {
+            setMobileOpen(false);
+        }
         if (helpPanel && !helpPanel.contains(event.target) && !helpToggle?.contains(event.target)) {
             setHelpOpen(false);
         }
@@ -271,11 +294,13 @@
     document.addEventListener('keydown', (event) => {
         if (event.key !== 'Escape') return;
         const profileWasOpen = profileToggle?.getAttribute('aria-expanded') === 'true';
+        const mobileWasOpen = mobileToggle?.getAttribute('aria-expanded') === 'true';
         const helpWasOpen = helpToggle?.getAttribute('aria-expanded') === 'true';
         setProfileOpen(false);
         setMobileOpen(false);
         setHelpOpen(false);
         if (profileWasOpen) profileToggle.focus();
+        else if (mobileWasOpen) mobileToggle.focus();
         else if (helpWasOpen) helpToggle.focus();
     });
 })();

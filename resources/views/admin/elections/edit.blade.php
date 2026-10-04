@@ -58,6 +58,17 @@
                     </div>
                 </div>
 
+                <div>
+                    <label for="result_visibility" class="block text-sm font-medium text-gray-700">Candidate result visibility</label>
+                    <select id="result_visibility" name="result_visibility" required class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="hidden" @selected(old('result_visibility', $election->result_visibility ?? 'hidden') === 'hidden')>Hidden</option>
+                        <option value="turnout_only" @selected(old('result_visibility', $election->result_visibility ?? 'hidden') === 'turnout_only')>Turnout only</option>
+                        <option value="live_candidate_results" @selected(old('result_visibility', $election->result_visibility ?? 'hidden') === 'live_candidate_results')>Publish candidate results immediately</option>
+                        <option value="after_close" @selected(old('result_visibility', $election->result_visibility ?? 'hidden') === 'after_close')>Publish after voting closes</option>
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500">Candidate vote totals are hidden unless this election explicitly permits publication.</p>
+                </div>
+
                 <div class="flex justify-end gap-2 pt-2">
                     <a href="{{ route('admin.elections.index') }}" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Back</a>
                     <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Save Changes</button>

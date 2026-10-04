@@ -252,6 +252,244 @@
         text-align: center;
     }
 
+    body.results-view .results-unpublished {
+        position: relative;
+        isolation: isolate;
+        display: grid;
+        grid-template-columns: minmax(150px, .7fr) minmax(0, 1.6fr);
+        align-items: center;
+        gap: clamp(24px, 5vw, 64px);
+        overflow: hidden;
+        margin: 0 auto;
+        padding: clamp(26px, 5vw, 56px);
+        border: 1px solid color-mix(in srgb, var(--brand), var(--line) 72%);
+        border-radius: 28px;
+        background:
+            radial-gradient(ellipse at 12% 50%, color-mix(in srgb, var(--brand), transparent 90%), transparent 42%),
+            linear-gradient(135deg, var(--card), color-mix(in srgb, var(--tint), var(--card) 42%));
+        box-shadow: 0 8px 22px rgba(15, 27, 51, .055), 0 24px 58px rgba(37, 99, 235, .09);
+        animation: results-card-in .48s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.results-view .results-unpublished::before,
+    body.results-view .results-unpublished::after {
+        position: absolute;
+        z-index: -1;
+        border: 1px solid color-mix(in srgb, var(--brand), transparent 90%);
+        border-radius: 50%;
+        content: "";
+        pointer-events: none;
+    }
+
+    body.results-view .results-unpublished::before {
+        top: -150px;
+        right: -70px;
+        width: 330px;
+        height: 330px;
+        box-shadow: 0 0 0 28px color-mix(in srgb, var(--brand), transparent 96%), 0 0 0 58px color-mix(in srgb, var(--brand), transparent 97%);
+    }
+
+    body.results-view .results-unpublished::after {
+        right: 15%;
+        bottom: -235px;
+        width: 290px;
+        height: 290px;
+        border-color: color-mix(in srgb, var(--brand), transparent 94%);
+    }
+
+    body.results-view .results-unpublished-art {
+        position: relative;
+        display: grid;
+        width: min(100%, 220px);
+        aspect-ratio: 1;
+        place-items: center;
+        justify-self: center;
+        border: 1px solid color-mix(in srgb, var(--brand), transparent 83%);
+        border-radius: 50%;
+        background:
+            radial-gradient(circle, color-mix(in srgb, var(--brand), var(--card) 92%) 0 43%, transparent 44%),
+            repeating-conic-gradient(from -8deg, color-mix(in srgb, var(--brand), transparent 92%) 0deg 1deg, transparent 1deg 15deg);
+        box-shadow: inset 0 0 0 14px color-mix(in srgb, var(--brand), transparent 97%);
+    }
+
+    body.results-view .results-unpublished-art::before,
+    body.results-view .results-unpublished-art::after {
+        position: absolute;
+        border: 1px solid color-mix(in srgb, var(--brand), transparent 80%);
+        border-radius: 50%;
+        content: "";
+    }
+
+    body.results-view .results-unpublished-art::before {
+        inset: 12%;
+    }
+
+    body.results-view .results-unpublished-art::after {
+        inset: 22%;
+        border-style: dashed;
+        opacity: .7;
+    }
+
+    body.results-view .results-unpublished-lock {
+        z-index: 1;
+        display: grid;
+        width: 86px;
+        height: 86px;
+        place-items: center;
+        border: 1px solid color-mix(in srgb, var(--brand), transparent 72%);
+        border-radius: 26px;
+        background: var(--card);
+        color: var(--brand);
+        box-shadow: 0 12px 28px rgba(15, 27, 51, .12), inset 0 1px rgba(255, 255, 255, .8);
+        transform: rotate(-7deg);
+    }
+
+    body.results-view .results-unpublished-lock .icon {
+        width: 40px;
+        height: 40px;
+        stroke-width: 1.7;
+    }
+
+    body.results-view .results-unpublished-copy {
+        min-width: 0;
+    }
+
+    body.results-view .results-unpublished-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        margin: 0 0 16px;
+        color: var(--brand);
+        font-size: .72rem;
+        font-weight: 850;
+        letter-spacing: .14em;
+    }
+
+    body.results-view .results-unpublished-kicker::before {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+        box-shadow: 0 0 0 5px color-mix(in srgb, var(--brand), transparent 89%);
+        content: "";
+    }
+
+    body.results-view .results-unpublished-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: 4px;
+        padding: 6px 10px;
+        border: 1px solid color-mix(in srgb, var(--wait), transparent 72%);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--wait-bg), var(--card) 38%);
+        color: var(--wait);
+        font-size: .68rem;
+        font-weight: 800;
+        letter-spacing: .06em;
+        line-height: 1;
+        vertical-align: middle;
+    }
+
+    body.results-view .results-unpublished-copy h2 {
+        max-width: 18ch;
+        margin: 0;
+        font-size: clamp(1.7rem, 3.5vw, 2.55rem);
+        letter-spacing: -.045em;
+        line-height: 1.12;
+        text-wrap: balance;
+    }
+
+    body.results-view .results-unpublished-description {
+        max-width: 58ch;
+        margin: 14px 0 0;
+        color: var(--mut);
+        font-size: clamp(.96rem, 1.5vw, 1.05rem);
+        line-height: 1.7;
+    }
+
+    body.results-view .results-unpublished-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        max-width: 58ch;
+        margin-top: 22px;
+        padding: 13px 15px;
+        border: 1px solid color-mix(in srgb, var(--line), transparent 12%);
+        border-radius: 14px;
+        background: color-mix(in srgb, var(--card), transparent 18%);
+        color: var(--mut);
+        font-size: .85rem;
+        line-height: 1.5;
+    }
+
+    body.results-view .results-unpublished-note .icon {
+        width: 18px;
+        height: 18px;
+        flex: none;
+        margin-top: 1px;
+        color: var(--brand);
+    }
+
+    body.results-view .results-unpublished-footer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px 20px;
+        margin-top: 24px;
+    }
+
+    body.results-view .results-unpublished-update {
+        color: var(--mut);
+        font-size: .82rem;
+        font-weight: 650;
+    }
+
+    body.results-view .results-unpublished-link {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        padding: 0 17px;
+        border: 1px solid color-mix(in srgb, var(--brand), transparent 72%);
+        border-radius: 12px;
+        background: var(--card);
+        color: var(--brand);
+        font-size: .88rem;
+        font-weight: 800;
+        box-shadow: 0 4px 12px rgba(15, 27, 51, .055);
+        transition: transform .18s ease, background-color .18s ease, color .18s ease, box-shadow .18s ease;
+    }
+
+    body.results-view .results-unpublished-link:hover {
+        transform: translateY(-2px);
+        background: var(--brand);
+        color: var(--brand-contrast);
+        box-shadow: 0 8px 18px color-mix(in srgb, var(--brand), transparent 78%);
+    }
+
+    body.results-view .results-unpublished-link:focus-visible {
+        outline-offset: 4px;
+    }
+
+    body.results-view .results-unpublished-link .icon {
+        width: 17px;
+        height: 17px;
+    }
+
+    :root[data-theme="dark"] body.results-view .results-unpublished {
+        background:
+            radial-gradient(ellipse at 12% 50%, color-mix(in srgb, var(--brand), transparent 88%), transparent 42%),
+            linear-gradient(135deg, var(--card), color-mix(in srgb, var(--tint), var(--card) 28%));
+        box-shadow: 0 12px 30px rgba(0, 0, 0, .2), 0 26px 60px color-mix(in srgb, var(--brand), transparent 90%);
+    }
+
+    :root[data-theme="dark"] body.results-view .results-unpublished-lock {
+        box-shadow: 0 12px 28px rgba(0, 0, 0, .3);
+    }
+
     @keyframes results-intro-in {
         from { opacity: 0; transform: translateY(12px); }
         to { opacity: 1; transform: translateY(0); }
@@ -282,6 +520,46 @@
         body.results-view .result-tile {
             min-height: 210px;
         }
+
+        body.results-view .results-unpublished {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 24px;
+            padding: 26px 22px;
+            border-radius: 22px;
+        }
+
+        body.results-view .results-unpublished-art {
+            width: 158px;
+        }
+
+        body.results-view .results-unpublished-lock {
+            width: 68px;
+            height: 68px;
+            border-radius: 21px;
+        }
+
+        body.results-view .results-unpublished-lock .icon {
+            width: 32px;
+            height: 32px;
+        }
+
+        body.results-view .results-unpublished-kicker {
+            flex-wrap: wrap;
+            font-size: .66rem;
+        }
+
+        body.results-view .results-unpublished-copy h2 {
+            font-size: clamp(1.65rem, 8vw, 2rem);
+        }
+
+        body.results-view .results-unpublished-footer {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        body.results-view .results-unpublished-link {
+            width: 100%;
+        }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -301,9 +579,47 @@
 <div class="page-content results-page">
     <header class="page-intro">
         <h1>Election Results</h1>
-        <p>Explore the latest election tallies by position and see which candidates are leading.</p>
+        <p>{{ $election ? 'Results for ' . $election->name . '.' : 'Explore the latest election tallies by position and see which candidates are leading.' }}</p>
     </header>
 
+    @if(!($resultsVisible ?? false))
+        <section class="results-unpublished" role="status" aria-labelledby="results-unpublished-title">
+            <div class="results-unpublished-art" aria-hidden="true">
+                <span class="results-unpublished-lock">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="10" width="16" height="11" rx="2"></rect>
+                        <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+                        <path d="M12 14v3"></path>
+                    </svg>
+                </span>
+            </div>
+            <div class="results-unpublished-copy">
+                <p class="results-unpublished-kicker">
+                    OFFICIAL RESULTS
+                    <span class="results-unpublished-status">NOT PUBLISHED</span>
+                </p>
+                <h2 id="results-unpublished-title">Official results are not available yet.</h2>
+                <p class="results-unpublished-description">
+                    @if($election)
+                        Candidate vote totals for <strong>{{ $election->name }}</strong> are being kept private until they are officially released.
+                    @else
+                        Candidate vote totals are kept private until they are officially released.
+                    @endif
+                </p>
+                <div class="results-unpublished-note">
+                    <svg class="icon" aria-hidden="true"><use href="#pcu-chart"/></svg>
+                    <span>Once published, official totals and position-by-position tallies will appear here.</span>
+                </div>
+                <div class="results-unpublished-footer">
+                    <span class="results-unpublished-update">Check back here when the election team announces publication.</span>
+                    <a class="results-unpublished-link" href="{{ route('election.details', $election ? ['election_id' => $election->id] : []) }}">
+                        View election details
+                        <svg class="icon" aria-hidden="true"><use href="#pcu-arrow"/></svg>
+                    </a>
+                </div>
+            </div>
+        </section>
+    @else
     <section aria-labelledby="position-results-title">
         <div class="results-section-heading">
             <div>
@@ -331,7 +647,7 @@
                         ? route('storage.image', ['folder' => 'upload', 'filename' => $tileRelative])
                         : asset('images/default-banner.png');
                 @endphp
-                <a href="{{ route('resultTally', ['position' => $position->id]) }}" class="surface-card result-tile">
+                <a href="{{ route('resultTally', ['position' => $position->id, 'election_id' => $election->id]) }}" class="surface-card result-tile">
                     <img src="{{ $tileUrl }}" alt="" onerror="this.onerror=null;this.src='{{ asset('images/default-banner.png') }}';">
                     <h2>{{ $position->name }}</h2>
                 </a>
@@ -339,7 +655,7 @@
                 <p class="results-empty">No election positions are available.</p>
             @endforelse
 
-            <a href="{{ route('resultTally') }}" class="surface-card result-tile">
+            <a href="{{ route('resultTally', ['election_id' => $election->id]) }}" class="surface-card result-tile">
                 <img src="{{ asset('images/default-banner.png') }}" alt="" onerror="this.onerror=null;this.src='{{ asset('images/default-banner.png') }}';">
                 <h2>All Positions</h2>
             </a>
@@ -375,5 +691,6 @@
             @endforeach
         </div>
     </section>
+    @endif
 </div>
 @endsection

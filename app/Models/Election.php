@@ -29,6 +29,7 @@ class Election extends Model
         'academic_year_id',
         'candidates_group',
         'candidates_result_announcements',
+        'result_visibility',
     ];
 
     protected $casts = [
@@ -51,5 +52,15 @@ class Election extends Model
     public function academicYear()
     {
         return $this->belongsTo(AcademicYear::class);
+    }
+
+    public function candidates()
+    {
+        return $this->hasMany(Candidate::class, 'election_id');
+    }
+
+    public function positionVotes()
+    {
+        return $this->hasMany(PositionVote::class, 'election_id');
     }
 }

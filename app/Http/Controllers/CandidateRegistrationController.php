@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Candidate;
 use App\Models\Course;
+use App\Models\Election;
 use App\Models\ElectionParty;
+use App\Models\PositionVote;
 use App\Models\Position;
 use App\Models\User;
 use Illuminate\Database\QueryException;
@@ -52,6 +54,8 @@ class CandidateRegistrationController extends Controller
         }
 
         return view('voter.candidate-register', [
+            'elections' => Election::query()->orderByDesc('created_at')->orderByDesc('id')->get(),
+            'prefillElectionId' => (string) $request->query('election_id', ''),
             'courses' => Course::query()
                 ->orderBy('name')
                 ->orderBy('id')
@@ -75,6 +79,7 @@ class CandidateRegistrationController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'election_id' => 'required|integer|exists:election,id',
             'idnumber' => 'required|string',
             'name' => 'required|string|max:255',
             'email' => 'required|email',
@@ -107,6 +112,17 @@ class CandidateRegistrationController extends Controller
             ->where('id_number', $idNumber)
             ->first();
 
+        if (
+            $existingCandidate
+            && $existingCandidate->election_id
+            && (int) $existingCandidate->election_id !== (int) $validated['election_id']
+            && PositionVote::query()->where('candidate_id', $existingCandidate->id)->exists()
+        ) {
+            return back()->withErrors([
+                'election_id' => 'This candidate already has recorded votes in another election and cannot be reassigned.',
+            ])->withInput();
+        }
+
         if ($existingCandidate && !$existingCandidate->trashed() && in_array($existingCandidate->status, ['Pending', 'Active'], true)) {
             return back()->withErrors([
                 'idnumber' => 'You have already submitted a candidate application. Please wait for the admin review.',
@@ -117,6 +133,7 @@ class CandidateRegistrationController extends Controller
         if ($partyId) {
             $partyPositionTaken = Candidate::query()
                 ->where('electionparty_id', $partyId)
+                ->where('election_id', (int) $validated['election_id'])
                 ->where('position_id', (int) $validated['position_id'])
                 ->whereNull('deleted_at')
                 ->whereIn('status', ['Pending', 'Active'])
@@ -141,6 +158,7 @@ class CandidateRegistrationController extends Controller
                 $candidate->users_id = $user ? $user->id : null;
             }
             $candidate->name = $validated['name'];
+            $candidate->election_id = (int) $validated['election_id'];
             $candidate->id_number = $idNumber;
             $candidate->course_id = (int) $validated['course_id'];
             $candidate->position_id = (int) $validated['position_id'];

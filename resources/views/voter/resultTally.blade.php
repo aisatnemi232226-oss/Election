@@ -48,9 +48,12 @@
             <img class="tally-banner" src="{{ $selectedTileUrl }}" alt="{{ $selectedPosition->name }}" onerror="this.onerror=null;this.src='{{ asset('images/default-banner.png') }}';">
         @endif
         <h1>{{ $selectedPosition ? ($selectedPosition->name . ' Results') : 'Election Results' }}</h1>
-        <p>View the detailed results of the election.</p>
+        <p>{{ $election ? 'Results for ' . $election->name . '.' : 'View the detailed results of the election.' }}</p>
     </header>
 
+    @if(!($resultsVisible ?? false))
+        <div class="notice" role="status">Candidate results have not been published for this election.</div>
+    @else
     <section class="surface-card">
         <h2>Candidate tally</h2>
         @if($selectedId)
@@ -176,6 +179,7 @@
             </article>
         </div>
     </section>
+    @endif
 </div>
 @endsection
 

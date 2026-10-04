@@ -210,6 +210,7 @@
                                                 data-candidate="{{ $candidate->name }}"
                                                 data-course="{{ optional($candidate->course)->name ?? '' }}"
                                                 data-course-id="{{ optional($candidate->course)->id ?? '' }}"
+                                                data-election-id="{{ $candidate->election_id ?? '' }}"
                                                 data-position="{{ optional($candidate->position)->name ?? '' }}"
                                                 data-position-id="{{ optional($candidate->position)->id ?? '' }}"
                                                 data-party="{{ $candidate->party ? $candidate->party->name : 'No Party' }}"
@@ -437,6 +438,16 @@
                         </div>
 
                         <div class="mb-4">
+                            <label for="edit-candidate-election" class="block font-medium">Election</label>
+                            <select id="edit-candidate-election" name="election_id" class="border border-gray-300 p-2 w-full rounded">
+                                <option value="">Unassigned / historical</option>
+                                @foreach ($elections as $election)
+                                    <option value="{{ $election->id }}">{{ $election->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
                             <label for="edit-candidate-position" class="block font-medium">Position</label>
                             <select id="edit-candidate-position" name="position_id" class="border border-gray-300 p-2 w-full rounded">
                                 <option value="">-- Select a Position --</option>
@@ -546,6 +557,16 @@
                                 <option value="">-- Select a Course --</option>
                                 @foreach ($courses as $course)
                                     <option value="{{ $course->id }}">{{ $course->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="block mb-2" for="new-candidate-election">Election</label>
+                            <select id="new-candidate-election" name="election_id" class="border border-gray-300 p-2 w-full rounded" required>
+                                <option value="">-- Select an Election --</option>
+                                @foreach ($elections as $election)
+                                    <option value="{{ $election->id }}">{{ $election->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -744,6 +765,7 @@
                     const editId = document.getElementById('edit-candidate-id');
                     const editName = document.getElementById('edit-candidate-name');
                     const editCourse = document.getElementById('edit-candidate-course');
+                    const editElection = document.getElementById('edit-candidate-election');
                     const editPosition = document.getElementById('edit-candidate-position');
                     const editParty = document.getElementById('edit-candidate-party');
                     const editStatus = document.getElementById('edit-candidate-status');
@@ -757,6 +779,7 @@
                     if (editId) editId.value = candidateId || '';
                     if (editName) editName.value = editBtn.getAttribute('data-candidate') || '';
                     if (editCourse) editCourse.value = editBtn.getAttribute('data-course-id') || '';
+                    if (editElection) editElection.value = editBtn.getAttribute('data-election-id') || '';
                     if (editPosition) editPosition.value = editBtn.getAttribute('data-position-id') || '';
                     if (editParty) editParty.value = editBtn.getAttribute('data-party-id') || '';
                     if (editStatus) editStatus.value = editBtn.getAttribute('data-status') || 'Active';

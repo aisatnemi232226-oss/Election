@@ -43,10 +43,10 @@
 
         <nav class="desktop-nav" aria-label="Main navigation">
             <a href="{{ url('/') }}" @if(request()->routeIs('home')) aria-current="page" @endif>Home</a>
-            <a href="{{ url('/election') }}">Election</a>
-            <a href="{{ route('election.details') }}">Vote</a>
-            <a href="{{ url('/result') }}">Results</a>
-            <a href="{{ url('/contact') }}">Contact</a>
+            <a href="{{ url('/election') }}" @if(request()->is('election')) aria-current="page" @endif>Election</a>
+            <a href="{{ route('election.details') }}" @if(request()->is('election-details')) aria-current="page" @endif>Vote</a>
+            <a href="{{ url('/result') }}" @if(request()->is('result')) aria-current="page" @endif>Results</a>
+            <a href="{{ url('/contact') }}" @if(request()->is('contact')) aria-current="page" @endif>Contact</a>
         </nav>
 
         <div class="header-actions">
@@ -121,18 +121,19 @@
                 @endauth
             </ul>
             <button class="icon-button mobile-nav-toggle" id="menu-toggle" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-menu">
-                <svg class="icon" aria-hidden="true"><use href="#pcu-menu"/></svg>
+                <svg class="icon menu-open-icon" aria-hidden="true"><use href="#pcu-menu"/></svg>
+                <svg class="icon menu-close-icon" aria-hidden="true"><use href="#pcu-x"/></svg>
             </button>
         </div>
     </div>
 
     <nav class="mobile-nav" id="mobile-menu" aria-label="Mobile navigation">
         <div class="page-wrap mobile-nav-inner">
-            <a href="{{ url('/') }}">Home</a>
-            <a href="{{ url('/election') }}">Election</a>
-            <a href="{{ route('election.details') }}">Vote</a>
-            <a href="{{ url('/result') }}">Results</a>
-            <a href="{{ url('/contact') }}">Contact</a>
+            <a href="{{ url('/') }}" @if(request()->routeIs('home')) aria-current="page" @endif>Home</a>
+            <a href="{{ url('/election') }}" @if(request()->is('election')) aria-current="page" @endif>Election</a>
+            <a href="{{ route('election.details') }}" @if(request()->is('election-details')) aria-current="page" @endif>Vote</a>
+            <a href="{{ url('/result') }}" @if(request()->is('result')) aria-current="page" @endif>Results</a>
+            <a href="{{ url('/contact') }}" @if(request()->is('contact')) aria-current="page" @endif>Contact</a>
             @auth
                 <div class="mobile-account">
                     <span class="avatar"><svg class="icon" aria-hidden="true"><use href="#pcu-user"/></svg></span>

@@ -55,8 +55,29 @@ class CandidateRegistrationPrefillTest extends TestCase
             $table->softDeletes();
         });
 
+        Schema::create('election', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+            $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
+            $table->date('reg_start')->nullable();
+            $table->date('reg_end')->nullable();
+            $table->date('campaign_start')->nullable();
+            $table->date('campaign_end')->nullable();
+            $table->date('result_date')->nullable();
+            $table->string('result_visibility')->default('hidden');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('deleted_at')->nullable();
+        });
+        DB::table('election')->insert([
+            'id' => 1,
+            'name' => 'Test Election',
+            'created_at' => now(),
+        ]);
+
         Schema::create('candidate', function (Blueprint $table): void {
             $table->id();
+            $table->unsignedBigInteger('election_id')->nullable();
             $table->unsignedBigInteger('users_id')->nullable();
             $table->string('name')->nullable();
             $table->string('id_number')->nullable();
@@ -77,6 +98,16 @@ class CandidateRegistrationPrefillTest extends TestCase
             $table->unsignedBigInteger('users_id');
             $table->timestamps();
             $table->softDeletes();
+        });
+
+        Schema::create('notifications', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->string('type');
+            $table->string('notifiable_type');
+            $table->unsignedBigInteger('notifiable_id');
+            $table->json('data');
+            $table->timestamp('read_at')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -201,6 +232,7 @@ class CandidateRegistrationPrefillTest extends TestCase
         $response = $this->actingAs($user)
             ->from('/candidate/register')
             ->post('/candidate/register', [
+                'election_id' => 1,
                 'idnumber' => '20250001',
                 'name' => 'Test Student',
                 'email' => 'student@example.test',
@@ -244,6 +276,7 @@ class CandidateRegistrationPrefillTest extends TestCase
 
         $this->actingAs($user)
             ->post('/candidate/register', [
+                'election_id' => 1,
                 'idnumber' => '20250001',
                 'name' => 'Test Student',
                 'email' => 'student@example.test',
@@ -287,6 +320,7 @@ class CandidateRegistrationPrefillTest extends TestCase
         $this->actingAs($user)
             ->from('/candidate/register')
             ->post('/candidate/register', [
+                'election_id' => 1,
                 'idnumber' => '20250001',
                 'name' => 'Test Student',
                 'email' => 'student@example.test',
@@ -319,7 +353,7 @@ class CandidateRegistrationPrefillTest extends TestCase
             ->from('/candidate/register')
             ->post('/candidate/register', [])
             ->assertRedirect('/candidate/register')
-            ->assertSessionHasErrors(['idnumber', 'name', 'email', 'course_id', 'position_id']);
+            ->assertSessionHasErrors(['election_id', 'idnumber', 'name', 'email', 'course_id', 'position_id']);
 
         $this->get('/candidate/register')
             ->assertOk()
