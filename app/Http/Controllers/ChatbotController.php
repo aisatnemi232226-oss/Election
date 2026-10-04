@@ -5,105 +5,144 @@ namespace App\Http\Controllers;
 use App\Models\ChatbotIntent;
 use App\Models\ChatbotLog;
 use App\Models\ChatbotSetting;
+use App\Services\Chatbot\AIProvider;
+use App\Services\Chatbot\AIProviderException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ChatbotController extends Controller
 {
+    private const DEFAULT_GREETING = "Hello! I'm the PCU Assistant. I can help with signing in, registration, voting, and election results.";
+
+    private const DEFAULT_FALLBACK = "I don't have an answer for that yet. Try asking about signing in, voter or candidate registration, verification, voting, or results.";
+
+    private const DEFAULT_QUICK_REPLIES = [
+        'How do I log in?',
+        'How do I vote?',
+        'How do I register as a candidate?',
+        'Where can I see results?',
+    ];
+
+    public function __construct(private readonly AIProvider $aiProvider) {}
+
     public function respond(Request $request): JsonResponse
     {
-        $message = trim((string) $request->input('message', ''));
-        $text = strtolower($message);
+        $validated = $request->validate([
+            'message' => ['required', 'string', 'max:1000'],
+            'history' => ['sometimes', 'array', 'max:8'],
+            'history.*.role' => ['required', 'string', 'in:user,assistant,bot'],
+            'history.*.content' => ['required', 'string', 'max:1000'],
+        ]);
 
-        $normalizedText = $this->normalize($text);
+        $message = trim($validated['message']);
+        $normalizedMessage = $this->normalize($message);
+        $history = array_map(static function (array $turn): array {
+            return [
+                'role' => $turn['role'] === 'bot' ? 'assistant' : $turn['role'],
+                'content' => trim($turn['content']),
+            ];
+        }, $validated['history'] ?? []);
 
         $settings = ChatbotSetting::query()
             ->whereIn('key', ['greeting', 'fallback', 'default_quick_replies'])
             ->pluck('value', 'key');
 
-        $quickRepliesRaw = (string) ($settings['default_quick_replies'] ?? '');
-        $quickReplies = $this->splitLinesCsv($quickRepliesRaw);
-        if (empty($quickReplies)) {
-            $quickReplies = $this->intentNameSuggestions();
+        $quickReplies = $this->splitLinesCsv((string) ($settings['default_quick_replies'] ?? ''));
+        if ($quickReplies === []) {
+            $quickReplies = self::DEFAULT_QUICK_REPLIES;
         }
 
-        $greeting = (string) ($settings['greeting'] ?? "Hello! You can ask me how to log in, how to vote, or where to see the election results.");
-        $fallback = (string) ($settings['fallback'] ?? "I couldn't find an exact match for that. Try asking about login, voting, candidate registration, or results.");
-
-        $isGibberish = function (string $input): bool {
-            $t = trim($input);
-            if ($t === '' || mb_strlen($t) < 2) {
-                return true;
-            }
-
-            $stripped = preg_replace('/\s+/', '', $t) ?? '';
-            $lettersOnly = preg_match('/^[a-zA-Z]+$/', $stripped) === 1;
-
-            if ($lettersOnly && mb_strlen($stripped) >= 8) {
-                $lower = strtolower($stripped);
-                $uniqueChars = count(array_unique(str_split($lower)));
-                if ($uniqueChars <= 3) {
-                    return true;
-                }
-                if (preg_match('/^(.{1,3})\1+$/', $lower) === 1) {
-                    return true;
-                }
-            }
-
-            $meaningfulChars = preg_match_all('/[a-zA-Z0-9]/', $t);
-            if (mb_strlen($t) >= 6 && $meaningfulChars <= 2) {
-                return true;
-            }
-
-            return false;
-        };
-
-        if ($isGibberish($message)) {
-            $reply = "I couldn't understand that. Please try a clear question or tap one of the suggestions below.";
-            $this->logChat($request, $message, $reply, null);
-            return response()->json(['reply' => $reply, 'quick_replies' => $quickReplies]);
+        $greeting = trim((string) ($settings['greeting'] ?? ''));
+        if ($greeting === '' || $this->hasConflictingGreetingParts($greeting)) {
+            $greeting = self::DEFAULT_GREETING;
         }
+
+        $fallback = trim((string) ($settings['fallback'] ?? ''));
+        if ($fallback === '') {
+            $fallback = self::DEFAULT_FALLBACK;
+        }
+
+        $customIntents = ChatbotIntent::query()
+            ->where('is_active', true)
+            ->orderBy('priority')
+            ->orderBy('id')
+            ->get();
 
         $matchedIntentId = null;
         $reply = '';
+        $mode = 'knowledge';
+        $notice = null;
 
-        if ($text === '' || $text === 'hi' || $text === 'hello' || $text === 'hey') {
+        if (in_array($normalizedMessage, ['hi', 'hello', 'hey', 'good morning', 'good afternoon', 'good evening'], true)) {
             $reply = $greeting;
         } else {
-            $intents = ChatbotIntent::query()
-                ->where('is_active', true)
-                ->orderBy('priority')
-                ->orderBy('id')
-                ->get();
-
-            foreach ($intents as $intent) {
-                $intentNameNorm = $this->normalize(strtolower((string) $intent->name));
-                if ($intentNameNorm !== '' && $intentNameNorm === $normalizedText) {
-                    $reply = $intent->reply;
+            foreach ($customIntents as $intent) {
+                if ($this->matchesIntent($normalizedMessage, (string) $intent->name, $intent->triggers)) {
+                    $reply = trim((string) $intent->reply);
                     $matchedIntentId = $intent->id;
-                    $qr = is_array($intent->quick_replies) ? $intent->quick_replies : [];
-                    if (!empty($qr)) {
-                        $quickReplies = $qr;
+                    $intentReplies = is_array($intent->quick_replies) ? $intent->quick_replies : [];
+                    if ($intentReplies !== []) {
+                        $quickReplies = $intentReplies;
                     }
                     break;
                 }
+            }
 
-                $triggers = is_array($intent->triggers) ? $intent->triggers : [];
-                if (empty($triggers) && (string) $intent->name !== '') {
-                    $triggers = [(string) $intent->name];
-                }
-                foreach ($triggers as $tr) {
-                    $needle = strtolower(trim((string) $tr));
-                    if ($needle === '') continue;
-                    if (str_contains($text, $needle)) {
-                        $reply = $intent->reply;
-                        $matchedIntentId = $intent->id;
-                        $qr = is_array($intent->quick_replies) ? $intent->quick_replies : [];
-                        if (!empty($qr)) {
-                            $quickReplies = $qr;
-                        }
-                        break 2;
+            if ($reply === '') {
+                foreach ($this->defaultIntents() as $intent) {
+                    if ($this->matchesIntent($normalizedMessage, $intent['name'], $intent['triggers'])) {
+                        $reply = $intent['reply'];
+                        break;
                     }
+                }
+            }
+
+            $provider = config('services.chatbot.provider');
+            $providerKey = in_array($provider, ['openai', 'openai-compatible'], true)
+                ? (string) (config('services.chatbot.openai_api_key') ?: config('services.chatbot.api_key'))
+                : (string) config('services.chatbot.api_key');
+            $aiIsConfigured = $provider === 'mock' || trim($providerKey) !== '';
+            if ($reply === '' && $aiIsConfigured) {
+                $startedAt = microtime(true);
+                try {
+                    $facts = collect($this->defaultIntents())
+                        ->map(static fn (array $intent) => $intent['name'].': '.$intent['reply'])
+                        ->concat($customIntents->map(static fn (ChatbotIntent $intent) => (string) $intent->name.': '.(string) $intent->reply))
+                        ->take(40)
+                        ->values()
+                        ->all();
+
+                    $response = $this->aiProvider->generate($message, $history, [
+                        'approved_facts' => $facts,
+                    ], ['max_output_tokens' => config('services.chatbot.max_output_tokens', 500)]);
+                    $reply = $response->text;
+                    $mode = 'ai';
+                    Log::info('The PCU Assistant AI provider request succeeded.', [
+                        'provider' => $response->provider,
+                        'model' => $response->model,
+                        'elapsed_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+                        'fallback_used' => $response->model !== trim((string) config('services.chatbot.model')),
+                    ]);
+                } catch (AIProviderException $exception) {
+                    Log::warning('The PCU Assistant AI provider request failed.', [
+                        'provider' => (string) config('services.chatbot.provider'),
+                        'model' => mb_substr((string) config('services.chatbot.model'), 0, 80),
+                        'error_code' => $exception->errorCode,
+                        'provider_status' => $exception->providerStatus,
+                        'elapsed_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+                        'fallback_used' => true,
+                    ]);
+                    $notice = $this->providerNotice($exception->errorCode);
+                } catch (\Throwable $exception) {
+                    Log::warning('The PCU Assistant encountered an unexpected provider error.', [
+                        'provider' => (string) config('services.chatbot.provider'),
+                        'model' => mb_substr((string) config('services.chatbot.model'), 0, 80),
+                        'exception_class' => $exception::class,
+                        'elapsed_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+                        'fallback_used' => true,
+                    ]);
+                    $notice = 'AI replies are temporarily unavailable. You can still use the common election help topics.';
                 }
             }
         }
@@ -117,71 +156,166 @@ class ChatbotController extends Controller
         return response()->json([
             'reply' => $reply,
             'quick_replies' => $quickReplies,
+            'mode' => $mode,
+            'notice' => $notice,
         ]);
+    }
+
+    private function providerNotice(string $errorCode): string
+    {
+        return match ($errorCode) {
+            'provider_quota_exhausted' => 'AI quota is temporarily unavailable. Common election help is still available; please try one of the suggested questions.',
+            'provider_payment_required' => 'AI credits are currently unavailable. Common election help is still available; please try one of the suggested questions.',
+            'provider_rate_limited' => 'The AI assistant is receiving too many requests right now. Please wait a moment and try again.',
+            'provider_invalid_credentials', 'provider_forbidden', 'provider_not_configured', 'provider_missing_api_key', 'provider_missing_model' => 'AI replies are not available right now. Common election help is still available.',
+            'provider_timeout', 'provider_connection_error' => 'The AI assistant could not connect in time. Please try again in a moment.',
+            'provider_blocked_response' => 'I could not provide an AI reply to that message. Please ask a PCU election help question instead.',
+            'provider_application_rate_limited', 'provider_all_models_busy', 'provider_all_models_cooling_down' => 'AI assistance is temporarily unavailable. You can still use the election help options below.',
+            default => 'AI replies are temporarily unavailable. Common election help is still available.',
+        };
+    }
+
+    private function defaultIntents(): array
+    {
+        return [
+            [
+                'name' => 'Change a submitted vote',
+                'triggers' => ['change my vote', 'edit my vote', 'change my ballot', 'edit my ballot'],
+                'reply' => 'Please review your choices before submitting your ballot. The system accepts one vote per student; if you submitted the wrong ballot, contact the election office for help.',
+            ],
+            [
+                'name' => 'Sign in and account recovery',
+                'triggers' => ['log in', 'login', 'sign in', 'forgot password', 'reset password', 'access my account'],
+                'reply' => 'Use the Log in page with your student account. If you forgot your password, choose Forgot password on the login page to begin account recovery.',
+            ],
+            [
+                'name' => 'Voter verification',
+                'triggers' => ['verification', 'verify my account', 'verify my voter account', 'verified voter', 'student verification'],
+                'reply' => 'Open your account menu and choose the voter verification option. Submit your student details, then return to your account to check the application status.',
+            ],
+            [
+                'name' => 'Who can vote',
+                'triggers' => ['who can vote', 'eligible to vote', 'eligible voter', 'voting eligibility'],
+                'reply' => 'Eligible, verified students can access the ballot using their student account.',
+            ],
+            [
+                'name' => 'Candidate registration',
+                'triggers' => ['register as a candidate', 'register as candidate', 'candidate registration', 'run for office', 'become a candidate'],
+                'reply' => 'Choose Register from the site navigation, select candidate registration, and follow the application steps. Contact the election office if you need help with your application.',
+            ],
+            [
+                'name' => 'Voter registration',
+                'triggers' => ['register as a voter', 'voter registration', 'register to vote', 'create an account', 'sign up'],
+                'reply' => 'Choose Register from the site navigation and select voter registration. Sign in afterward and complete voter verification to access the ballot.',
+            ],
+            [
+                'name' => 'Cast a vote',
+                'triggers' => ['how do i vote', 'how can i vote', 'cast my ballot', 'submit my ballot', 'voting', 'vote'],
+                'reply' => 'Sign in with your student account and make sure your voter account is verified. Open Vote, select your candidates, review your choices, and submit your ballot. Each student may vote only once.',
+            ],
+            [
+                'name' => 'Election results',
+                'triggers' => ['where can i see results', 'election results', 'vote count', 'who won', 'results', 'result'],
+                'reply' => 'Open Results from the site navigation. Results are available there when they have been published.',
+            ],
+            [
+                'name' => 'Election schedule',
+                'triggers' => ['when is the election', 'when does voting start', 'election date', 'voting dates', 'election schedule'],
+                'reply' => 'Check the Election timeline and News and events sections on the home page for the currently published election dates and announcements.',
+            ],
+            [
+                'name' => 'Contact the election office',
+                'triggers' => ['contact the election office', 'contact support', 'need help', 'contact us'],
+                'reply' => 'Visit the Contact page to reach the election office. Include a short description of the issue so they can direct your request.',
+            ],
+        ];
+    }
+
+    private function matchesIntent(string $message, string $name, mixed $triggers): bool
+    {
+        if ($message === '') {
+            return false;
+        }
+
+        $normalizedName = $this->normalize($name);
+        if ($normalizedName !== '' && $normalizedName === $message) {
+            return true;
+        }
+
+        $phrases = is_array($triggers) ? $triggers : [];
+        if ($phrases === [] && trim($name) !== '') {
+            $phrases[] = $name;
+        }
+
+        $paddedMessage = ' '.$message.' ';
+        foreach ($phrases as $phrase) {
+            $needle = $this->normalize((string) $phrase);
+            if ($needle !== '' && str_contains($paddedMessage, ' '.$needle.' ')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function splitLinesCsv(string $raw): array
     {
-        $t = trim($raw);
-        if ($t === '') return [];
+        $parts = preg_split('/[\n,]+/', trim($raw)) ?: [];
 
-        $parts = preg_split('/[\n,]+/', $t) ?: [];
-        $clean = [];
-        foreach ($parts as $p) {
-            $v = trim((string) $p);
-            if ($v === '') continue;
-            $clean[] = $v;
-        }
-
-        return array_values(array_unique($clean));
+        return array_values(array_unique(array_filter(array_map(
+            static fn ($part) => trim((string) $part),
+            $parts
+        ), static fn ($part) => $part !== '')));
     }
 
-    private function intentNameSuggestions(int $limit = 6): array
+    private function hasConflictingGreetingParts(string $greeting): bool
     {
-        $names = ChatbotIntent::query()
-            ->where('is_active', true)
-            ->orderBy('priority')
-            ->orderBy('id')
-            ->limit($limit)
-            ->pluck('name')
-            ->map(fn ($v) => trim((string) $v))
-            ->filter(fn ($v) => $v !== '')
-            ->values()
-            ->all();
+        preg_match_all('/\b(?:morning|afternoon|evening)\b/i', $greeting, $matches);
 
-        if (!empty($names)) {
-            return $names;
-        }
-
-        return [
-            'How do I log in?',
-            'How do I vote?',
-            'How do I register as candidate?',
-            'Where can I see results?',
-        ];
+        return count(array_unique(array_map('strtolower', $matches[0] ?? []))) > 1;
     }
 
     private function logChat(Request $request, string $message, string $reply, ?int $matchedIntentId): void
     {
+        if (! config('services.chatbot.log_conversations', false)) {
+            return;
+        }
+
         try {
+            $retentionDays = max(1, (int) config('services.chatbot.log_retention_days', 30));
+            ChatbotLog::query()
+                ->where('created_at', '<', now()->subDays($retentionDays))
+                ->delete();
+
             ChatbotLog::query()->create([
                 'user_id' => $request->user()?->id,
                 'session_id' => (string) ($request->session()->getId() ?? ''),
-                'message' => $message,
-                'reply' => $reply,
+                'message' => $this->redactSensitiveText($message),
+                'reply' => $this->redactSensitiveText($reply),
                 'matched_intent_id' => $matchedIntentId,
             ]);
-        } catch (\Throwable $e) {
-            // swallow
+        } catch (\Throwable $exception) {
+            Log::warning('Unable to save a chatbot conversation log.', [
+                'exception_class' => $exception::class,
+            ]);
         }
     }
 
-    private function normalize(string $s): string
+    private function redactSensitiveText(string $text): string
     {
-        $t = trim($s);
-        if ($t === '') return '';
-        $t = preg_replace('/\s+/', ' ', $t) ?? $t;
-        $t = preg_replace('/[^a-z0-9 ]/i', '', $t) ?? $t;
-        return trim(strtolower($t));
+        $patterns = [
+            '/\b(password|passcode|otp|one[- ]time code|verification code|token)\b\s*[:=]?\s*\S+/iu',
+            '/\b\d{6,}\b/u',
+        ];
+
+        return mb_substr(trim(preg_replace($patterns, '[redacted]', strip_tags($text)) ?? '[redacted]'), 0, 2000);
+    }
+
+    private function normalize(string $text): string
+    {
+        $normalized = mb_strtolower(trim($text));
+        $normalized = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $normalized) ?? $normalized;
+
+        return trim(preg_replace('/\s+/u', ' ', $normalized) ?? $normalized);
     }
 }

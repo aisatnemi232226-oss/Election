@@ -2,20 +2,25 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\Facades\View;
-use Illuminate\Pagination\Paginator;
+use App\Models\Article;
 use App\Models\Candidate;
+use App\Models\Course;
 use App\Models\Election;
 use App\Models\ElectionParty;
-use App\Models\Course;
 use App\Models\Position;
-use App\Models\Article;
 use App\Models\Role;
 use App\Models\User;
 use App\Observers\AdminAuditObserver;
+use App\Services\Chatbot\AIProvider;
+use App\Services\Chatbot\GeminiModelRouter;
+use App\Services\Chatbot\MockAIProvider;
+use App\Services\Chatbot\OpenAICompatibleProvider;
 use Carbon\Carbon;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
+use InvalidArgumentException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,7 +29,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(AIProvider::class, function () {
+            return match (config('services.chatbot.provider')) {
+                'gemini' => $this->app->make(GeminiModelRouter::class),
+                'openai' => $this->app->make(OpenAICompatibleProvider::class),
+                'openai-compatible' => $this->app->make(OpenAICompatibleProvider::class),
+                'mock' => $this->app->make(MockAIProvider::class),
+                default => throw new InvalidArgumentException('Unsupported chatbot AI provider.'),
+            };
+        });
     }
 
     /**

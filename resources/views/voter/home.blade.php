@@ -672,8 +672,7 @@
     }
 
     body.voter-home-page #how-it-works,
-    body.voter-home-page #events,
-    body.voter-home-page #guidelines {
+    body.voter-home-page #events {
         background:
             radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--tint), transparent 32%), transparent 50%),
             var(--tint);
@@ -769,6 +768,7 @@
     body.voter-home-page .article-card,
     body.voter-home-page .faq-item,
     body.voter-home-page .guidelines-card,
+    body.voter-home-page .guideline-item,
     body.voter-home-page .empty-card {
         border-color: color-mix(in srgb, var(--line), transparent 12%);
         border-radius: 20px;
@@ -1494,22 +1494,346 @@
         color: var(--articles-muted);
     }
 
+    body.voter-home-page #faq {
+        --faq-start: #f6f9ff;
+        --faq-end: #eaf0fa;
+        --faq-text: #142746;
+        --faq-muted: #536680;
+        --faq-card: #fff;
+        --faq-card-soft: #f2f6ff;
+        --faq-border: #d7e2f2;
+        --faq-brand: #315fbd;
+        background:
+            radial-gradient(ellipse at 100% 0%, rgba(67, 119, 230, .1), transparent 42%),
+            linear-gradient(145deg, var(--faq-start), var(--faq-end));
+    }
+
+    :root[data-theme="dark"] body.voter-home-page #faq {
+        --faq-start: #101b2d;
+        --faq-end: #172743;
+        --faq-text: #edf4ff;
+        --faq-muted: #b7c5dc;
+        --faq-card: #1a2a43;
+        --faq-card-soft: #142139;
+        --faq-border: #2c4161;
+        --faq-brand: #8db4ff;
+    }
+
+    body.voter-home-page #faq .section-heading {
+        margin-bottom: clamp(22px, 3vw, 32px);
+    }
+
+    body.voter-home-page .faq-kicker {
+        margin: 0 0 7px;
+        color: var(--faq-brand);
+        font-size: .74rem;
+        font-weight: 800;
+        letter-spacing: .15em;
+    }
+
+    body.voter-home-page #faq .section-heading h2 {
+        color: var(--faq-text);
+        font-size: clamp(1.8rem, 3.4vw, 2.4rem);
+    }
+
+    body.voter-home-page #faq .section-heading p:not(.faq-kicker) {
+        margin-top: 9px;
+        color: var(--faq-muted);
+    }
+
+    body.voter-home-page #guidelines {
+        --guidelines-start: #eff7ff;
+        --guidelines-end: #e7f2f6;
+        --guidelines-text: #142746;
+        --guidelines-muted: #536680;
+        --guidelines-card: #fff;
+        --guidelines-card-soft: #f4f8fc;
+        --guidelines-border: #d5e3ee;
+        --guidelines-brand: #256b83;
+        background:
+            radial-gradient(ellipse at 0% 100%, rgba(53, 144, 168, .13), transparent 46%),
+            linear-gradient(145deg, var(--guidelines-start), var(--guidelines-end));
+    }
+
+    :root[data-theme="dark"] body.voter-home-page #guidelines {
+        --guidelines-start: #101d2c;
+        --guidelines-end: #142b38;
+        --guidelines-text: #edf5fb;
+        --guidelines-muted: #b8cad7;
+        --guidelines-card: #1a2d3b;
+        --guidelines-card-soft: #203846;
+        --guidelines-border: #304d5c;
+        --guidelines-brand: #7bc4d1;
+    }
+
+    body.voter-home-page #guidelines .section-heading {
+        margin-bottom: clamp(22px, 3vw, 32px);
+    }
+
+    body.voter-home-page .guidelines-kicker {
+        margin: 0 0 7px;
+        color: var(--guidelines-brand);
+        font-size: .74rem;
+        font-weight: 800;
+        letter-spacing: .15em;
+    }
+
+    body.voter-home-page #guidelines .section-heading h2 {
+        color: var(--guidelines-text);
+        font-size: clamp(1.8rem, 3.4vw, 2.4rem);
+    }
+
+    body.voter-home-page #guidelines .section-heading p:not(.guidelines-kicker) {
+        max-width: 62ch;
+        margin-top: 9px;
+        color: var(--guidelines-muted);
+    }
+
+    body.voter-home-page .guidelines-card {
+        padding: clamp(20px, 3vw, 30px);
+        border: 1px solid var(--guidelines-border);
+        border-radius: 24px;
+        background:
+            radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--guidelines-brand), transparent 94%), transparent 42%),
+            var(--guidelines-card);
+        box-shadow: 0 9px 24px rgba(15, 27, 51, .055), 0 20px 42px rgba(15, 27, 51, .045);
+    }
+
+    body.voter-home-page .guidelines-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 22px;
+    }
+
+    body.voter-home-page .guidelines-card-intro {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 14px;
+    }
+
+    body.voter-home-page .guidelines-card-icon {
+        display: grid;
+        width: 48px;
+        height: 48px;
+        flex: none;
+        place-items: center;
+        border: 1px solid color-mix(in srgb, var(--guidelines-brand), transparent 78%);
+        border-radius: 16px;
+        background: var(--guidelines-card-soft);
+        color: var(--guidelines-brand);
+    }
+
+    body.voter-home-page .guidelines-card-icon .icon {
+        width: 24px;
+        height: 24px;
+    }
+
+    body.voter-home-page .guidelines-card-intro strong {
+        display: block;
+        color: var(--guidelines-text);
+        font-size: clamp(1.05rem, 1.8vw, 1.25rem);
+        letter-spacing: -.02em;
+        line-height: 1.3;
+    }
+
+    body.voter-home-page .guidelines-card-intro p {
+        margin: 5px 0 0;
+        color: var(--guidelines-muted);
+        font-size: .9rem;
+    }
+
+    body.voter-home-page .guidelines-count {
+        display: inline-flex;
+        flex: none;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 12px;
+        border: 1px solid var(--guidelines-border);
+        border-radius: 999px;
+        background: var(--guidelines-card-soft);
+        color: var(--guidelines-brand);
+        font-size: .78rem;
+        font-weight: 800;
+    }
+
+    body.voter-home-page .guidelines-count .icon {
+        width: 15px;
+        height: 15px;
+    }
+
+    body.voter-home-page .guidelines-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    body.voter-home-page .guideline-item {
+        display: flex;
+        min-height: 76px;
+        align-items: flex-start;
+        gap: 13px;
+        padding: 16px;
+        border: 1px solid color-mix(in srgb, var(--guidelines-border), transparent 18%);
+        border-radius: 17px;
+        background: color-mix(in srgb, var(--guidelines-card-soft), transparent 12%);
+        color: var(--guidelines-text);
+        transition: transform .22s cubic-bezier(.2, .75, .25, 1), border-color .2s ease, background-color .2s ease, box-shadow .22s ease;
+    }
+
+    body.voter-home-page .guideline-item:hover {
+        transform: translateY(-2px);
+        border-color: color-mix(in srgb, var(--guidelines-brand), transparent 62%);
+        background: var(--guidelines-card);
+        box-shadow: 0 10px 20px color-mix(in srgb, var(--guidelines-brand), transparent 92%);
+    }
+
+    body.voter-home-page .guideline-check {
+        display: grid;
+        width: 26px;
+        height: 26px;
+        flex: none;
+        place-items: center;
+        border: 1px solid color-mix(in srgb, var(--guidelines-brand), transparent 70%);
+        border-radius: 9px;
+        background: color-mix(in srgb, var(--guidelines-brand), transparent 91%);
+        color: var(--guidelines-brand);
+    }
+
+    body.voter-home-page .guideline-check .icon {
+        width: 15px;
+        height: 15px;
+        stroke-width: 2.5;
+    }
+
+    body.voter-home-page .guideline-item > span:last-child {
+        padding-top: 1px;
+        color: var(--guidelines-text);
+        font-size: .94rem;
+        font-weight: 650;
+        line-height: 1.5;
+    }
+
+    body.voter-home-page .faq-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 13px;
+        counter-reset: faq-item;
+    }
+
     body.voter-home-page .faq-item {
         overflow: hidden;
-        transition: border-color .2s ease, box-shadow .2s ease;
+        margin: 0;
+        border: 1px solid var(--faq-border);
+        border-radius: 20px;
+        background:
+            radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--faq-brand), transparent 95%), transparent 44%),
+            var(--faq-card);
+        color: var(--faq-text);
+        box-shadow: 0 6px 16px rgba(15, 27, 51, .045), 0 15px 30px rgba(15, 27, 51, .035);
+        counter-increment: faq-item;
+        transition: transform .22s cubic-bezier(.2, .75, .25, 1), border-color .2s ease, box-shadow .22s ease, background-color .2s ease;
+    }
+
+    body.voter-home-page .faq-item:hover {
+        transform: translateY(-2px);
+        border-color: color-mix(in srgb, var(--faq-brand), transparent 58%);
+        box-shadow: 0 12px 24px color-mix(in srgb, var(--faq-brand), transparent 91%), 0 18px 34px rgba(15, 27, 51, .07);
     }
 
     body.voter-home-page .faq-item[open] {
-        border-color: color-mix(in srgb, var(--brand), transparent 62%);
-        box-shadow: var(--sh);
+        border-color: color-mix(in srgb, var(--faq-brand), transparent 48%);
+        box-shadow: 0 12px 28px color-mix(in srgb, var(--faq-brand), transparent 91%), 0 18px 34px rgba(15, 27, 51, .07);
     }
 
     body.voter-home-page .faq-item summary {
+        display: grid;
+        min-height: 78px;
+        grid-template-columns: 38px minmax(0, 1fr) 38px;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 20px;
+        color: var(--faq-text);
+        cursor: pointer;
+        font-size: 1.02rem;
+        font-weight: 800;
+        line-height: 1.4;
+        list-style: none;
         transition: color .18s ease;
     }
 
-    body.voter-home-page .faq-item summary:hover {
-        color: var(--brand);
+    body.voter-home-page .faq-item summary::-webkit-details-marker {
+        display: none;
+    }
+
+    body.voter-home-page .faq-item summary::before {
+        display: grid;
+        width: 38px;
+        height: 38px;
+        place-items: center;
+        border: 1px solid color-mix(in srgb, var(--faq-brand), transparent 82%);
+        border-radius: 13px;
+        background: var(--faq-card-soft);
+        color: var(--faq-brand);
+        content: counter(faq-item, decimal-leading-zero);
+        font-size: .76rem;
+        font-variant-numeric: tabular-nums;
+        font-weight: 850;
+        transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+    }
+
+    body.voter-home-page .faq-item summary:hover,
+    body.voter-home-page .faq-item[open] summary {
+        color: var(--faq-brand);
+    }
+
+    body.voter-home-page .faq-item[open] summary::before {
+        border-color: var(--faq-brand);
+        background: var(--faq-brand);
+        color: #fff;
+    }
+
+    body.voter-home-page .faq-item summary:focus-visible {
+        outline: 3px solid var(--faq-brand);
+        outline-offset: -5px;
+        border-radius: 16px;
+    }
+
+    body.voter-home-page .faq-item summary .icon {
+        width: 38px;
+        height: 38px;
+        padding: 11px;
+        border: 1px solid var(--faq-border);
+        border-radius: 13px;
+        background: var(--faq-card);
+        color: var(--faq-brand);
+        transition: transform .22s cubic-bezier(.2, .75, .25, 1), background-color .2s ease, border-color .2s ease;
+    }
+
+    body.voter-home-page .faq-item[open] summary .icon {
+        transform: rotate(180deg);
+        border-color: color-mix(in srgb, var(--faq-brand), transparent 68%);
+        background: var(--faq-card-soft);
+    }
+
+    body.voter-home-page .faq-answer {
+        margin: 0;
+        padding: 0 24px 22px 72px;
+        color: var(--faq-muted);
+        font-size: .95rem;
+        line-height: 1.65;
+    }
+
+    @media (min-width: 760px) {
+        body.voter-home-page .faq-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
     }
 
     @keyframes home-intro {
@@ -1587,6 +1911,48 @@
         body.voter-home-page .candidate-showcase-heading {
             align-items: flex-start;
             flex-direction: column;
+        }
+
+        body.voter-home-page .faq-item summary {
+            min-height: 70px;
+            grid-template-columns: 34px minmax(0, 1fr) 34px;
+            gap: 11px;
+            padding: 14px;
+            font-size: .96rem;
+        }
+
+        body.voter-home-page .faq-item summary::before,
+        body.voter-home-page .faq-item summary .icon {
+            width: 34px;
+            height: 34px;
+        }
+
+        body.voter-home-page .faq-item summary .icon {
+            padding: 9px;
+        }
+
+        body.voter-home-page .faq-answer {
+            padding: 0 18px 19px 59px;
+            font-size: .92rem;
+        }
+
+        body.voter-home-page .guidelines-card-head {
+            align-items: flex-start;
+        }
+
+        body.voter-home-page .guidelines-count {
+            padding: 7px 9px;
+            font-size: .72rem;
+        }
+
+        body.voter-home-page .guidelines-list {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 9px;
+        }
+
+        body.voter-home-page .guideline-item {
+            min-height: 0;
+            padding: 14px;
         }
 
         body.voter-home-page .candidate-live-badge {
@@ -1737,6 +2103,11 @@
         body.voter-home-page .article-card,
         body.voter-home-page .article-image,
         body.voter-home-page .article-read-more .icon,
+        body.voter-home-page .faq-item,
+        body.voter-home-page .faq-item summary,
+        body.voter-home-page .faq-item summary::before,
+        body.voter-home-page .faq-item summary .icon,
+        body.voter-home-page .guideline-item,
         body.voter-home-page .action-card,
         body.voter-home-page .date-card,
         body.voter-home-page .action-card::after,
@@ -1754,6 +2125,7 @@
         body.voter-home-page .event-card,
         body.voter-home-page .article-card,
         body.voter-home-page .faq-item,
+        body.voter-home-page .guideline-item,
         body.voter-home-page .guidelines-card,
         body.voter-home-page .empty-card {
             animation: none !important;
@@ -2207,43 +2579,61 @@
 
 <section class="content-section" id="faq">
     <div class="page-wrap">
-        <div class="section-heading"><div><h2>Common questions</h2></div></div>
-        <details class="faq-item">
-            <summary>Who can vote?<svg class="icon" aria-hidden="true"><use href="#pcu-chev"/></svg></summary>
-            <p class="faq-answer">Eligible, verified students can access the ballot using their student account.</p>
-        </details>
-        <details class="faq-item">
-            <summary>How do I get verified?<svg class="icon" aria-hidden="true"><use href="#pcu-chev"/></svg></summary>
-            <p class="faq-answer">Open your account menu, choose the verification option, and submit your student details. You can return to view an application that is awaiting review.</p>
-        </details>
-        <details class="faq-item">
-            <summary>Can I change my vote?<svg class="icon" aria-hidden="true"><use href="#pcu-chev"/></svg></summary>
-            <p class="faq-answer">Review your selections before submitting your ballot. Contact the election office if you need assistance.</p>
-        </details>
-        <details class="faq-item">
-            <summary>Where can I see election results?<svg class="icon" aria-hidden="true"><use href="#pcu-chev"/></svg></summary>
-            <p class="faq-answer">Published results are available from the Results link in the navigation.</p>
-        </details>
+        <div class="section-heading">
+            <div>
+                <p class="faq-kicker">HERE TO HELP</p>
+                <h2>Common questions</h2>
+                <p>Quick answers to help you take part with confidence.</p>
+            </div>
+        </div>
+        <div class="faq-grid">
+            <details class="faq-item">
+                <summary>Who can vote?<svg class="icon" aria-hidden="true"><use href="#pcu-chev"/></svg></summary>
+                <p class="faq-answer">Eligible, verified students can access the ballot using their student account.</p>
+            </details>
+            <details class="faq-item">
+                <summary>How do I get verified?<svg class="icon" aria-hidden="true"><use href="#pcu-chev"/></svg></summary>
+                <p class="faq-answer">Open your account menu, choose the verification option, and submit your student details. You can return to view an application that is awaiting review.</p>
+            </details>
+            <details class="faq-item">
+                <summary>Can I change my vote?<svg class="icon" aria-hidden="true"><use href="#pcu-chev"/></svg></summary>
+                <p class="faq-answer">Review your selections before submitting your ballot. Contact the election office if you need assistance.</p>
+            </details>
+            <details class="faq-item">
+                <summary>Where can I see election results?<svg class="icon" aria-hidden="true"><use href="#pcu-chev"/></svg></summary>
+                <p class="faq-answer">Published results are available from the Results link in the navigation.</p>
+            </details>
+        </div>
     </div>
 </section>
 
 <section class="content-section" id="guidelines">
     <div class="page-wrap">
-        <div class="section-heading"><div><h2>Election guidelines</h2></div></div>
+        <div class="section-heading">
+            <div>
+                <p class="guidelines-kicker">A FAIR ELECTION STARTS WITH ALL OF US</p>
+                <h2>Election guidelines</h2>
+                <p>Follow the university's election guidelines and review the rules before participating.</p>
+            </div>
+        </div>
         <div class="guidelines-card">
-            <p>Follow the university's election guidelines and review the rules before participating.</p>
-            <ul>
-                <li>Only eligible students may cast a ballot.</li>
-                <li>Each student may vote only once.</li>
-                <li>Do not attempt to interfere with election processes.</li>
-                <li>Respect candidates and their campaigns.</li>
-                <li>Follow the university's code of conduct during the election period.</li>
+            <div class="guidelines-card-head">
+                <div class="guidelines-card-intro">
+                    <span class="guidelines-card-icon"><svg class="icon" aria-hidden="true"><use href="#pcu-vote"/></svg></span>
+                    <div><strong>Election principles</strong><p>Keep these essentials in mind as you participate.</p></div>
+                </div>
+                <span class="guidelines-count"><svg class="icon" aria-hidden="true"><use href="#pcu-ok"/></svg>5 guidelines</span>
+            </div>
+            <ul class="guidelines-list">
+                <li class="guideline-item"><span class="guideline-check"><svg class="icon" aria-hidden="true"><use href="#pcu-ok"/></svg></span><span>Only eligible students may cast a ballot.</span></li>
+                <li class="guideline-item"><span class="guideline-check"><svg class="icon" aria-hidden="true"><use href="#pcu-ok"/></svg></span><span>Each student may vote only once.</span></li>
+                <li class="guideline-item"><span class="guideline-check"><svg class="icon" aria-hidden="true"><use href="#pcu-ok"/></svg></span><span>Do not attempt to interfere with election processes.</span></li>
+                <li class="guideline-item"><span class="guideline-check"><svg class="icon" aria-hidden="true"><use href="#pcu-ok"/></svg></span><span>Respect candidates and their campaigns.</span></li>
+                <li class="guideline-item"><span class="guideline-check"><svg class="icon" aria-hidden="true"><use href="#pcu-ok"/></svg></span><span>Follow the university's code of conduct during the election period.</span></li>
             </ul>
         </div>
     </div>
 </section>
-
-@include('layouts.partials.help-button')
 
 <div class="overlay-dialog" id="article-modal" role="dialog" aria-modal="true" aria-labelledby="article-modal-title" tabindex="-1" hidden>
     <div class="dialog-panel">
@@ -2614,129 +3004,4 @@
     })();
 </script>
 
-@guest
-<script>
-    (() => {
-        const chatbotToggle = document.getElementById('chatbot-toggle');
-        const chatbotPanel = document.getElementById('chatbot-panel');
-        const chatbotClose = document.getElementById('chatbot-close');
-        const chatbotForm = document.getElementById('chatbot-form');
-        const chatbotInput = document.getElementById('chatbot-input');
-        const chatbotMessages = document.getElementById('chatbot-messages');
-        const chatbotQuickReplies = document.getElementById('chatbot-quick-replies');
-        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
-        if (!chatbotToggle || !chatbotPanel || !chatbotForm || !chatbotInput || !chatbotMessages || !chatbotQuickReplies) return;
-
-        function appendMessage(role, text) {
-            const bubble = document.createElement('div');
-            bubble.className = `chat-message ${role === 'user' ? 'chat-message-user' : 'chat-message-bot'}`;
-            bubble.textContent = text;
-            chatbotMessages.append(bubble);
-            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
-        }
-
-        function renderQuickReplies(replies) {
-            chatbotQuickReplies.replaceChildren();
-            (replies || []).forEach((reply) => {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.className = 'chat-quick';
-                button.textContent = reply;
-                button.addEventListener('click', () => {
-                    chatbotInput.value = reply;
-                    chatbotForm.requestSubmit();
-                });
-                chatbotQuickReplies.append(button);
-            });
-        }
-
-        async function sendToBot(message) {
-            const response = await fetch("{{ route('chatbot.respond') }}", {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': csrf
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify({ message })
-            });
-            if (!response.ok) throw new Error(`Chatbot request failed: ${response.status}`);
-            return response.json();
-        }
-
-        function isGibberish(text) {
-            const trimmed = String(text || '').trim();
-            if (trimmed.length < 2) return true;
-            const compact = trimmed.replace(/\s+/g, '');
-            if (/^[a-z]+$/i.test(compact) && compact.length >= 8) {
-                const lower = compact.toLowerCase();
-                if (new Set(lower).size <= 3 || /^(.{1,3})\1+$/.test(lower)) return true;
-            }
-            const meaningful = (trimmed.match(/[a-z0-9]/gi) || []).length;
-            return trimmed.length >= 6 && meaningful <= 2;
-        }
-
-        let quickReplies = [
-            'How do I log in?',
-            'How do I vote?',
-            'How do I register as candidate?',
-            'Where can I see results?'
-        ];
-
-        async function openChatbot() {
-            chatbotPanel.hidden = false;
-            chatbotToggle.setAttribute('aria-expanded', 'true');
-            if (!chatbotMessages.childElementCount) {
-                try {
-                    const data = await sendToBot('hi');
-                    appendMessage('bot', data.reply || "Hi! I'm PCU Assistant.");
-                    if (Array.isArray(data.quick_replies) && data.quick_replies.length) quickReplies = data.quick_replies;
-                    renderQuickReplies(quickReplies);
-                } catch (error) {
-                    console.error(error);
-                    appendMessage('bot', "Hi! I'm PCU Assistant. Ask how to log in, register as a candidate, vote, or view results.");
-                    renderQuickReplies(quickReplies);
-                }
-            }
-            chatbotInput.focus();
-        }
-
-        function closeChatbot() {
-            chatbotPanel.hidden = true;
-            chatbotToggle.setAttribute('aria-expanded', 'false');
-        }
-
-        chatbotToggle.addEventListener('click', (event) => {
-            event.stopPropagation();
-            if (chatbotPanel.hidden) openChatbot();
-            else closeChatbot();
-        });
-        chatbotClose?.addEventListener('click', closeChatbot);
-        chatbotPanel.addEventListener('click', (event) => event.stopPropagation());
-        chatbotForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const message = chatbotInput.value.trim();
-            if (!message) return;
-            if (isGibberish(message)) {
-                chatbotInput.value = '';
-                appendMessage('bot', "I couldn't understand that. Please try a clear question or choose one of these:");
-                renderQuickReplies(quickReplies);
-                return;
-            }
-            chatbotInput.value = '';
-            appendMessage('user', message);
-            try {
-                const data = await sendToBot(message);
-                appendMessage('bot', data.reply || 'Sorry, I could not respond.');
-                renderQuickReplies(data.quick_replies || []);
-            } catch (error) {
-                console.error(error);
-                appendMessage('bot', 'Sorry, something went wrong. Please try again.');
-            }
-        });
-    })();
-</script>
-@endguest
 @endpush

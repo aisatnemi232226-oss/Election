@@ -30,6 +30,7 @@
     <main id="main-content">
         @yield('content')
     </main>
+    @include('layouts.partials.help-button')
     @include('layouts.partials.footer')
     @stack('scripts')
 </body>

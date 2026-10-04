@@ -334,7 +334,9 @@ Route::get('/candidate-tallies', function () use ($candidateTallyQuery) {
     ])->header('Cache-Control', 'no-store, private');
 })->name('candidate.tallies');
 
-Route::post('/chatbot', [ChatbotController::class, 'respond'])->name('chatbot.respond');
+Route::post('/chatbot', [ChatbotController::class, 'respond'])
+    ->middleware('throttle:30,1')
+    ->name('chatbot.respond');
 
 Route::get('/election-details', function () {
     $elections = \App\Models\Election::query()
