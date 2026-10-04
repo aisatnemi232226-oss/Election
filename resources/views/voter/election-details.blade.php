@@ -5,6 +5,72 @@
 
 @push('styles')
 <style>
+    body.election-details-view #main-content {
+        --details-bg-start: #eaf2ff;
+        --details-bg-mid: #d7e6ff;
+        --details-bg-end: #f0f6ff;
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        background:
+            radial-gradient(ellipse at 8% 12%, rgba(56, 111, 229, .2), transparent 38%),
+            radial-gradient(ellipse at 100% 46%, rgba(83, 145, 255, .17), transparent 42%),
+            linear-gradient(135deg, var(--details-bg-start), var(--details-bg-mid) 48%, var(--details-bg-end));
+    }
+
+    body.election-details-view #main-content::before,
+    body.election-details-view #main-content::after {
+        position: absolute;
+        z-index: 0;
+        pointer-events: none;
+        content: "";
+    }
+
+    body.election-details-view #main-content::before {
+        inset: 0;
+        background-image: radial-gradient(rgba(40, 87, 158, .16) .8px, transparent .8px);
+        background-size: 26px 26px;
+        opacity: .34;
+        mask-image: linear-gradient(125deg, #000, transparent 68%);
+    }
+
+    body.election-details-view #main-content::after {
+        top: 390px;
+        right: -210px;
+        width: min(62vw, 760px);
+        aspect-ratio: 1;
+        border: 1px solid rgba(255, 255, 255, .52);
+        border-radius: 50%;
+        box-shadow: 0 0 0 42px rgba(255, 255, 255, .16), 0 0 0 84px rgba(255, 255, 255, .1);
+        animation: election-details-orbit 32s ease-in-out infinite alternate;
+    }
+
+    body.election-details-view .election-details-page {
+        position: relative;
+        z-index: 1;
+    }
+
+    :root[data-theme="dark"] body.election-details-view #main-content {
+        --details-bg-start: #17396b;
+        --details-bg-mid: #24508c;
+        --details-bg-end: #162f58;
+    }
+
+    :root[data-theme="dark"] body.election-details-view #main-content::before {
+        background-image: radial-gradient(rgba(215, 230, 255, .18) .8px, transparent .8px);
+        opacity: .23;
+    }
+
+    :root[data-theme="dark"] body.election-details-view #main-content::after {
+        border-color: rgba(220, 234, 255, .2);
+        box-shadow: 0 0 0 42px rgba(220, 234, 255, .055), 0 0 0 84px rgba(220, 234, 255, .035);
+    }
+
+    @keyframes election-details-orbit {
+        from { transform: translate3d(0, 0, 0); }
+        to { transform: translate3d(-18px, 14px, 0); }
+    }
+
     body.election-details-view .election-details-page {
         width: min(1280px, 100% - 2 * clamp(20px, 5vw, 48px));
         padding-block: clamp(28px, 5vw, 60px) clamp(48px, 7vw, 80px);
@@ -29,7 +95,21 @@
         box-shadow: 0 18px 42px rgba(15, 27, 51, .14);
         color: #f7faff;
         text-align: left;
-        animation: election-details-intro .55s cubic-bezier(.2, .75, .25, 1) both;
+        animation: election-details-hero-in .7s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.election-details-view .election-details-page > .page-intro::after {
+        position: absolute;
+        z-index: -1;
+        top: -190px;
+        right: -85px;
+        width: 410px;
+        aspect-ratio: 1;
+        border: 1px solid rgba(224, 237, 255, .27);
+        border-radius: 50%;
+        box-shadow: 0 0 0 32px rgba(224, 237, 255, .08), 0 0 0 64px rgba(224, 237, 255, .05);
+        content: "";
+        pointer-events: none;
     }
 
     body.election-details-view .election-details-page > .page-intro::before {
@@ -56,18 +136,20 @@
     }
 
     body.election-details-view .candidate-filters {
+        position: relative;
+        overflow: hidden;
         margin: 0;
         padding: clamp(20px, 3vw, 30px);
         border-color: color-mix(in srgb, var(--line), transparent 10%);
         border-radius: 22px;
         background: var(--card);
         box-shadow: 0 5px 14px rgba(15, 27, 51, .045), 0 18px 40px rgba(15, 27, 51, .07);
-        animation: election-details-intro .55s .08s cubic-bezier(.2, .75, .25, 1) both;
+        animation: election-details-intro .6s .08s cubic-bezier(.2, .75, .25, 1) both;
     }
 
     body.election-details-view .candidate-filters::before {
         display: block;
-        margin-bottom: 18px;
+        margin-bottom: 8px;
         color: var(--brand);
         content: "FIND YOUR CANDIDATE";
         font-size: .75rem;
@@ -75,8 +157,24 @@
         letter-spacing: .12em;
     }
 
+    body.election-details-view .candidate-filter-heading {
+        margin-bottom: 19px;
+    }
+
+    body.election-details-view .candidate-filter-heading h2 {
+        margin: 0;
+        font-size: clamp(1.18rem, 2.2vw, 1.4rem);
+        letter-spacing: -.025em;
+    }
+
+    body.election-details-view .candidate-filter-heading p {
+        margin: 4px 0 0;
+        color: var(--mut);
+        font-size: .9rem;
+    }
+
     body.election-details-view .candidate-filter-grid {
-        gap: 14px;
+        gap: 16px;
     }
 
     body.election-details-view .candidate-filter-grid .field {
@@ -86,6 +184,7 @@
 
     body.election-details-view .candidate-filter-grid .field label {
         font-size: .9rem;
+        font-weight: 700;
     }
 
     body.election-details-view .candidate-filter-grid input,
@@ -128,6 +227,50 @@
         font-size: clamp(1.5rem, 3vw, 2rem);
         letter-spacing: -.035em;
         text-wrap: balance;
+    }
+
+    body.election-details-view .candidate-section-heading {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 22px;
+    }
+
+    body.election-details-view .candidate-section-heading h2 {
+        margin: 0;
+    }
+
+    body.election-details-view .candidate-section-heading p {
+        margin: 6px 0 0;
+        color: var(--mut);
+        font-size: .94rem;
+    }
+
+    body.election-details-view .candidate-section-kicker {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--brand);
+        font-size: .72rem;
+        font-weight: 800;
+        letter-spacing: .13em;
+        text-transform: uppercase;
+    }
+
+    body.election-details-view .candidate-count {
+        display: inline-flex;
+        min-height: 36px;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        padding: 6px 12px;
+        border: 1px solid color-mix(in srgb, var(--brand), transparent 78%);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--card), var(--tint) 55%);
+        color: var(--brand-d);
+        font-size: .82rem;
+        font-weight: 750;
+        font-variant-numeric: tabular-nums;
     }
 
     body.election-details-view .election-available-section .election-grid {
@@ -224,11 +367,16 @@
         min-height: 420px;
         margin: 0;
         border-radius: 19px;
-        transition: translate .2s ease, filter .2s ease;
+        animation: election-candidate-in .55s cubic-bezier(.2, .75, .25, 1) both;
+        transition: translate .24s cubic-bezier(.2, .75, .25, 1), filter .24s ease;
     }
 
+    body.election-details-view .candidate-grid > .candidate-card:nth-child(2) { animation-delay: 75ms; }
+    body.election-details-view .candidate-grid > .candidate-card:nth-child(3) { animation-delay: 150ms; }
+
     body.election-details-view .candidate-grid > .candidate-card:hover {
-        translate: 0 -3px;
+        translate: 0 -6px;
+        filter: drop-shadow(0 12px 18px rgba(15, 27, 51, .1));
     }
 
     body.election-details-view .candidate-card:focus-visible {
@@ -243,6 +391,12 @@
         border-color: color-mix(in srgb, var(--line), transparent 6%);
         border-radius: 19px;
         box-shadow: 0 5px 14px rgba(15, 27, 51, .05), 0 16px 34px rgba(15, 27, 51, .07);
+        transition: border-color .24s ease, box-shadow .24s ease;
+    }
+
+    body.election-details-view .candidate-card:hover .candidate-card-face {
+        border-color: color-mix(in srgb, var(--brand), transparent 68%);
+        box-shadow: 0 9px 20px rgba(15, 27, 51, .07), 0 22px 44px color-mix(in srgb, var(--brand), transparent 88%);
     }
 
     body.election-details-view .candidate-card-front {
@@ -250,14 +404,30 @@
     }
 
     body.election-details-view .candidate-banner {
+        position: relative;
+        z-index: 0;
         height: 124px;
         object-position: center 38%;
+        transition: transform .55s cubic-bezier(.2, .75, .25, 1), filter .3s ease;
+    }
+
+    body.election-details-view .candidate-card:hover .candidate-banner {
+        transform: scale(1.045);
+        filter: saturate(1.08);
     }
 
     body.election-details-view .candidate-avatar {
+        position: relative;
+        z-index: 1;
         width: 88px;
         height: 88px;
         box-shadow: 0 4px 14px rgba(15, 27, 51, .14);
+        transition: box-shadow .24s ease, transform .24s ease;
+    }
+
+    body.election-details-view .candidate-card:hover .candidate-avatar {
+        transform: translateY(-2px);
+        box-shadow: 0 7px 20px rgba(37, 99, 235, .2);
     }
 
     body.election-details-view .candidate-card-content {
@@ -318,14 +488,40 @@
         to { opacity: 1; translate: 0 0; }
     }
 
+    @keyframes election-details-hero-in {
+        from { opacity: 0; translate: 0 18px; }
+        to { opacity: 1; translate: 0 0; }
+    }
+
+    @keyframes election-candidate-in {
+        from { opacity: 0; translate: 0 16px; scale: .985; }
+        to { opacity: 1; translate: 0 0; scale: 1; }
+    }
+
     @keyframes candidate-modal-enter {
         from { opacity: 0; scale: .985; }
         to { opacity: 1; scale: 1; }
     }
 
     @media (min-width: 960px) {
+        body.election-details-view .candidate-filter-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
         body.election-details-view .candidate-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @media (min-width: 1200px) {
+        body.election-details-view .candidate-filter-grid {
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+    }
+
+    @media (min-width: 640px) and (max-width: 959px) {
+        body.election-details-view .candidate-filter-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
 
@@ -353,6 +549,15 @@
             grid-template-columns: minmax(0, 1fr) minmax(100px, .55fr);
         }
 
+        body.election-details-view .candidate-section-heading {
+            align-items: flex-start;
+        }
+
+        body.election-details-view .candidate-section-heading p {
+            max-width: 38ch;
+            font-size: .88rem;
+        }
+
         body.election-details-view .candidate-filter-actions .button {
             min-width: 0;
             padding-inline: 12px;
@@ -370,9 +575,18 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
+        body.election-details-view #main-content::after {
+            animation: none;
+        }
+
+        body.election-details-view .election-details-page > .page-intro::after {
+            animation: none;
+        }
+
         body.election-details-view .election-details-page > .page-intro,
         body.election-details-view .candidate-filters,
-        body.election-details-view .available-election-card {
+        body.election-details-view .available-election-card,
+        body.election-details-view .candidate-grid > .candidate-card {
             animation: none;
         }
 
@@ -381,8 +595,21 @@
         body.election-details-view .candidate-filter-grid input,
         body.election-details-view .candidate-filter-grid select,
         body.election-details-view .candidate-filter-actions .button,
-        body.election-details-view .candidate-card-actions .button {
+        body.election-details-view .candidate-card-actions .button,
+        body.election-details-view .candidate-card-face,
+        body.election-details-view .candidate-banner,
+        body.election-details-view .candidate-avatar {
             transition: none;
+        }
+
+        body.election-details-view .candidate-grid > .candidate-card:hover {
+            translate: none;
+            filter: none;
+        }
+
+        body.election-details-view .candidate-card:hover .candidate-banner,
+        body.election-details-view .candidate-card:hover .candidate-avatar {
+            transform: none;
         }
 
         body.election-details-view .candidate-modal-panel {
@@ -431,6 +658,10 @@ document.addEventListener('DOMContentLoaded', function () {
     </header>
 
     <section class="surface-card candidate-filters">
+        <div class="candidate-filter-heading">
+            <h2>Find the right candidate</h2>
+            <p>Choose an election or narrow the list by name, party, course, or position.</p>
+        </div>
         <form id="filter-form" method="GET" action="{{ route('election.details') }}">
             <div class="candidate-filter-grid">
                 <div class="field">
@@ -495,7 +726,14 @@ document.addEventListener('DOMContentLoaded', function () {
     @endif
 
     <section class="election-candidates-section">
-        <h2>{{ $selectedElection ? 'Candidates for ' . $selectedElection->name : 'Candidates' }}</h2>
+        <div class="candidate-section-heading">
+            <div>
+                <span class="candidate-section-kicker">Meet the student leaders</span>
+                <h2>{{ $selectedElection ? 'Candidates for ' . $selectedElection->name : 'Candidates' }}</h2>
+                <p>Explore candidate profiles and compare their platforms before you vote.</p>
+            </div>
+            <span class="candidate-count">{{ $pageCandidates->count() }} {{ $pageCandidates->count() === 1 ? 'candidate' : 'candidates' }}</span>
+        </div>
         <div id="candidates-container" aria-live="polite">
             @if($pageCandidates->isEmpty())
                 <div class="notice">No candidates available.</div>

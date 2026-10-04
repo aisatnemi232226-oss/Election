@@ -5,6 +5,72 @@
 
 @push('styles')
 <style>
+    body.contact-view #main-content {
+        --contact-bg-start: #eaf2ff;
+        --contact-bg-mid: #d7e6ff;
+        --contact-bg-end: #f0f6ff;
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        background:
+            radial-gradient(ellipse at 8% 12%, rgba(56, 111, 229, .2), transparent 38%),
+            radial-gradient(ellipse at 100% 46%, rgba(83, 145, 255, .17), transparent 42%),
+            linear-gradient(135deg, var(--contact-bg-start), var(--contact-bg-mid) 48%, var(--contact-bg-end));
+    }
+
+    body.contact-view #main-content::before,
+    body.contact-view #main-content::after {
+        position: absolute;
+        z-index: 0;
+        pointer-events: none;
+        content: "";
+    }
+
+    body.contact-view #main-content::before {
+        inset: 0;
+        background-image: radial-gradient(rgba(40, 87, 158, .16) .8px, transparent .8px);
+        background-size: 26px 26px;
+        opacity: .34;
+        mask-image: linear-gradient(125deg, #000, transparent 68%);
+    }
+
+    body.contact-view #main-content::after {
+        top: 330px;
+        right: -210px;
+        width: min(62vw, 760px);
+        aspect-ratio: 1;
+        border: 1px solid rgba(255, 255, 255, .52);
+        border-radius: 50%;
+        box-shadow: 0 0 0 42px rgba(255, 255, 255, .16), 0 0 0 84px rgba(255, 255, 255, .1);
+        animation: contact-background-orbit 32s ease-in-out infinite alternate;
+    }
+
+    body.contact-view .contact-page {
+        position: relative;
+        z-index: 1;
+    }
+
+    :root[data-theme="dark"] body.contact-view #main-content {
+        --contact-bg-start: #17396b;
+        --contact-bg-mid: #24508c;
+        --contact-bg-end: #162f58;
+    }
+
+    :root[data-theme="dark"] body.contact-view #main-content::before {
+        background-image: radial-gradient(rgba(215, 230, 255, .18) .8px, transparent .8px);
+        opacity: .23;
+    }
+
+    :root[data-theme="dark"] body.contact-view #main-content::after {
+        border-color: rgba(220, 234, 255, .2);
+        box-shadow: 0 0 0 42px rgba(220, 234, 255, .055), 0 0 0 84px rgba(220, 234, 255, .035);
+    }
+
+    @keyframes contact-background-orbit {
+        from { transform: translate3d(0, 0, 0); }
+        to { transform: translate3d(-18px, 14px, 0); }
+    }
+
     body.contact-view .contact-page {
         width: min(1240px, 100% - 2 * clamp(18px, 5vw, 48px));
         padding-block: clamp(28px, 5vw, 60px) clamp(48px, 7vw, 80px);
@@ -32,13 +98,33 @@
         animation: contact-intro-in .55s cubic-bezier(.2, .75, .25, 1) both;
     }
 
-    body.contact-view .contact-page > .page-intro::before {
-        margin-bottom: 10px;
-        color: #c9dcff;
-        content: "PHILIPPINE CHRISTIAN UNIVERSITY";
-        font-size: .76rem;
+    body.contact-view .contact-page > .page-intro::after {
+        position: absolute;
+        z-index: -1;
+        top: -190px;
+        right: -85px;
+        width: 410px;
+        aspect-ratio: 1;
+        border: 1px solid rgba(224, 237, 255, .27);
+        border-radius: 50%;
+        box-shadow: 0 0 0 32px rgba(224, 237, 255, .08), 0 0 0 64px rgba(224, 237, 255, .05);
+        content: "";
+        pointer-events: none;
+    }
+
+    body.contact-view .contact-hero-kicker {
+        display: inline-flex;
+        align-items: center;
+        align-self: flex-start;
+        margin-bottom: 9px;
+        padding: 7px 10px;
+        border: 1px solid rgba(226, 238, 255, .3);
+        border-radius: 999px;
+        background: rgba(239, 246, 255, .1);
+        color: #e4eeff;
+        font-size: .69rem;
         font-weight: 800;
-        letter-spacing: .14em;
+        letter-spacing: .12em;
     }
 
     body.contact-view .contact-page > .page-intro h1 {
@@ -55,9 +141,40 @@
         font-size: clamp(1rem, 1.8vw, 1.15rem);
     }
 
+    body.contact-view .contact-hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 22px;
+    }
+
+    body.contact-view .contact-hero-actions .button {
+        min-height: 44px;
+        border-radius: 10px;
+        transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease;
+    }
+
+    body.contact-view .contact-hero-actions .button:hover {
+        transform: translateY(-2px);
+    }
+
+    body.contact-view .contact-hero-actions .button-secondary {
+        border-color: rgba(255, 255, 255, .7);
+        color: #fff;
+    }
+
+    body.contact-view .contact-hero-actions .button-secondary:hover {
+        background: rgba(255, 255, 255, .12);
+    }
+
+    body.contact-view .contact-hero-actions .button .icon {
+        width: 17px;
+        height: 17px;
+    }
+
     body.contact-view .contact-layout {
         display: grid;
-        grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+        grid-template-columns: minmax(0, 1.02fr) minmax(0, .98fr);
         align-items: stretch;
         gap: clamp(16px, 2.4vw, 26px);
     }
@@ -70,11 +187,15 @@
         border-radius: 22px;
         background: linear-gradient(145deg, var(--card), color-mix(in srgb, var(--tint), var(--card) 62%));
         box-shadow: 0 5px 14px rgba(15, 27, 51, .045), 0 18px 38px rgba(15, 27, 51, .07);
-        animation: contact-panel-in .48s cubic-bezier(.2, .75, .25, 1) both;
+        animation: contact-panel-in .58s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.contact-view .contact-location {
+        animation-delay: 70ms;
     }
 
     body.contact-view .contact-layout > .contact-info {
-        animation-delay: 70ms;
+        animation-delay: 150ms;
     }
 
     body.contact-view .contact-panel-heading {
@@ -95,6 +216,12 @@
         letter-spacing: -.03em;
     }
 
+    body.contact-view .contact-panel-description {
+        margin: 6px 0 0;
+        color: var(--mut);
+        font-size: .92rem;
+    }
+
     body.contact-view .contact-panel-heading > p:last-child {
         margin: 8px 0 0;
         color: var(--mut);
@@ -102,9 +229,10 @@
     }
 
     body.contact-view .contact-map-frame {
+        position: relative;
         overflow: hidden;
         border: 1px solid var(--line);
-        border-radius: 16px;
+        border-radius: 18px;
         background: var(--tint);
         box-shadow: inset 0 1px 3px rgba(15, 27, 51, .05);
     }
@@ -117,32 +245,38 @@
         aspect-ratio: 4 / 3;
         border: 0;
         border-radius: 0;
+        transition: filter .25s ease;
+    }
+
+    body.contact-view .contact-map-frame:focus-within {
+        outline: 3px solid color-mix(in srgb, var(--brand), transparent 35%);
+        outline-offset: 3px;
     }
 
     body.contact-view .contact-info-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
+        gap: 14px;
     }
 
     body.contact-view .contact-info-item {
         display: flex;
         min-width: 0;
-        min-height: 144px;
+        min-height: 158px;
         flex-direction: column;
         align-items: flex-start;
         margin: 0;
         padding: clamp(15px, 2vw, 20px);
         border: 1px solid var(--line);
         border-radius: 16px;
-        background: var(--card);
+        background: linear-gradient(145deg, var(--card), color-mix(in srgb, var(--tint), var(--card) 52%));
         box-shadow: 0 4px 12px rgba(15, 27, 51, .035);
-        transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+        transition: transform .22s cubic-bezier(.2, .75, .25, 1), border-color .22s ease, box-shadow .22s ease, background-color .22s ease;
     }
 
     body.contact-view .contact-info-item:hover {
-        transform: translateY(-3px);
+        transform: translateY(-4px);
         border-color: color-mix(in srgb, var(--brand), transparent 60%);
-        box-shadow: 0 10px 22px rgba(15, 27, 51, .07);
+        box-shadow: 0 10px 22px rgba(15, 27, 51, .07), 0 16px 30px color-mix(in srgb, var(--brand), transparent 93%);
     }
 
     body.contact-view .contact-info-icon {
@@ -156,6 +290,13 @@
         border-radius: 13px;
         background: var(--tint);
         color: var(--brand);
+        transition: transform .22s ease, background-color .22s ease, color .22s ease;
+    }
+
+    body.contact-view .contact-info-item:hover .contact-info-icon {
+        transform: translateY(-2px) rotate(-3deg);
+        background: var(--brand);
+        color: var(--brand-contrast);
     }
 
     body.contact-view .contact-info-icon svg {
@@ -207,13 +348,13 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    @media (max-width: 960px) {
+    @media (max-width: 820px) {
         body.contact-view .contact-layout {
             grid-template-columns: minmax(0, 1fr);
         }
 
         body.contact-view .contact-location iframe {
-            min-height: 280px;
+            min-height: 300px;
             aspect-ratio: 16 / 8;
         }
     }
@@ -230,12 +371,48 @@
             background-position: 56% center;
         }
 
+        body.contact-view .contact-hero-actions {
+            gap: 8px;
+            margin-top: 18px;
+        }
+
+        body.contact-view .contact-hero-actions .button {
+            min-height: 42px;
+            padding-inline: 13px;
+            font-size: .9rem;
+        }
+
+        body.contact-view .contact-layout > .surface-card {
+            padding: 19px;
+            border-radius: 18px;
+        }
+
         body.contact-view .contact-info-grid {
             grid-template-columns: minmax(0, 1fr);
+            gap: 10px;
         }
 
         body.contact-view .contact-info-item {
+            display: grid;
+            grid-template-columns: 42px minmax(0, 1fr);
+            align-items: center;
+            column-gap: 13px;
             min-height: 0;
+            padding: 14px;
+        }
+
+        body.contact-view .contact-info-icon {
+            grid-row: span 2;
+            margin: 0;
+        }
+
+        body.contact-view .contact-info-item h3 {
+            align-self: end;
+            margin-bottom: 2px;
+        }
+
+        body.contact-view .contact-info-item p {
+            align-self: start;
         }
 
         body.contact-view .contact-location iframe {
@@ -245,6 +422,11 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
+        body.contact-view #main-content::after,
+        body.contact-view .contact-page > .page-intro::after {
+            animation: none;
+        }
+
         body.contact-view *,
         body.contact-view *::before,
         body.contact-view *::after {
@@ -260,15 +442,24 @@
 @section('content')
 <div class="page-content contact-page">
     <header class="page-intro">
-        <h1>Contact us</h1>
-        <p>We would love to hear from you. Find our location or use the contact information below to get in touch.</p>
+        <span class="contact-hero-kicker">PHILIPPINE CHRISTIAN UNIVERSITY</span>
+        <h1>Let’s connect.</h1>
+        <p>We’d love to hear from you. Find our campus or reach the university using the contact information below.</p>
+        <div class="contact-hero-actions">
+            <a class="button button-primary" href="#contact-location">
+                Visit campus
+                <svg class="icon" aria-hidden="true"><use href="#pcu-arrow"/></svg>
+            </a>
+            <a class="button button-secondary" href="#contact-information">Get in touch</a>
+        </div>
     </header>
 
     <div class="contact-layout">
-        <section class="surface-card contact-location" aria-labelledby="contact-location-title">
+        <section class="surface-card contact-location" id="contact-location" aria-labelledby="contact-location-title">
             <div class="contact-panel-heading">
                 <p class="contact-panel-kicker">VISIT CAMPUS</p>
                 <h2 id="contact-location-title">Our location</h2>
+                <p class="contact-panel-description">Find us and plan your visit to campus.</p>
             </div>
             <div class="contact-map-frame">
                 <iframe
@@ -280,10 +471,11 @@
             </div>
         </section>
 
-        <section class="surface-card contact-info" aria-labelledby="contact-info-title">
+        <section class="surface-card contact-info" id="contact-information" aria-labelledby="contact-info-title">
             <div class="contact-panel-heading">
                 <p class="contact-panel-kicker">GET IN TOUCH</p>
                 <h2 id="contact-info-title">Contact information</h2>
+                <p class="contact-panel-description">Choose the best way to reach our team.</p>
             </div>
             <div class="surface-grid contact-info-grid">
                 <article class="contact-info-item">

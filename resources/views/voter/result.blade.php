@@ -5,6 +5,72 @@
 
 @push('styles')
 <style>
+    body.results-view #main-content {
+        --results-bg-start: #eaf2ff;
+        --results-bg-mid: #d7e6ff;
+        --results-bg-end: #f0f6ff;
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        background:
+            radial-gradient(ellipse at 8% 12%, rgba(56, 111, 229, .2), transparent 38%),
+            radial-gradient(ellipse at 100% 46%, rgba(83, 145, 255, .17), transparent 42%),
+            linear-gradient(135deg, var(--results-bg-start), var(--results-bg-mid) 48%, var(--results-bg-end));
+    }
+
+    body.results-view #main-content::before,
+    body.results-view #main-content::after {
+        position: absolute;
+        z-index: 0;
+        pointer-events: none;
+        content: "";
+    }
+
+    body.results-view #main-content::before {
+        inset: 0;
+        background-image: radial-gradient(rgba(40, 87, 158, .16) .8px, transparent .8px);
+        background-size: 26px 26px;
+        opacity: .34;
+        mask-image: linear-gradient(125deg, #000, transparent 68%);
+    }
+
+    body.results-view #main-content::after {
+        top: 330px;
+        right: -210px;
+        width: min(62vw, 760px);
+        aspect-ratio: 1;
+        border: 1px solid rgba(255, 255, 255, .52);
+        border-radius: 50%;
+        box-shadow: 0 0 0 42px rgba(255, 255, 255, .16), 0 0 0 84px rgba(255, 255, 255, .1);
+        animation: results-background-orbit 32s ease-in-out infinite alternate;
+    }
+
+    body.results-view .results-page {
+        position: relative;
+        z-index: 1;
+    }
+
+    :root[data-theme="dark"] body.results-view #main-content {
+        --results-bg-start: #17396b;
+        --results-bg-mid: #24508c;
+        --results-bg-end: #162f58;
+    }
+
+    :root[data-theme="dark"] body.results-view #main-content::before {
+        background-image: radial-gradient(rgba(215, 230, 255, .18) .8px, transparent .8px);
+        opacity: .23;
+    }
+
+    :root[data-theme="dark"] body.results-view #main-content::after {
+        border-color: rgba(220, 234, 255, .2);
+        box-shadow: 0 0 0 42px rgba(220, 234, 255, .055), 0 0 0 84px rgba(220, 234, 255, .035);
+    }
+
+    @keyframes results-background-orbit {
+        from { transform: translate3d(0, 0, 0); }
+        to { transform: translate3d(-18px, 14px, 0); }
+    }
+
     body.results-view .results-page {
         width: min(1240px, 100% - 2 * clamp(18px, 5vw, 48px));
         padding-block: clamp(28px, 5vw, 60px) clamp(48px, 7vw, 80px);
@@ -563,6 +629,10 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
+        body.results-view #main-content::after {
+            animation: none !important;
+        }
+
         body.results-view *,
         body.results-view *::before,
         body.results-view *::after {
