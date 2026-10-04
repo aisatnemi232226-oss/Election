@@ -195,7 +195,20 @@ class ElectionWidgetTest extends TestCase
             ->assertJsonPath('statistics.voters_participated', 1)
             ->assertJsonPath('statistics.turnout_percentage', 50)
             ->assertJsonPath('results.visible', false)
-            ->assertJsonPath('upcoming_events.0.title', 'Public forum');
+            ->assertJsonPath('upcoming_events.0.title', 'Public forum')
+            ->assertJsonPath('elections.0.id', 2)
+            ->assertJsonPath('elections.1.id', 1);
+
+        $this->getJson('/api/election/widget?election_id=1')
+            ->assertOk()
+            ->assertJsonPath('election.id', 1)
+            ->assertJsonPath('election.name', 'Election 1')
+            ->assertJsonPath('status', 'voting_open')
+            ->assertJsonPath('statistics.voters_participated', 1)
+            ->assertJsonPath('results.visible', false);
+
+        $this->getJson('/api/election/widget?election_id=999')
+            ->assertUnprocessable();
     }
 
     public function test_home_carousel_uses_active_unlinked_profiles_when_the_current_election_has_no_candidates(): void

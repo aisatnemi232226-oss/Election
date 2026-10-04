@@ -115,6 +115,7 @@
     body.contact-view .contact-hero-kicker {
         display: inline-flex;
         align-items: center;
+        gap: 7px;
         align-self: flex-start;
         margin-bottom: 9px;
         padding: 7px 10px;
@@ -125,6 +126,11 @@
         font-size: .69rem;
         font-weight: 800;
         letter-spacing: .12em;
+    }
+
+    body.contact-view .contact-hero-kicker .icon {
+        width: 15px;
+        height: 15px;
     }
 
     body.contact-view .contact-page > .page-intro h1 {
@@ -442,7 +448,10 @@
 @section('content')
 <div class="page-content contact-page">
     <header class="page-intro">
-        <span class="contact-hero-kicker">PHILIPPINE CHRISTIAN UNIVERSITY</span>
+        <span class="contact-hero-kicker">
+            <svg class="icon" aria-hidden="true"><use href="#pcu-grad"></use></svg>
+            PHILIPPINE CHRISTIAN UNIVERSITY
+        </span>
         <h1>Let’s connect.</h1>
         <p>We’d love to hear from you. Find our campus or reach the university using the contact information below.</p>
         <div class="contact-hero-actions">

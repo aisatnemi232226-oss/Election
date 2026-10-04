@@ -74,6 +74,7 @@
     body.voter-home-page .election-widget-heading,
     body.voter-home-page .election-widget-brand,
     body.voter-home-page .election-widget-status,
+    body.voter-home-page .election-widget-close,
     body.voter-home-page .election-widget-turnout-heading,
     body.voter-home-page .election-widget-actions,
     body.voter-home-page .election-widget-title-row {
@@ -169,6 +170,39 @@
         color: var(--election-widget-muted);
         font-size: .9rem;
         line-height: 1.45;
+    }
+
+    body.voter-home-page .election-widget-election-picker {
+        display: grid;
+        gap: 6px;
+        margin-top: 14px;
+    }
+
+    body.voter-home-page .election-widget-election-picker[hidden] {
+        display: none !important;
+    }
+
+    body.voter-home-page .election-widget-election-picker label {
+        color: var(--election-widget-muted);
+        font-size: .74rem;
+        font-weight: 750;
+    }
+
+    body.voter-home-page .election-widget-election-picker select {
+        width: 100%;
+        min-width: 0;
+        padding: 9px 34px 9px 11px;
+        border: 1px solid var(--election-widget-border);
+        border-radius: 10px;
+        background: var(--election-widget-surface);
+        color: var(--election-widget-text);
+        font: inherit;
+        font-size: .85rem;
+    }
+
+    body.voter-home-page .election-widget-election-picker select:focus-visible {
+        outline: 3px solid color-mix(in srgb, var(--election-widget-brand), transparent 65%);
+        outline-offset: 2px;
     }
 
     body.voter-home-page .election-widget-countdown {
@@ -396,10 +430,16 @@
                 PCU ELECTION
             </span>
             <span class="election-widget-status" data-election-state data-state="loading">Updating</span>
+            <button class="election-widget-close" type="button" data-election-widget-close aria-label="Close election widget">×</button>
+        </div>
+        <div class="election-widget-election-picker" data-election-picker hidden>
+            <label for="election-widget-select">Election timeline</label>
+            <select id="election-widget-select" data-election-select aria-label="Choose an election timeline">
+                <option value="">Loading elections…</option>
+            </select>
         </div>
         <div class="election-widget-title-row">
             <h3 class="election-widget-title" id="election-widget-title" data-election-name>Current student election</h3>
-            <button class="election-widget-close" type="button" data-election-widget-close aria-label="Close election widget">×</button>
         </div>
         <p class="election-widget-summary" data-election-summary>Loading election information.</p>
 
@@ -492,6 +532,8 @@ function initializeElectionWidget(widget) {
     const numberFormat = new Intl.NumberFormat();
     const elements = {
         name: widget.querySelector('[data-election-name]'),
+        picker: widget.querySelector('[data-election-picker]'),
+        electionSelect: widget.querySelector('[data-election-select]'),
         summary: widget.querySelector('[data-election-summary]'),
         state: widget.querySelector('[data-election-state]'),
         countdownLabel: widget.querySelector('[data-countdown-label]'),
@@ -517,6 +559,36 @@ function initializeElectionWidget(widget) {
     let targetDeadline = null;
     let targetSignature = '';
     let expiryRefreshRequested = false;
+
+    const updateElectionLinks = (electionId) => {
+        for (const [selector, route] of [
+            ['[data-results-action]', '{{ route('result') }}'],
+            ['[data-election-action]', '{{ route('election.details') }}']
+        ]) {
+            const link = widget.querySelector(selector);
+            const url = new URL(route, window.location.href);
+            if (electionId) url.searchParams.set('election_id', electionId);
+            link.href = url.toString();
+        }
+    };
+
+    const renderElectionOptions = (elections, selectedId) => {
+        const options = Array.isArray(elections) ? elections : [];
+        elements.picker.hidden = options.length < 2;
+        elements.electionSelect.replaceChildren();
+
+        for (const election of options) {
+            const option = document.createElement('option');
+            option.value = String(election.id);
+            option.textContent = election.label || election.name;
+            option.selected = Number(election.id) === Number(selectedId);
+            elements.electionSelect.append(option);
+        }
+
+        if (options.length && !elements.electionSelect.value) {
+            elements.electionSelect.value = String(selectedId || options[0].id);
+        }
+    };
 
     const setFreshness = (state, label) => {
         elements.freshness.dataset.freshnessState = state;
@@ -558,10 +630,7 @@ function initializeElectionWidget(widget) {
     };
 
     const tickCountdown = () => {
-        if (targetDeadline === null) {
-            elements.countdown.textContent = '--';
-            return;
-        }
+        if (targetDeadline === null) return;
 
         const seconds = Math.max(0, Math.ceil((targetDeadline - performance.now()) / 1000));
         const days = Math.floor(seconds / 86400);
@@ -580,6 +649,8 @@ function initializeElectionWidget(widget) {
         const election = payload.election;
         const status = payload.status || 'unavailable';
         const resultsVisible = payload.results?.visible === true;
+        renderElectionOptions(payload.elections, election?.id);
+        updateElectionLinks(election?.id);
         elements.name.textContent = election?.name || 'Election information';
         elements.summary.textContent = payload.status_label || 'Election information is not available.';
         elements.state.textContent = status.replaceAll('_', ' ');
@@ -608,9 +679,21 @@ function initializeElectionWidget(widget) {
             elements.turnoutFill.style.width = '0%';
         }
 
+        const countdownCopy = {
+            completed: ['Election status', 'Voting has ended'],
+            results_available: ['Results status', 'Official results are available'],
+            unavailable: ['Election schedule', 'Election dates are not available']
+        };
         const target = payload.countdown?.target_time;
         const signature = `${target || ''}:${payload.countdown?.target_label || ''}`;
-        elements.countdownLabel.textContent = payload.countdown?.target_label || 'No upcoming countdown';
+        const fallbackCountdown = countdownCopy[status];
+        elements.countdown.setAttribute(
+            'aria-label',
+            target ? `${payload.countdown.target_label} countdown` : 'Election status'
+        );
+        elements.countdownLabel.textContent = payload.countdown?.target_label
+            || fallbackCountdown?.[0]
+            || 'Election schedule';
         if (target && signature !== targetSignature) {
             const targetTime = Date.parse(target);
             const serverTime = Date.parse(payload.server_time);
@@ -626,9 +709,25 @@ function initializeElectionWidget(widget) {
         }
 
         renderNextEvent(payload);
-        elements.resultsNote.hidden = resultsVisible;
-        elements.resultsAction.hidden = !resultsVisible;
-        tickCountdown();
+        if (resultsVisible) {
+            elements.resultsNote.hidden = true;
+            elements.resultsAction.textContent = 'View Results';
+            elements.resultsAction.hidden = false;
+        } else {
+            elements.resultsNote.textContent = status === 'completed' || status === 'counting'
+                ? 'Official results are pending publication. Check the Results page for updates.'
+                : 'Official results will be available after voting closes and the totals are published.';
+            elements.resultsNote.hidden = false;
+            elements.resultsAction.textContent = 'Check Results';
+            elements.resultsAction.hidden = status !== 'completed' && status !== 'counting';
+        }
+
+        if (!target) {
+            elements.countdown.textContent = fallbackCountdown?.[1]
+                || (resultsVisible ? 'Official results are available' : 'Election schedule not available');
+        } else {
+            tickCountdown();
+        }
     };
 
     const renderFailure = () => {
@@ -652,7 +751,11 @@ function initializeElectionWidget(widget) {
         const timeoutId = window.setTimeout(() => controller.abort(), 8000);
 
         try {
-            const response = await fetch(endpoint, {
+            const url = new URL(endpoint, window.location.href);
+            if (elements.electionSelect.value) {
+                url.searchParams.set('election_id', elements.electionSelect.value);
+            }
+            const response = await fetch(url, {
                 headers: { Accept: 'application/json' },
                 credentials: 'same-origin',
                 cache: 'no-store',
@@ -697,6 +800,15 @@ function initializeElectionWidget(widget) {
         window.clearTimeout(refreshTimerId);
         if (!document.hidden) refreshTimerId = window.setTimeout(refresh, delay);
     }
+
+    elements.electionSelect.addEventListener('change', () => {
+        window.clearTimeout(refreshTimerId);
+        if (requestController) {
+            requestController.abort();
+            requestController = null;
+        }
+        refresh();
+    });
 
     const startCountdown = () => {
         if (countdownTimerId === null) countdownTimerId = window.setInterval(tickCountdown, 1000);

@@ -3109,19 +3109,24 @@
         }
 
         body.voter-home-page .candidate-carousel-controls {
-            align-items: flex-start;
-            flex-wrap: wrap;
-            padding: 9px;
+            align-items: center;
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px;
             border-radius: 16px;
         }
 
         body.voter-home-page .candidate-carousel-actions {
             order: 2;
             width: 100%;
+            justify-content: center;
+            gap: 8px;
         }
 
         body.voter-home-page .candidate-carousel-pagination {
+            order: 1;
             min-height: 42px;
+            justify-content: center;
             margin-inline: auto;
         }
 

@@ -112,13 +112,25 @@
         pointer-events: none;
     }
 
-    body.election-details-view .election-details-page > .page-intro::before {
+    body.election-details-view .election-details-page > .page-intro > .page-intro-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        align-self: flex-start;
         margin-bottom: 10px;
-        color: #c9dcff;
-        content: "PCU ONLINE ELECTION";
-        font-size: .76rem;
+        padding: 7px 10px;
+        border: 1px solid rgba(226, 238, 255, .3);
+        border-radius: 999px;
+        background: rgba(239, 246, 255, .1);
+        color: #e4eeff;
+        font-size: .69rem;
         font-weight: 800;
-        letter-spacing: .14em;
+        letter-spacing: .12em;
+    }
+
+    body.election-details-view .election-details-page > .page-intro > .page-intro-kicker .icon {
+        width: 15px;
+        height: 15px;
     }
 
     body.election-details-view .election-details-page > .page-intro h1 {
@@ -173,8 +185,21 @@
         font-size: .9rem;
     }
 
+    body.election-details-view .candidate-filter-search-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+        gap: 12px;
+    }
+
+    body.election-details-view .candidate-filter-search-row .field {
+        min-width: 0;
+        gap: 7px;
+    }
+
     body.election-details-view .candidate-filter-grid {
         gap: 16px;
+        margin-top: 16px;
     }
 
     body.election-details-view .candidate-filter-grid .field {
@@ -202,8 +227,10 @@
     }
 
     body.election-details-view .candidate-filter-actions {
+        display: flex;
+        align-items: center;
         gap: 10px;
-        margin-top: 20px;
+        margin: 0;
     }
 
     body.election-details-view .candidate-filter-actions .button {
@@ -505,17 +532,11 @@
 
     @media (min-width: 960px) {
         body.election-details-view .candidate-filter-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
         }
 
         body.election-details-view .candidate-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-    }
-
-    @media (min-width: 1200px) {
-        body.election-details-view .candidate-filter-grid {
-            grid-template-columns: repeat(5, minmax(0, 1fr));
         }
     }
 
@@ -544,9 +565,13 @@
             border-radius: 18px;
         }
 
+        body.election-details-view .candidate-filter-search-row {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
         body.election-details-view .candidate-filter-actions {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(100px, .55fr);
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         body.election-details-view .candidate-section-heading {
@@ -653,6 +678,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <div class="page-content election-details-page">
     <header class="page-intro">
+        <span class="page-intro-kicker">
+            <svg class="icon" aria-hidden="true"><use href="#pcu-grad"></use></svg>
+            PHILIPPINE CHRISTIAN UNIVERSITY
+        </span>
         <h1>Election Details</h1>
         <p>Review the election schedule, explore candidates, and cast your vote.</p>
     </header>
@@ -663,6 +692,16 @@ document.addEventListener('DOMContentLoaded', function () {
             <p>Choose an election or narrow the list by name, party, course, or position.</p>
         </div>
         <form id="filter-form" method="GET" action="{{ route('election.details') }}">
+            <div class="candidate-filter-search-row">
+                <div class="field">
+                    <label for="candidate-search">Search candidate</label>
+                    <input id="candidate-search" type="search" name="q" value="{{ $q }}" placeholder="Search name...">
+                </div>
+                <div class="candidate-filter-actions">
+                    <button type="submit" class="button button-primary">Apply filters</button>
+                    <a href="{{ route('election.details', $selectedElectionId ? ['election_id' => $selectedElectionId] : []) }}" class="button button-secondary">Reset</a>
+                </div>
+            </div>
             <div class="candidate-filter-grid">
                 <div class="field">
                     <label for="candidate-election">Election</label>
@@ -672,7 +711,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         @endforeach
                     </select>
                 </div>
-                <div class="field"><label for="candidate-search">Search candidate</label><input id="candidate-search" type="search" name="q" value="{{ $q }}" placeholder="Search name..."></div>
                 <div class="field">
                     <label for="candidate-party">Party</label>
                     <select id="candidate-party" name="party"><option value="">All parties</option>
@@ -697,10 +735,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         @endforeach
                     </select>
                 </div>
-            </div>
-            <div class="candidate-filter-actions">
-                <button type="submit" class="button button-primary">Apply filters</button>
-                <a href="{{ route('election.details', $selectedElectionId ? ['election_id' => $selectedElectionId] : []) }}" class="button button-secondary">Reset</a>
             </div>
         </form>
     </section>

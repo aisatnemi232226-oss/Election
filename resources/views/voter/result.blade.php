@@ -98,13 +98,25 @@
         animation: results-intro-in .55s cubic-bezier(.2, .75, .25, 1) both;
     }
 
-    body.results-view .results-page > .page-intro::before {
+    body.results-view .results-page > .page-intro > .page-intro-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        align-self: flex-start;
         margin-bottom: 10px;
-        color: #c9dcff;
-        content: "PCU ONLINE ELECTION";
-        font-size: .76rem;
+        padding: 7px 10px;
+        border: 1px solid rgba(226, 238, 255, .3);
+        border-radius: 999px;
+        background: rgba(239, 246, 255, .1);
+        color: #e4eeff;
+        font-size: .69rem;
         font-weight: 800;
-        letter-spacing: .14em;
+        letter-spacing: .12em;
+    }
+
+    body.results-view .results-page > .page-intro > .page-intro-kicker .icon {
+        width: 15px;
+        height: 15px;
     }
 
     body.results-view .results-page > .page-intro h1 {
@@ -648,8 +660,18 @@
 @section('content')
 <div class="page-content results-page">
     <header class="page-intro">
+        <span class="page-intro-kicker">
+            <svg class="icon" aria-hidden="true"><use href="#pcu-grad"></use></svg>
+            PHILIPPINE CHRISTIAN UNIVERSITY
+        </span>
         <h1>Election Results</h1>
-        <p>{{ $election ? 'Results for ' . $election->name . '.' : 'Explore the latest election tallies by position and see which candidates are leading.' }}</p>
+        <p>
+            @if($resultsVisible ?? false)
+                Explore official vote totals and candidate standings by position. Select a position below to view its full tally.
+            @else
+                Official vote totals and candidate standings for each position will appear here once the election results are officially published.
+            @endif
+        </p>
     </header>
 
     @if(!($resultsVisible ?? false))
@@ -670,11 +692,7 @@
                 </p>
                 <h2 id="results-unpublished-title">Official results are not available yet.</h2>
                 <p class="results-unpublished-description">
-                    @if($election)
-                        Candidate vote totals for <strong>{{ $election->name }}</strong> are being kept private until they are officially released.
-                    @else
-                        Candidate vote totals are kept private until they are officially released.
-                    @endif
+                    Candidate vote totals remain private until the election team officially releases the results.
                 </p>
                 <div class="results-unpublished-note">
                     <svg class="icon" aria-hidden="true"><use href="#pcu-chart"/></svg>

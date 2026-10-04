@@ -40,14 +40,27 @@ class ElectionWidgetService
         }
     }
 
-    public function payload(): array
+    public function payload(?int $electionId = null): array
     {
         $now = now();
-        $election = $this->currentElection();
+        $election = $electionId
+            ? Election::query()->find($electionId)
+            : $this->currentElection();
+        $elections = Election::query()
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get(['id', 'name', 'start_date'])
+            ->map(fn (Election $option): array => [
+                'id' => (int) $option->id,
+                'name' => (string) $option->name,
+                'label' => (string) $option->name . ($option->start_date ? ' · ' . $option->start_date->format('Y') : ''),
+            ])
+            ->all();
 
         if (! $election) {
             return [
                 'election' => null,
+                'elections' => $elections,
                 'status' => 'unavailable',
                 'status_label' => 'Election information is not available',
                 'server_time' => $now->toIso8601String(),
@@ -69,6 +82,7 @@ class ElectionWidgetService
         $generatedAt = Carbon::parse($cache['generated_at']);
 
         $cache['server_time'] = $now->toIso8601String();
+        $cache['elections'] = $elections;
         $cache['freshness'] = [
             'generated_at' => $generatedAt->toIso8601String(),
             'cache_age_seconds' => max(0, $generatedAt->diffInSeconds($now)),
@@ -86,6 +100,7 @@ class ElectionWidgetService
 
         return [
             'election' => [
+                'id' => (int) $election->id,
                 'name' => (string) $election->name,
             ],
             'status' => $status['value'],

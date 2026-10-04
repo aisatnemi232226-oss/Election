@@ -84,90 +84,87 @@
         text-align: left;
     }
 
-    body.election-index-page .page-intro::before {
-        display: block;
-        margin-bottom: 10px;
-        color: var(--brand);
-        content: "PCU ONLINE ELECTION";
-        font-size: .76rem;
-        font-weight: 800;
-        letter-spacing: .14em;
-    }
-
-    body.election-index-page .page-intro h1 {
-        font-size: clamp(2.25rem, 5vw, 3.5rem);
-        letter-spacing: -.045em;
-        text-wrap: balance;
-    }
-
-    body.election-index-page .page-intro p {
-        max-width: 55ch;
-        margin: 12px 0 0;
-        font-size: clamp(1rem, 1.8vw, 1.15rem);
-    }
-
     body.election-index-page .election-hero {
         position: relative;
-        display: grid;
-        grid-template-columns: minmax(0, 1.05fr) minmax(280px, .95fr);
-        align-items: stretch;
-        gap: clamp(24px, 5vw, 62px);
-        min-height: 360px;
-        margin-bottom: clamp(44px, 6vw, 72px);
+        isolation: isolate;
+        display: flex;
+        min-height: clamp(210px, 25vw, 300px);
+        flex-direction: column;
+        justify-content: flex-end;
         overflow: hidden;
-        border: 1px solid color-mix(in srgb, var(--brand), transparent 86%);
-        border-radius: 28px;
+        margin-bottom: clamp(24px, 4vw, 36px);
+        padding: clamp(26px, 5vw, 54px);
+        border: 1px solid rgba(255, 255, 255, .16);
+        border-radius: 26px;
         background:
-            radial-gradient(ellipse at 9% 100%, color-mix(in srgb, var(--brand), transparent 91%), transparent 44%),
-            linear-gradient(120deg, var(--card), color-mix(in srgb, var(--tint), var(--card) 50%));
-        box-shadow: 0 16px 44px rgba(15, 27, 51, .08);
+            linear-gradient(100deg, rgba(5, 17, 42, .88), rgba(5, 20, 48, .68) 58%, rgba(5, 20, 48, .4)),
+            linear-gradient(0deg, rgba(4, 14, 32, .5), transparent 78%),
+            url("{{ asset('images/background1.jpg') }}") center 42% / cover no-repeat;
+        box-shadow: 0 18px 42px rgba(15, 27, 51, .14);
+        color: #f7faff;
+        text-align: left;
         animation: election-hero-in .7s cubic-bezier(.2, .75, .25, 1) both;
     }
 
-    body.election-index-page .election-hero::before {
-        display: none;
-        content: none;
+    body.election-index-page .election-hero::after {
+        position: absolute;
+        z-index: -1;
+        top: -190px;
+        right: -85px;
+        width: 410px;
+        aspect-ratio: 1;
+        border: 1px solid rgba(224, 237, 255, .27);
+        border-radius: 50%;
+        box-shadow: 0 0 0 32px rgba(224, 237, 255, .08), 0 0 0 64px rgba(224, 237, 255, .05);
+        content: "";
+        pointer-events: none;
     }
 
     body.election-index-page .election-hero-copy {
-        align-self: center;
-        padding: clamp(28px, 5vw, 60px) 0 clamp(28px, 5vw, 60px) clamp(26px, 5vw, 62px);
+        position: relative;
+        z-index: 1;
+        max-width: 58ch;
     }
 
     body.election-index-page .election-eyebrow {
         display: inline-flex;
         align-items: center;
-        gap: 9px;
-        margin-bottom: 18px;
-        color: var(--brand);
-        font-size: .77rem;
+        gap: 7px;
+        margin-bottom: 10px;
+        padding: 7px 10px;
+        border: 1px solid rgba(226, 238, 255, .3);
+        border-radius: 999px;
+        background: rgba(239, 246, 255, .1);
+        color: #e4eeff;
+        font-size: .69rem;
         font-weight: 800;
         letter-spacing: .12em;
         text-transform: uppercase;
     }
 
     body.election-index-page .election-eyebrow .icon {
-        width: 19px;
-        height: 19px;
+        width: 15px;
+        height: 15px;
     }
 
     body.election-index-page .election-hero h1 {
-        max-width: 11ch;
-        font-size: clamp(2.65rem, 5.5vw, 4.65rem);
-        line-height: .99;
-        letter-spacing: -.065em;
+        max-width: 16ch;
+        color: #fff;
+        font-size: clamp(2rem, 5vw, 3.25rem);
+        line-height: 1.08;
+        letter-spacing: -.045em;
         text-wrap: balance;
     }
 
     body.election-index-page .election-hero h1 span {
-        color: var(--brand);
+        color: #c9dcff;
     }
 
     body.election-index-page .election-hero-copy > p {
-        max-width: 44ch;
-        margin-top: 18px;
-        font-size: clamp(1rem, 1.6vw, 1.12rem);
-        line-height: 1.7;
+        max-width: 56ch;
+        margin: 12px 0 0;
+        color: rgba(239, 245, 255, .86);
+        font-size: clamp(1rem, 1.8vw, 1.15rem);
     }
 
     body.election-index-page .election-hero-actions {
@@ -175,7 +172,7 @@
         flex-wrap: wrap;
         align-items: center;
         gap: 10px;
-        margin-top: 24px;
+        margin-top: 20px;
     }
 
     body.election-index-page .election-hero-actions .button {
@@ -192,6 +189,17 @@
         box-shadow: 0 8px 18px color-mix(in srgb, var(--brand), transparent 78%);
     }
 
+    body.election-index-page .election-hero-actions .button-secondary {
+        border-color: rgba(226, 238, 255, .55);
+        background: rgba(239, 246, 255, .1);
+        color: #f7faff;
+    }
+
+    body.election-index-page .election-hero-actions .button-secondary:hover {
+        border-color: rgba(226, 238, 255, .8);
+        background: rgba(239, 246, 255, .18);
+    }
+
     body.election-index-page .election-hero-actions .button .icon {
         width: 18px;
         transition: transform .2s ease;
@@ -199,93 +207,6 @@
 
     body.election-index-page .election-hero-actions .button-primary:hover .icon {
         transform: translateX(3px);
-    }
-
-    body.election-index-page .election-hero-visual {
-        position: relative;
-        min-height: 300px;
-        align-self: stretch;
-        overflow: hidden;
-        margin: 12px;
-        border-radius: 20px;
-        background: var(--brand-d);
-        isolation: isolate;
-        animation: election-visual-in .85s .12s cubic-bezier(.2, .75, .25, 1) both;
-    }
-
-    body.election-index-page .election-hero-visual::after {
-        position: absolute;
-        z-index: 0;
-        inset: 0;
-        background: linear-gradient(180deg, rgba(8, 22, 49, .03) 30%, rgba(8, 22, 49, .72) 100%);
-        content: "";
-    }
-
-    body.election-index-page .election-hero-visual img {
-        width: 100%;
-        height: 100%;
-        min-height: 300px;
-        display: block;
-        object-fit: cover;
-        object-position: center;
-        transition: transform .8s cubic-bezier(.2, .75, .25, 1);
-    }
-
-    body.election-index-page .election-hero-visual:hover img {
-        transform: scale(1.045);
-    }
-
-    body.election-index-page .election-hero-caption {
-        position: absolute;
-        z-index: 1;
-        right: clamp(18px, 3vw, 34px);
-        bottom: clamp(18px, 3vw, 32px);
-        left: clamp(18px, 3vw, 34px);
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        gap: 16px;
-        color: #fff;
-    }
-
-    body.election-index-page .election-hero-caption-copy {
-        max-width: 24ch;
-    }
-
-    body.election-index-page .election-hero-caption-copy span {
-        display: block;
-        margin-bottom: 6px;
-        color: rgba(255, 255, 255, .82);
-        font-size: .72rem;
-        font-weight: 800;
-        letter-spacing: .14em;
-        text-transform: uppercase;
-    }
-
-    body.election-index-page .election-hero-caption-copy strong {
-        display: block;
-        font-size: clamp(1.3rem, 2.2vw, 1.85rem);
-        line-height: 1.15;
-        letter-spacing: -.035em;
-        text-wrap: balance;
-    }
-
-    body.election-index-page .election-hero-mark {
-        width: 54px;
-        height: 54px;
-        display: grid;
-        place-items: center;
-        flex: none;
-        border: 1px solid rgba(255, 255, 255, .48);
-        border-radius: 50%;
-        background: rgba(255, 255, 255, .14);
-        color: #fff;
-        backdrop-filter: blur(8px);
-    }
-
-    body.election-index-page .election-hero-mark .icon {
-        width: 25px;
-        height: 25px;
     }
 
     body.election-index-page .election-list-section + .election-list-section,
@@ -532,11 +453,6 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    @keyframes election-visual-in {
-        from { opacity: 0; transform: translateX(14px) scale(.985); }
-        to { opacity: 1; transform: translateX(0) scale(1); }
-    }
-
     @media (min-width: 640px) {
         body.election-index-page .election-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -558,23 +474,8 @@
     }
 
     @media (max-width: 720px) {
-        body.election-index-page .election-hero {
-            grid-template-columns: minmax(0, 1fr);
-            gap: 0;
-        }
-
-        body.election-index-page .election-hero-copy {
-            padding: 34px 34px 24px;
-        }
-
-        body.election-index-page .election-hero-visual {
-            min-height: 240px;
-            margin: 0 12px 12px;
-        }
-
-        body.election-index-page .election-hero-visual img {
-            min-height: 240px;
-            max-height: 320px;
+        body.election-index-page .election-hero::after {
+            right: -180px;
         }
     }
 
@@ -585,23 +486,17 @@
         }
 
         body.election-index-page .election-hero {
-            grid-template-columns: minmax(0, 1fr);
-            gap: 0;
             border-radius: 22px;
-        }
-
-        body.election-index-page .election-hero-copy {
-            padding: 28px 24px 24px;
+            padding: 26px 24px;
         }
 
         body.election-index-page .election-eyebrow {
-            margin-bottom: 13px;
             font-size: .68rem;
         }
 
         body.election-index-page .election-hero h1 {
-            max-width: 10ch;
-            font-size: clamp(2.55rem, 12vw, 3.45rem);
+            max-width: 16ch;
+            font-size: clamp(2rem, 10vw, 2.65rem);
         }
 
         body.election-index-page .election-hero-copy > p {
@@ -610,22 +505,6 @@
 
         body.election-index-page .election-hero-actions {
             margin-top: 19px;
-        }
-
-        body.election-index-page .election-hero-visual {
-            min-height: 190px;
-            margin: 0 10px 10px;
-            border-radius: 15px;
-        }
-
-        body.election-index-page .election-hero-visual img {
-            min-height: 190px;
-            max-height: 230px;
-        }
-
-        body.election-index-page .election-hero-mark {
-            width: 44px;
-            height: 44px;
         }
 
         body.election-index-page .section-heading {
@@ -653,13 +532,11 @@
         }
 
         body.election-index-page .election-hero,
-        body.election-index-page .election-hero-visual,
         body.election-index-page .election-card {
             animation: none;
             transition: none;
         }
 
-        body.election-index-page .election-hero-visual img,
         body.election-index-page .election-card img {
             transition: none;
         }
@@ -673,7 +550,6 @@
         body.election-index-page .election-card:hover,
         body.election-index-page .registration-history li:hover,
         body.election-index-page .election-hero-actions .button:hover,
-        body.election-index-page .election-hero-visual:hover img,
         body.election-index-page .election-card:hover img,
         body.election-index-page .carousel-controls .icon-button:hover {
             transform: none;
@@ -703,18 +579,6 @@
                     <svg class="icon" aria-hidden="true"><use href="#pcu-arrow"/></svg>
                 </a>
                 <a class="button button-secondary" href="#previous-elections">Past elections</a>
-            </div>
-        </div>
-        <div class="election-hero-visual">
-            <img src="{{ asset('images/background1.jpg') }}" alt="" fetchpriority="high">
-            <div class="election-hero-caption">
-                <div class="election-hero-caption-copy">
-                    <span>Student voices. Shared future.</span>
-                    <strong>Your choice helps shape what comes next.</strong>
-                </div>
-                <span class="election-hero-mark">
-                    <svg class="icon" aria-hidden="true"><use href="#pcu-vote"/></svg>
-                </span>
             </div>
         </div>
     </header>
