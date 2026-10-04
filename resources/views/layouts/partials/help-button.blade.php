@@ -15,7 +15,7 @@
         <div class="chat-messages" id="chatbot-messages" role="log" aria-live="polite" aria-relevant="additions" aria-atomic="false"></div>
         <button class="chat-suggestions-toggle" id="chatbot-suggestions-toggle" type="button" aria-controls="chatbot-quick-replies" aria-expanded="false">Show suggestions</button>
         <div class="chat-quick-replies" id="chatbot-quick-replies" aria-label="Suggested questions" hidden></div>
-        <form class="chat-form" id="chatbot-form" action="{{ route('chatbot.respond') }}" method="post" data-ai-enabled="{{ (config('services.chatbot.provider') === 'mock' || trim((string) (in_array(config('services.chatbot.provider'), ['openai', 'openai-compatible'], true) ? (config('services.chatbot.openai_api_key') ?: config('services.chatbot.api_key')) : config('services.chatbot.api_key'))) !== '') ? 'true' : 'false' }}">
+        <form class="chat-form" id="chatbot-form" action="{{ route('chatbot.respond') }}" method="post" data-ai-enabled="{{ config('services.chatbot.ai_enabled') ? 'true' : 'false' }}">
             @csrf
             <label class="visually-hidden" for="chatbot-input">Ask the PCU Assistant</label>
             <input id="chatbot-input" name="message" type="text" placeholder="Type a question..." autocomplete="off" maxlength="1000" required>

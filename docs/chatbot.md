@@ -1,10 +1,59 @@
 # PCU Assistant
 
-The existing chatbot combines local election-help answers with an optional AI provider. Local answers are tried first; AI is used only when no local answer matches. AI replies are advisory and cannot read or change accounts, ballots, votes, eligibility, or election results. Published election information and all election decisions remain controlled by the application.
+The chatbot combines deterministic PCU election-help answers with optional AI. Local answers are checked first; AI is used only when no local answer matches. AI replies are advisory and cannot read or change accounts, ballots, votes, eligibility, or election results. Published election information and election decisions remain controlled by the application.
 
-## Gemini provider
+## Multi-provider routing
 
-Gemini is the default provider. Configure it only in the local `.env` file:
+The default `router` provider tries configured AI services in server-side priority order. Common questions such as how to vote or register are handled locally and do not consume provider requests. The default order is Groq followed by Gemini:
+
+```dotenv
+CHATBOT_AI_PROVIDER=router
+CHATBOT_AI_PRIMARY_PROVIDER=groq
+CHATBOT_AI_FALLBACK_PROVIDERS=gemini
+CHATBOT_AI_MAX_PROVIDERS_PER_REQUEST=2
+CHATBOT_AI_MAX_ATTEMPTS_PER_REQUEST=4
+CHATBOT_AI_MAX_REQUESTS_PER_MINUTE=10
+CHATBOT_AI_MAX_TOTAL_SECONDS=35
+CHATBOT_AI_MAX_OUTPUT_TOKENS=500
+```
+
+The router skips providers without a configured key, so leaving Groq unconfigured uses Gemini when its key is present. It makes one request per provider, cools down providers after rate-limit/quota/service errors, and falls back to deterministic help if no provider responds. The total attempt cap includes individual Gemini model attempts; the request/time caps prevent provider failover from multiplying outbound calls without bound. Authentication/configuration errors are not repeatedly retried against the same provider. Model choice and provider selection are server-side; the browser cannot send a trusted model or endpoint.
+
+Use a shared Laravel cache store across all application workers so the outbound budget, cooldowns, and locks apply across the deployment. This project defaults to the database cache store. The application-level cap is a soft safeguard, not a promise of provider capacity or a replacement for account-specific limits.
+
+## Groq
+
+Groq uses its OpenAI-compatible Chat Completions API. Current documented endpoint:
+
+`https://api.groq.com/openai/v1/chat/completions`
+
+Configure a Groq key only in the local `.env`:
+
+```dotenv
+CHATBOT_GROQ_API_KEY=your-groq-api-key
+CHATBOT_GROQ_ENDPOINT=https://api.groq.com/openai/v1/chat/completions
+CHATBOT_GROQ_MODEL=openai/gpt-oss-20b
+CHATBOT_GROQ_FALLBACK_MODELS=openai/gpt-oss-120b,qwen/qwen3.8-27b
+CHATBOT_GROQ_TIMEOUT=20
+```
+
+Create and manage keys in the [Groq Console](https://console.groq.com/keys). Keep the key server-side; never add it to source, Blade, JavaScript, browser requests, logs, or documentation. The default model is configurable and should be checked against the active models available to your Groq organization. Groq documents `GET https://api.groq.com/openai/v1/models` for retrieving hosted active models; the application does not call this endpoint on student requests.
+
+The server tries the configured Groq models sequentially: `CHATBOT_GROQ_MODEL` first, then each comma-separated model in `CHATBOT_GROQ_FALLBACK_MODELS`. The defaults are `openai/gpt-oss-20b`, `openai/gpt-oss-120b`, and `qwen/qwen3.8-27b`. The browser cannot select or override a provider or model. Only retryable model failures advance to the next Groq model; invalid credentials and forbidden responses stop Groq model rotation and may use the configured Gemini provider instead. Invalid requests do not cause retries against other Groq models. Per-model cooldowns prevent repeatedly calling a temporarily unhealthy model.
+
+The shared `CHATBOT_AI_MAX_ATTEMPTS_PER_REQUEST=4` cap covers the entire request: at most three Groq model calls and one Gemini model call with the default list. If the configured cap or time limit is reached sooner, routing stops. Failover is for service resilience, not quota circumvention; each model/account may have different limits, and the application does not promise or multiply provider capacity.
+
+The provider sends a capped text-only `system`, `user`, and `assistant` message list to Chat Completions. It uses the centralized PCU system instruction and existing input/history sanitization, limits output, and uses the documented conservative `reasoning_effort=low` option shared by the configured models. It does not enable tools, function calls, streaming, image/audio, SQL, account, ballot, or vote access. Only the final message content is returned; provider reasoning is not surfaced. Groq-specific request/response structures remain inside `GroqProvider`.
+
+Groq's current documentation describes organization-level limits across RPM, RPD, TPM, TPD, and, for some organizations, ITPM/OTPM. Exact limits vary by organization, model, and account and are shown in the [Groq Console limits page](https://console.groq.com/settings/limits); this project does not assume a guaranteed free-tier quota. On HTTP 429 the provider reads `retry-after` and rate-limit reset headers when present, distinguishes likely daily quota messages from short-term rate limits, and cools down the affected model. Remaining model attempts and then Gemini are used only within the shared request cap. Transient errors also fail over without repeated retries of the same model. No key rotation or quota-circumvention behavior is used.
+
+For troubleshooting, confirm the configured model IDs are active for the Groq organization and that the model is enabled for the key. Groq's current model pages list [`openai/gpt-oss-20b`](https://console.groq.com/docs/model/openai/gpt-oss-20b), [`openai/gpt-oss-120b`](https://console.groq.com/docs/model/openai/gpt-oss-120b), and [`qwen/qwen3.8-27b`](https://console.groq.com/docs/model/qwen/qwen3.8-27b). The application does not make model-list or health-check requests per student message.
+
+Groq's [data documentation](https://console.groq.com/docs/your-data) says inference inputs and outputs are not retained by default, but may be temporarily logged for service reliability or abuse monitoring (up to 30 days, unless applicable requirements call for longer). Organization data-control settings, including Zero Data Retention, are managed in the Groq Console. Do not submit passwords, verification codes, ballot selections, or sensitive student information.
+
+## Gemini
+
+Gemini remains the configured fallback and can still be selected directly:
 
 ```dotenv
 CHATBOT_AI_PROVIDER=gemini
@@ -12,52 +61,42 @@ CHATBOT_AI_API_KEY=your-gemini-api-key
 CHATBOT_AI_MODEL=gemini-3.8-flash
 CHATBOT_AI_FALLBACK_MODELS=gemini-3.5-flash-lite,gemini-2.5-flash-lite
 CHATBOT_AI_TIMEOUT=20
-CHATBOT_AI_MAX_OUTPUT_TOKENS=500
-CHATBOT_AI_MAX_MODELS_PER_REQUEST=3
-CHATBOT_AI_MAX_REQUESTS_PER_MINUTE=10
-CHATBOT_AI_MAX_TOTAL_SECONDS=35
-CHATBOT_LOG_CONVERSATIONS=false
-CHATBOT_LOG_RETENTION_DAYS=30
 ```
 
-Create a key at [Google AI Studio API keys](https://aistudio.google.com/apikey), then put it in the local `.env` as `CHATBOT_AI_API_KEY`. Do not paste it into chat, Blade, JavaScript, or `.env.example`, and do not commit it. Google says new AI Studio keys created since May 28, 2026 are authorization keys; unrestricted older standard keys are rejected, while standard keys with explicit restrictions remain supported. Check the key and project status in AI Studio if authentication fails.
+Create a key in [Google AI Studio](https://aistudio.google.com/apikey). The Gemini adapter uses Google's stateless Interactions REST API at `https://generativelanguage.googleapis.com/v1beta/interactions`, authenticated with `x-goog-api-key`, and `store: false`. Local election facts and the same safety instructions are supplied to each configured Gemini model. Google's free-tier terms may allow submitted content to be used to improve its products. Quotas and model access vary by project; check [AI Studio rate limits](https://aistudio.google.com/rate-limit).
 
-The provider uses Google's stateless Interactions REST API at `https://generativelanguage.googleapis.com/v1beta/interactions`, authenticated with the `x-goog-api-key` header. It sends a capped, sanitized text-only dialogue, the same centralized PCU system instruction for every model, and `store: false`; no tools, Search grounding, image, audio, SQL, account, or ballot access are enabled. An optional `CHATBOT_AI_ENDPOINT` override is available for local testing.
+Within Gemini, configured models are tried in order up to `CHATBOT_AI_MAX_MODELS_PER_REQUEST`. Daily-quota errors cool a model down until the next midnight Pacific reset; short-term rate limits and temporary service errors receive shorter cooldowns. Model rotation does not promise extra capacity or bypass project limits.
 
-The current documented model candidates are `gemini-3.8-flash` (primary), `gemini-3.5-flash-lite`, and `gemini-2.5-flash-lite` (fallbacks). Google's model pages document these text-capable models; model availability, free-tier eligibility, and quotas depend on the configured project and can change. Confirm the actual project's access and active per-model limits in [AI Studio rate limits](https://aistudio.google.com/rate-limit) before enabling a fallback. The router does not treat model rotation as unlimited capacity or as a way to bypass project limits. Google's free-tier terms may allow submitted content to be used to improve its products.
+## Other provider modes
 
-### Quota-aware model routing
+- `CHATBOT_AI_PROVIDER=router`: Groq first, then configured fallback providers (default `gemini`).
+- `CHATBOT_AI_PROVIDER=groq`: use Groq directly.
+- `CHATBOT_AI_PROVIDER=gemini`: use Gemini and its configured model fallback list.
+- `CHATBOT_AI_PROVIDER=openai` or `openai-compatible`: use the existing OpenAI-compatible adapter.
+- `CHATBOT_AI_PROVIDER=mock`: local mock response; not a production AI service.
 
-Local election intents and approved help answers are checked first, so common questions do not use AI quota. For other questions, the server tries the configured primary model followed by the configured fallback list in order, up to `CHATBOT_AI_MAX_MODELS_PER_REQUEST`. The browser cannot choose a model.
+Local deterministic answers continue to run if AI is disabled or unavailable. To disable network AI, remove/clear the configured provider API keys and run `php artisan config:clear`. To switch between Groq and Gemini as router primary, set `CHATBOT_AI_PRIMARY_PROVIDER`; list fallbacks in priority order in `CHATBOT_AI_FALLBACK_PROVIDERS`. Only use `groq` and/or `gemini` in the router fallback list.
 
-Each model receives at most one API request per chatbot request. A short-lived shared Laravel cache health record and per-model cache lock track successful models and temporarily avoid models that are rate-limited, unavailable, or not found. A `429 rate_limit_exceeded`/`too_many_requests` cools down that model briefly; a documented daily `quota_exceeded` cools it down until the next midnight Pacific reset. A `503`, timeout, connection failure, or model-not-found error can move the request to the next configured model. Invalid requests, authentication/permission errors, and project prerequisite failures stop routing rather than blindly trying other models. If all candidates fail or are cooling down, the chatbot returns its local fallback/help options.
+## Safety, privacy, and logging
 
-`CHATBOT_AI_MAX_REQUESTS_PER_MINUTE` is an application-wide soft cap on outgoing Gemini requests (10 per minute by default), in addition to the existing student-facing endpoint throttle. `CHATBOT_AI_MAX_TOTAL_SECONDS` bounds the time spent trying models (35 seconds by default). These application safeguards do not replace Google's per-project, per-model RPM/TPM/RPD or billing limits. Use a shared Laravel cache store across application workers so model cooldowns, locks, and the request budget are shared; this project defaults to the database cache store.
+All providers receive the same centralized PCU instructions, approved election facts, capped conversation history, and sanitized messages. Legacy `bot` history is normalized to `assistant`. Outputs are treated as text and HTML is stripped before display. The providers have no tool, SQL, election database, account, ballot, or voting access. The application remains authoritative for election dates, status, eligibility, candidates, rules, and results.
 
-To disable network AI while keeping deterministic local answers, clear `CHATBOT_AI_API_KEY` and run `php artisan config:clear`. To change model order, edit `CHATBOT_AI_MODEL` and `CHATBOT_AI_FALLBACK_MODELS`; only include models confirmed for the configured API/project. If configuration is cached, run `php artisan config:clear` after editing `.env`.
+Provider failure logs contain only provider/model identifiers, normalized error category, HTTP status, elapsed time/attempt order, and fallback metadata; they do not include raw provider responses, prompts, credentials, or student messages. Chat transcripts are not stored by PCU by default. Enable `CHATBOT_LOG_CONVERSATIONS=true` only if institutional retention/access policies approve it; records older than `CHATBOT_LOG_RETENTION_DAYS` are removed during chatbot requests. PCU transcript settings do not control provider-side processing or retention.
 
-If Laravel configuration is cached after changing `.env`, run `php artisan config:clear`. Never enter passwords, verification codes, ballot selections, or other sensitive student information in the chat. The provider removes common password/code patterns, email addresses, and long digit sequences before sending, but users should still avoid sharing sensitive data.
+The chatbot endpoint retains its existing CSRF protection and student request throttle. `CHATBOT_AI_MAX_REQUESTS_PER_MINUTE` limits outgoing AI calls across the application; `CHATBOT_AI_MAX_TOTAL_SECONDS` bounds routing time; `CHATBOT_AI_MAX_ATTEMPTS_PER_REQUEST` bounds total provider/model calls. Google and Groq enforce their own project/organization limits, which may be lower.
 
-Provider failures are logged using only provider/model identifiers, attempt order, normalized error category, HTTP status, and whether fallback was used; raw provider responses, prompts, and credentials are not logged. Daily quota exhaustion is distinguished from short-term rate limits. Models are not repeatedly retried within one user request. When AI is unavailable, local answers remain available.
+After changing `.env`, run `php artisan config:clear` and restart the local server as needed. Automated chatbot tests fake external requests and do not consume Groq or Gemini quota.
 
-## Conversation privacy
+## Official provider documentation
 
-Conversation transcripts are not stored by default. Enable `CHATBOT_LOG_CONVERSATIONS=true` only if the institution has approved the retention and access policy; likely password/code patterns are redacted before a log entry is written. When enabled, records older than `CHATBOT_LOG_RETENTION_DAYS` are removed during chatbot requests (30 days by default). This setting does not control provider-side retention.
-
-## Provider development
-
-`App\Services\Chatbot\AIProvider` defines the provider boundary. `gemini` is the default network adapter. `openai` and `openai-compatible` remain available for future switching; configure `CHATBOT_OPENAI_API_KEY`, an OpenAI model in `CHATBOT_AI_MODEL`, and (if needed) `CHATBOT_AI_ENDPOINT` for that provider. The `mock` provider can be selected locally to verify the UI without making an external request or using API credits; do not use mock mode as a production AI service.
-
-To run the app locally, use the project's normal Laravel/Vite workflow (`composer run dev`). Add a Gemini key only to `.env`, then run `php artisan config:clear` and `php artisan serve` (or restart `composer run dev`). The automated chatbot tests fake every provider HTTP request and do not use API credits.
-
-The manual end-to-end check was completed through the local student-facing chatbot after a Gemini key was configured: the route returned HTTP 200, `mode: ai`, and a visible Gemini response. This confirms the configured key/model worked for that request; future account quota and availability remain subject to Google's limits. Automated request/response tests fake provider HTTP calls and do not use live API credits.
-
-## Official Gemini documentation
-
-- [Interactions API overview](https://ai.google.dev/gemini-api/docs/interactions-overview)
-- [Interactions API REST reference](https://ai.google.dev/api/interactions-api)
-- [Gemini models](https://ai.google.dev/gemini-api/docs/models)
-- [Gemini API keys](https://ai.google.dev/gemini-api/docs/api-key)
-- [Pricing and free tier](https://ai.google.dev/gemini-api/docs/pricing)
-- [Rate limits](https://ai.google.dev/gemini-api/docs/rate-limits)
-- [API error handling](https://ai.google.dev/gemini-api/docs/api-errors)
+- Groq [OpenAI compatibility](https://console.groq.com/docs/openai)
+- Groq [Chat Completions](https://console.groq.com/docs/text-chat)
+- Groq [models](https://console.groq.com/docs/models)
+- Groq [rate limits](https://console.groq.com/docs/rate-limits)
+- Groq [errors](https://console.groq.com/docs/errors)
+- Groq [data handling](https://console.groq.com/docs/your-data)
+- Gemini [Interactions API](https://ai.google.dev/gemini-api/docs/interactions-overview)
+- Gemini [models](https://ai.google.dev/gemini-api/docs/models)
+- Gemini [pricing](https://ai.google.dev/gemini-api/docs/pricing)
+- Gemini [rate limits](https://ai.google.dev/gemini-api/docs/rate-limits)
+- Gemini [API errors](https://ai.google.dev/gemini-api/docs/api-errors)

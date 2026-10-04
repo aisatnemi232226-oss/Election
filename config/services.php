@@ -1,5 +1,10 @@
 <?php
 
+$chatbotProvider = env('CHATBOT_AI_PROVIDER', 'router');
+$chatbotGroqKey = (string) env('CHATBOT_GROQ_API_KEY', '');
+$chatbotGeminiKey = (string) env('CHATBOT_AI_API_KEY', '');
+$chatbotOpenAIKey = (string) (env('CHATBOT_OPENAI_API_KEY') ?: $chatbotGeminiKey);
+
 return [
 
     /*
@@ -36,11 +41,38 @@ return [
     ],
 
     'chatbot' => [
-        'provider' => env('CHATBOT_AI_PROVIDER', 'gemini'),
+        'provider' => $chatbotProvider,
         'api_key' => env('CHATBOT_AI_API_KEY'),
         'openai_api_key' => env('CHATBOT_OPENAI_API_KEY'),
         'endpoint' => env('CHATBOT_AI_ENDPOINT'),
         'model' => env('CHATBOT_AI_MODEL', 'gemini-3.8-flash'),
+        'primary_provider' => env('CHATBOT_AI_PRIMARY_PROVIDER', 'groq'),
+        'fallback_providers' => array_values(array_filter(array_map(
+            static fn (string $provider): string => strtolower(trim($provider)),
+            explode(',', (string) env('CHATBOT_AI_FALLBACK_PROVIDERS', 'gemini')),
+        ))),
+        'max_providers_per_request' => (int) env('CHATBOT_AI_MAX_PROVIDERS_PER_REQUEST', 2),
+        'max_attempts_per_request' => (int) env('CHATBOT_AI_MAX_ATTEMPTS_PER_REQUEST', 4),
+        'ai_enabled' => match ($chatbotProvider) {
+            'mock' => true,
+            'router' => $chatbotGroqKey !== '' || $chatbotGeminiKey !== '',
+            'groq' => $chatbotGroqKey !== '',
+            'openai', 'openai-compatible' => $chatbotOpenAIKey !== '',
+            default => $chatbotGeminiKey !== '',
+        },
+        'groq' => [
+            'api_key' => $chatbotGroqKey,
+            'endpoint' => env('CHATBOT_GROQ_ENDPOINT', 'https://api.groq.com/openai/v1/chat/completions'),
+            'model' => env('CHATBOT_GROQ_MODEL', 'openai/gpt-oss-20b'),
+            'fallback_models' => array_values(array_filter(array_map(
+                'trim',
+                explode(',', (string) env(
+                    'CHATBOT_GROQ_FALLBACK_MODELS',
+                    'openai/gpt-oss-120b,qwen/qwen3.8-27b',
+                )),
+            ))),
+            'timeout' => (int) env('CHATBOT_GROQ_TIMEOUT', 20),
+        ],
         'fallback_models' => array_values(array_filter(array_map(
             'trim',
             explode(',', (string) env('CHATBOT_AI_FALLBACK_MODELS', 'gemini-3.5-flash-lite,gemini-2.5-flash-lite')),

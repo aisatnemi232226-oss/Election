@@ -32,7 +32,7 @@ class ChatbotController extends Controller
             'message' => ['required', 'string', 'max:1000'],
             'history' => ['sometimes', 'array', 'max:8'],
             'history.*.role' => ['required', 'string', 'in:user,assistant,bot'],
-            'history.*.content' => ['required', 'string', 'max:1000'],
+            'history.*.content' => ['required', 'string', 'max:2500'],
         ]);
 
         $message = trim($validated['message']);
@@ -99,10 +99,7 @@ class ChatbotController extends Controller
             }
 
             $provider = config('services.chatbot.provider');
-            $providerKey = in_array($provider, ['openai', 'openai-compatible'], true)
-                ? (string) (config('services.chatbot.openai_api_key') ?: config('services.chatbot.api_key'))
-                : (string) config('services.chatbot.api_key');
-            $aiIsConfigured = $provider === 'mock' || trim($providerKey) !== '';
+            $aiIsConfigured = (bool) config('services.chatbot.ai_enabled');
             if ($reply === '' && $aiIsConfigured) {
                 $startedAt = microtime(true);
                 try {
@@ -122,7 +119,9 @@ class ChatbotController extends Controller
                         'provider' => $response->provider,
                         'model' => $response->model,
                         'elapsed_ms' => (int) round((microtime(true) - $startedAt) * 1000),
-                        'fallback_used' => $response->model !== trim((string) config('services.chatbot.model')),
+                        'fallback_used' => config('services.chatbot.provider') === 'router'
+                            ? $response->provider !== config('services.chatbot.primary_provider')
+                            : $response->model !== trim((string) config('services.chatbot.model')),
                     ]);
                 } catch (AIProviderException $exception) {
                     Log::warning('The PCU Assistant AI provider request failed.', [
@@ -170,7 +169,7 @@ class ChatbotController extends Controller
             'provider_invalid_credentials', 'provider_forbidden', 'provider_not_configured', 'provider_missing_api_key', 'provider_missing_model' => 'AI replies are not available right now. Common election help is still available.',
             'provider_timeout', 'provider_connection_error' => 'The AI assistant could not connect in time. Please try again in a moment.',
             'provider_blocked_response' => 'I could not provide an AI reply to that message. Please ask a PCU election help question instead.',
-            'provider_application_rate_limited', 'provider_all_models_busy', 'provider_all_models_cooling_down' => 'AI assistance is temporarily unavailable. You can still use the election help options below.',
+            'provider_application_rate_limited', 'provider_all_models_busy', 'provider_all_models_cooling_down', 'provider_all_providers_cooling_down', 'provider_all_providers_unavailable' => 'AI assistance is temporarily unavailable. You can still use the election help options below.',
             default => 'AI replies are temporarily unavailable. Common election help is still available.',
         };
     }

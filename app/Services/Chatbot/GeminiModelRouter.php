@@ -5,7 +5,6 @@ namespace App\Services\Chatbot;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\RateLimiter;
 
 final class GeminiModelRouter implements AIProvider
 {
@@ -22,7 +21,10 @@ final class GeminiModelRouter implements AIProvider
         'provider_malformed_response',
     ];
 
-    public function __construct(private readonly GeminiProvider $provider) {}
+    public function __construct(
+        private readonly GeminiProvider $provider,
+        private readonly ApplicationAIRequestBudget $requestBudget,
+    ) {}
 
     public function generate(string $message, array $history, array $context, array $options = []): AIResponse
     {
@@ -38,10 +40,19 @@ final class GeminiModelRouter implements AIProvider
             throw new AIProviderException('provider_invalid_model_configuration');
         }
 
-        $maxModels = max(1, min((int) config('services.chatbot.max_models_per_request', 3), 5));
+        $maxModels = max(1, min(
+            (int) ($options['max_models_per_request'] ?? config('services.chatbot.max_models_per_request', 3)),
+            5,
+        ));
         $models = array_slice($models, 0, $maxModels);
-        $maxDuration = max(5, min((int) config('services.chatbot.max_total_seconds', 35), 120));
-        $providerTimeout = max(1, min((int) config('services.chatbot.timeout', 20), 45));
+        $maxDuration = max(1, min(
+            (int) ($options['max_total_seconds'] ?? config('services.chatbot.max_total_seconds', 35)),
+            120,
+        ));
+        $providerTimeout = max(1, min(
+            (int) ($options['timeout_seconds'] ?? config('services.chatbot.timeout', 20)),
+            45,
+        ));
         $startedAt = microtime(true);
         $lastError = null;
         $busyModels = 0;
@@ -65,7 +76,7 @@ final class GeminiModelRouter implements AIProvider
             }
 
             try {
-                if (! $this->reserveApplicationRequest()) {
+                if (! $this->requestBudget->reserve()) {
                     throw new AIProviderException('provider_application_rate_limited');
                 }
 
@@ -151,27 +162,6 @@ final class GeminiModelRouter implements AIProvider
         }
 
         return true;
-    }
-
-    private function reserveApplicationRequest(): bool
-    {
-        $limit = max(1, min((int) config('services.chatbot.max_requests_per_minute', 10), 1000));
-        $limiterKey = 'chatbot:gemini:application-budget';
-        $lock = Cache::lock('chatbot:gemini:application-budget-lock', 5);
-        if (! $lock->get()) {
-            return false;
-        }
-
-        try {
-            if (RateLimiter::tooManyAttempts($limiterKey, $limit)) {
-                return false;
-            }
-            RateLimiter::hit($limiterKey, 60);
-
-            return true;
-        } finally {
-            $lock->release();
-        }
     }
 
     private function isCoolingDown(string $model): bool

@@ -12,7 +12,9 @@ use App\Models\Role;
 use App\Models\User;
 use App\Observers\AdminAuditObserver;
 use App\Services\Chatbot\AIProvider;
+use App\Services\Chatbot\ChatbotAIRouter;
 use App\Services\Chatbot\GeminiModelRouter;
+use App\Services\Chatbot\GroqProvider;
 use App\Services\Chatbot\MockAIProvider;
 use App\Services\Chatbot\OpenAICompatibleProvider;
 use Carbon\Carbon;
@@ -31,6 +33,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(AIProvider::class, function () {
             return match (config('services.chatbot.provider')) {
+                'router' => $this->app->make(ChatbotAIRouter::class),
+                'groq' => $this->app->make(GroqProvider::class),
                 'gemini' => $this->app->make(GeminiModelRouter::class),
                 'openai' => $this->app->make(OpenAICompatibleProvider::class),
                 'openai-compatible' => $this->app->make(OpenAICompatibleProvider::class),

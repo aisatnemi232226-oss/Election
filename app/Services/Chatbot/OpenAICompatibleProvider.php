@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Http;
 
 final class OpenAICompatibleProvider implements AIProvider
 {
+    public function __construct(private readonly ApplicationAIRequestBudget $requestBudget) {}
+
     public function generate(string $message, array $history, array $context, array $options = []): AIResponse
     {
         $endpoint = trim((string) config('services.chatbot.endpoint'));
@@ -17,6 +19,9 @@ final class OpenAICompatibleProvider implements AIProvider
 
         if ($endpoint === '' || $model === '' || $apiKey === '') {
             throw new AIProviderException('provider_not_configured');
+        }
+        if (! $this->requestBudget->reserve()) {
+            throw new AIProviderException('provider_application_rate_limited');
         }
 
         $messages = [[
@@ -41,7 +46,7 @@ final class OpenAICompatibleProvider implements AIProvider
             $response = Http::acceptJson()
                 ->withToken($apiKey)
                 ->connectTimeout(5)
-                ->timeout(max(5, min((int) config('services.chatbot.timeout', 20), 45)))
+                ->timeout(max(1, min((int) ($options['timeout_seconds'] ?? config('services.chatbot.timeout', 20)), 45)))
                 ->post($endpoint, [
                     'model' => $model,
                     'messages' => $messages,
