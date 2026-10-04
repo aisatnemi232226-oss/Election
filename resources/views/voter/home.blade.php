@@ -20,6 +20,10 @@
         --candidate-control-border: rgba(23, 59, 105, .2);
         --candidate-dot: rgba(23, 59, 105, .35);
         --candidate-dot-active: #2457a6;
+        --candidate-banner-overlay: linear-gradient(102deg, rgba(226, 238, 255, .32) 0%, rgba(220, 234, 255, .18) 48%, rgba(13, 48, 102, .06) 100%);
+        --candidate-banner-opacity: .46;
+        --candidate-copy-surface: rgba(255, 255, 255, .7);
+        --candidate-copy-border: rgba(255, 255, 255, .76);
         position: relative;
         isolation: isolate;
         overflow: hidden;
@@ -61,6 +65,10 @@
         --candidate-control-border: rgba(255, 255, 255, .24);
         --candidate-dot: rgba(255, 255, 255, .38);
         --candidate-dot-active: #a8c9ff;
+        --candidate-banner-overlay: linear-gradient(102deg, rgba(5, 16, 37, .56) 0%, rgba(5, 18, 42, .34) 48%, rgba(5, 18, 42, .1) 100%);
+        --candidate-banner-opacity: .58;
+        --candidate-copy-surface: rgba(5, 16, 37, .66);
+        --candidate-copy-border: rgba(255, 255, 255, .18);
     }
 
     body.voter-home-page .candidate-showcase::before,
@@ -153,21 +161,23 @@
     }
 
     body.voter-home-page .candidate-carousel-stage {
-        --candidate-slide-stage: #e3edfc;
-        --candidate-slide-border: #c3d5ef;
+        --candidate-slide-stage: #d8e7ff;
+        --candidate-slide-border: #b8cdee;
         --candidate-slide-text: #142746;
         --candidate-slide-muted: #405776;
-        --candidate-slide-accent: #315f9f;
+        --candidate-slide-accent: #2457a6;
         --candidate-slide-track: rgba(34, 68, 118, .13);
-        --candidate-slide-overlay: linear-gradient(100deg, rgba(247, 250, 255, .97) 0%, rgba(241, 247, 255, .9) 48%, rgba(230, 240, 255, .68) 100%);
-        --candidate-slide-backdrop-opacity: .12;
+        --candidate-slide-overlay: var(--candidate-banner-overlay);
+        --candidate-slide-backdrop-opacity: var(--candidate-banner-opacity);
+        --candidate-slide-copy-surface: var(--candidate-copy-surface);
+        --candidate-slide-copy-border: var(--candidate-copy-border);
         position: relative;
         isolation: isolate;
         overflow: hidden;
         border: 1px solid var(--candidate-slide-border);
-        border-radius: 28px;
+        border-radius: 30px;
         background: var(--candidate-slide-stage);
-        box-shadow: 0 20px 48px rgba(22, 55, 105, .18), inset 0 1px rgba(255, 255, 255, .76);
+        box-shadow: 0 24px 58px rgba(22, 55, 105, .2), inset 0 1px rgba(255, 255, 255, .82);
     }
 
     body.voter-home-page .candidate-carousel-stage::after {
@@ -202,8 +212,6 @@
         --candidate-slide-muted: rgba(235, 242, 255, .82);
         --candidate-slide-accent: #bdd4ff;
         --candidate-slide-track: rgba(255, 255, 255, .12);
-        --candidate-slide-overlay: linear-gradient(100deg, rgba(5, 16, 37, .96) 0%, rgba(5, 18, 42, .88) 48%, rgba(5, 18, 42, .52) 100%);
-        --candidate-slide-backdrop-opacity: .34;
         box-shadow: 0 24px 60px rgba(0, 7, 22, .32), inset 0 1px rgba(255, 255, 255, .1);
     }
 
@@ -217,12 +225,12 @@
         z-index: 1;
         isolation: isolate;
         display: grid;
-        min-height: clamp(390px, 42vw, 500px);
-        grid-template-columns: minmax(0, 1.1fr) minmax(230px, .9fr);
+        min-height: clamp(420px, 45vw, 530px);
+        grid-template-columns: minmax(0, 1.08fr) minmax(250px, .92fr);
         align-items: center;
-        gap: clamp(20px, 5vw, 64px);
+        gap: clamp(22px, 4vw, 54px);
         overflow: hidden;
-        padding: clamp(28px, 6vw, 68px);
+        padding: clamp(24px, 5vw, 56px);
         animation: candidate-slide-in .72s cubic-bezier(.2, .75, .25, 1) both;
     }
 
@@ -244,7 +252,9 @@
     }
 
     body.voter-home-page .candidate-slide::after {
-        background: radial-gradient(ellipse at 78% 50%, rgba(84, 139, 255, .22), transparent 40%);
+        background:
+            radial-gradient(ellipse at 77% 48%, rgba(84, 139, 255, .34), transparent 34%),
+            linear-gradient(180deg, transparent 56%, rgba(8, 35, 79, .12));
     }
 
     body.voter-home-page .candidate-slide-backdrop {
@@ -255,21 +265,34 @@
         height: 100%;
         object-fit: cover;
         opacity: var(--candidate-slide-backdrop-opacity);
-        filter: saturate(.8);
+        filter: saturate(.96) contrast(.94);
         animation: candidate-backdrop-in 1.1s cubic-bezier(.2, .75, .25, 1) both;
     }
 
     body.voter-home-page .candidate-slide-copy {
+        position: relative;
+        z-index: 1;
         min-width: 0;
+        padding: clamp(22px, 3vw, 32px);
+        border: 1px solid var(--candidate-slide-copy-border);
+        border-radius: 24px;
+        background: var(--candidate-slide-copy-surface);
+        box-shadow: 0 16px 38px rgba(10, 34, 74, .12), inset 0 1px rgba(255, 255, 255, .58);
+        backdrop-filter: blur(16px) saturate(1.12);
+        -webkit-backdrop-filter: blur(16px) saturate(1.12);
     }
 
     body.voter-home-page .candidate-slide-overline {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        margin-bottom: 16px;
+        margin-bottom: 18px;
+        padding: 8px 11px;
+        border: 1px solid color-mix(in srgb, var(--candidate-slide-accent), transparent 82%);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--candidate-slide-accent), transparent 94%);
         color: var(--candidate-slide-accent);
-        font-size: .76rem;
+        font-size: .7rem;
         font-weight: 800;
         letter-spacing: .13em;
         text-transform: uppercase;
@@ -277,10 +300,12 @@
     }
 
     body.voter-home-page .candidate-slide-overline::before {
-        width: 22px;
-        height: 2px;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
         background: var(--candidate-slide-accent);
         content: "";
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--candidate-slide-accent), transparent 90%);
     }
 
     body.voter-home-page .candidate-slide-position {
@@ -296,12 +321,24 @@
         max-width: 16ch;
         margin: 0;
         color: var(--candidate-slide-text);
-        font-size: clamp(2rem, 5.2vw, 3.8rem);
+        font-size: clamp(2.1rem, 4.8vw, 3.65rem);
         letter-spacing: -.05em;
         line-height: 1.02;
         overflow-wrap: anywhere;
         text-wrap: balance;
+        text-shadow: 0 2px 18px color-mix(in srgb, var(--candidate-slide-text), transparent 88%);
         animation: candidate-copy-in .62s .2s cubic-bezier(.2, .75, .25, 1) both;
+    }
+
+    body.voter-home-page .candidate-slide h3::after {
+        display: block;
+        width: clamp(42px, 6vw, 68px);
+        height: 4px;
+        margin-top: 17px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #3478f6, color-mix(in srgb, var(--candidate-slide-accent), white 44%));
+        box-shadow: 0 4px 14px rgba(49, 111, 225, .24);
+        content: "";
     }
 
     body.voter-home-page .candidate-vote-share {
@@ -309,14 +346,14 @@
         align-items: baseline;
         justify-content: space-between;
         gap: 16px;
-        margin-top: clamp(26px, 4vw, 38px);
+        margin-top: clamp(22px, 3vw, 30px);
         color: var(--candidate-slide-muted);
         font-size: .9rem;
         font-weight: 650;
     }
 
     body.voter-home-page .candidate-vote-share strong {
-        color: var(--candidate-slide-text);
+        color: var(--candidate-slide-accent);
         font-size: clamp(1.8rem, 4vw, 2.55rem);
         font-variant-numeric: tabular-nums;
         letter-spacing: -.04em;
@@ -325,12 +362,12 @@
     }
 
     body.voter-home-page .candidate-vote-track {
-        height: 10px;
+        height: 11px;
         overflow: hidden;
-        margin-top: 13px;
-        border: 1px solid color-mix(in srgb, var(--candidate-slide-text), transparent 88%);
+        margin-top: 11px;
+        border: 1px solid color-mix(in srgb, var(--candidate-slide-accent), transparent 84%);
         border-radius: 999px;
-        background: var(--candidate-slide-track);
+        background: color-mix(in srgb, var(--candidate-slide-accent), transparent 92%);
     }
 
     body.voter-home-page .candidate-vote-fill {
@@ -355,44 +392,44 @@
         position: relative;
         display: grid;
         min-width: 0;
-        min-height: 300px;
+        min-height: 330px;
         place-items: center;
     }
 
     body.voter-home-page .candidate-slide-portrait::before {
         position: absolute;
-        width: min(100%, 340px);
+        width: min(100%, 366px);
         aspect-ratio: 1;
-        border: 1px solid color-mix(in srgb, var(--candidate-slide-text), transparent 82%);
-        border-top-color: color-mix(in srgb, var(--candidate-slide-accent), transparent 12%);
-        border-right-color: color-mix(in srgb, var(--candidate-slide-accent), transparent 48%);
+        border: 1px solid color-mix(in srgb, var(--candidate-slide-text), transparent 74%);
+        border-top-color: color-mix(in srgb, var(--candidate-slide-accent), transparent 4%);
+        border-right-color: color-mix(in srgb, var(--candidate-slide-accent), transparent 30%);
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(111, 160, 255, .2), color-mix(in srgb, var(--candidate-slide-text), transparent 97%) 66%, transparent 67%);
-        box-shadow: 0 0 0 22px color-mix(in srgb, var(--candidate-slide-text), transparent 97%), 0 0 0 46px color-mix(in srgb, var(--candidate-slide-text), transparent 98%);
+        background: radial-gradient(circle, rgba(111, 160, 255, .3), color-mix(in srgb, var(--candidate-slide-text), transparent 95%) 62%, transparent 63%);
+        box-shadow: 0 0 0 18px color-mix(in srgb, var(--candidate-slide-text), transparent 95%), 0 0 0 42px color-mix(in srgb, var(--candidate-slide-text), transparent 97%), 0 18px 56px rgba(30, 85, 170, .16);
         content: "";
         animation: candidate-halo-spin 28s linear infinite;
     }
 
     body.voter-home-page .candidate-slide-portrait::after {
         position: absolute;
-        width: min(82%, 278px);
+        width: min(82%, 292px);
         aspect-ratio: 1;
         border: 1px dashed color-mix(in srgb, var(--candidate-slide-accent), transparent 68%);
         border-radius: 50%;
         content: "";
-        opacity: .58;
+        opacity: .72;
         pointer-events: none;
         animation: candidate-halo-spin 42s linear infinite reverse;
     }
 
     body.voter-home-page .candidate-slide-portrait img {
         position: relative;
-        width: clamp(210px, 25vw, 310px);
+        width: clamp(220px, 27vw, 326px);
         aspect-ratio: 1;
-        border: 8px solid rgba(255, 255, 255, .88);
+        border: 9px solid rgba(255, 255, 255, .94);
         border-radius: 50%;
-        background: #eaf1ff;
-        box-shadow: 0 24px 50px rgba(0, 6, 22, .38), 0 0 0 1px rgba(255, 255, 255, .2);
+        background: linear-gradient(145deg, #eff5ff, #b9d0f8);
+        box-shadow: 0 28px 62px rgba(0, 6, 22, .4), 0 0 0 1px rgba(255, 255, 255, .55), 0 0 38px rgba(113, 164, 255, .28);
         object-fit: cover;
         animation: candidate-portrait-in .7s .08s cubic-bezier(.2, .75, .25, 1) both, candidate-portrait-float 6s 1s ease-in-out infinite;
     }
@@ -402,7 +439,13 @@
         align-items: center;
         justify-content: space-between;
         gap: 14px;
-        margin-top: 17px;
+        margin-top: 18px;
+        padding: 10px;
+        border: 1px solid var(--candidate-control-border);
+        border-radius: 18px;
+        background: color-mix(in srgb, var(--candidate-control-bg), transparent 12%);
+        box-shadow: 0 8px 20px rgba(22, 55, 105, .08), inset 0 1px rgba(255, 255, 255, .42);
+        backdrop-filter: blur(12px);
     }
 
     body.voter-home-page .candidate-carousel-controls[hidden] {
@@ -456,19 +499,24 @@
     }
 
     body.voter-home-page .candidate-carousel-dot {
-        width: 9px;
-        height: 9px;
+        width: 10px;
+        height: 10px;
         padding: 0;
-        border: 0;
+        border: 1px solid color-mix(in srgb, var(--candidate-dot-active), transparent 36%);
         border-radius: 999px;
         background: var(--candidate-dot);
         cursor: pointer;
-        transition: width .2s ease, background-color .2s ease;
+        transition: width .2s ease, background-color .2s ease, box-shadow .2s ease, transform .2s ease;
     }
 
     body.voter-home-page .candidate-carousel-dot[aria-current="true"] {
-        width: 25px;
+        width: 30px;
         background: var(--candidate-dot-active);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--candidate-dot-active), transparent 88%);
+    }
+
+    body.voter-home-page .candidate-carousel-dot:hover {
+        transform: scale(1.15);
     }
 
     body.voter-home-page .candidate-carousel-empty {
@@ -1909,13 +1957,14 @@
     }
 
     body.voter-home-page #articles::after {
-        right: -12rem;
-        bottom: -20rem;
-        width: 35rem;
+        top: 50%;
+        right: clamp(3.5rem, 7vw, 5.5rem);
+        width: clamp(11rem, 24vw, 20rem);
         aspect-ratio: 1;
+        transform: translateY(-50%);
         border: 1px solid rgba(255, 255, 255, .58);
         border-radius: 50%;
-        box-shadow: 0 0 0 2.8rem rgba(255, 255, 255, .16), 0 0 0 5.6rem rgba(255, 255, 255, .09);
+        box-shadow: 0 0 0 1.5rem rgba(255, 255, 255, .16), 0 0 0 3rem rgba(255, 255, 255, .09);
         animation: articles-orbit-drift 34s ease-in-out infinite alternate;
     }
 
@@ -1936,7 +1985,7 @@
 
     :root[data-theme="dark"] body.voter-home-page #articles::after {
         border-color: rgba(201, 220, 255, .2);
-        box-shadow: 0 0 0 2.8rem rgba(201, 220, 255, .06), 0 0 0 5.6rem rgba(201, 220, 255, .035);
+        box-shadow: 0 0 0 1.5rem rgba(201, 220, 255, .06), 0 0 0 3rem rgba(201, 220, 255, .035);
     }
 
     body.voter-home-page #articles .page-wrap {
@@ -2199,8 +2248,8 @@
     }
 
     @keyframes articles-orbit-drift {
-        from { transform: translate3d(0, 0, 0) rotate(-3deg); }
-        to { transform: translate3d(-16px, -12px, 0) rotate(4deg); }
+        from { translate: 0 0; }
+        to { translate: -8px -8px; }
     }
 
     @keyframes articles-kicker-in {
@@ -2250,13 +2299,14 @@
     }
 
     body.voter-home-page #faq::after {
-        top: -15rem;
-        right: -14rem;
-        width: 34rem;
+        top: 50%;
+        right: clamp(3.5rem, 7vw, 5.5rem);
+        width: clamp(11rem, 24vw, 20rem);
         aspect-ratio: 1;
+        transform: translateY(-50%);
         border: 1px solid rgba(255, 255, 255, .58);
         border-radius: 50%;
-        box-shadow: 0 0 0 2.8rem rgba(255, 255, 255, .16), 0 0 0 5.6rem rgba(255, 255, 255, .09);
+        box-shadow: 0 0 0 1.5rem rgba(255, 255, 255, .16), 0 0 0 3rem rgba(255, 255, 255, .09);
         animation: faq-orbit-drift 32s ease-in-out infinite alternate;
     }
 
@@ -2277,7 +2327,7 @@
 
     :root[data-theme="dark"] body.voter-home-page #faq::after {
         border-color: rgba(201, 220, 255, .2);
-        box-shadow: 0 0 0 2.8rem rgba(201, 220, 255, .06), 0 0 0 5.6rem rgba(201, 220, 255, .035);
+        box-shadow: 0 0 0 1.5rem rgba(201, 220, 255, .06), 0 0 0 3rem rgba(201, 220, 255, .035);
     }
 
     body.voter-home-page #faq .page-wrap {
@@ -2836,8 +2886,8 @@
     }
 
     @keyframes faq-orbit-drift {
-        from { transform: translate3d(0, 0, 0) rotate(-4deg); }
-        to { transform: translate3d(-16px, 12px, 0) rotate(4deg); }
+        from { translate: 0 0; }
+        to { translate: -8px 8px; }
     }
 
     @keyframes faq-kicker-in {
@@ -3020,6 +3070,7 @@
 
         body.voter-home-page .candidate-carousel-stage {
             border-radius: 22px;
+            --candidate-slide-backdrop-opacity: .36;
         }
 
         body.voter-home-page .candidate-slide {
@@ -3060,6 +3111,8 @@
         body.voter-home-page .candidate-carousel-controls {
             align-items: flex-start;
             flex-wrap: wrap;
+            padding: 9px;
+            border-radius: 16px;
         }
 
         body.voter-home-page .candidate-carousel-actions {
@@ -3070,6 +3123,14 @@
         body.voter-home-page .candidate-carousel-pagination {
             min-height: 42px;
             margin-inline: auto;
+        }
+
+        body.voter-home-page .candidate-slide-copy {
+            padding: 20px;
+            border-radius: 20px;
+            background: color-mix(in srgb, var(--candidate-slide-copy-surface), transparent 2%);
+            backdrop-filter: blur(12px) saturate(1.08);
+            -webkit-backdrop-filter: blur(12px) saturate(1.08);
         }
 
         body.voter-home-page .hero-inner {
@@ -3216,6 +3277,9 @@
         body.voter-home-page .candidate-vote-fill,
         body.voter-home-page .candidate-carousel-button,
         body.voter-home-page .candidate-carousel-dot,
+        body.voter-home-page .candidate-slide-copy,
+        body.voter-home-page .candidate-slide h3::after,
+        body.voter-home-page .candidate-slide-portrait img,
         body.voter-home-page .hero-status,
         body.voter-home-page .button,
         body.voter-home-page .step-item,
